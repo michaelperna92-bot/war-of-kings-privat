@@ -51,35 +51,35 @@ window.WOK_DATA = (function () {
   // Heldengaben: Texte und CT laut Master-Regelwerk vom 29.10.2026, Abschnitt 10 (Schütze = Werkstatt-Ergänzung, noch nicht im Regelwerk).
   // Alle übrigen Gaben wurden auf Anweisung entfernt.
   const GIFTS = [
-    { id: 'mordlust', short: '+500 ATK bis zum Zugende. Nur eigene Battlephase.', name: 'Mordlust', kind: 'ct', ct: 2, crest: 'gabe_Mordlust',
-      text: 'Der Held erhält +500 ATK bis zum Zugende. Aktivierbar nur in der eigenen Battlephase.' },
+    { id: 'mordlust', short: '+500 ATK bis zum Zugende. Eigene Battle- oder Konterphase.', name: 'Mordlust', kind: 'ct', ct: 2, crest: 'gabe_Mordlust',
+      text: 'Der Held erhält +500 ATK bis zum Zugende. Aktivierbar in der eigenen Battlephase oder der eigenen Konterphase.' },
     { id: 'entwaffnen', short: 'Ein Gegner in Angriffsreichweite: −500 DEF bis Zugende.', name: 'Entwaffnen', kind: 'ct', ct: 2, crest: 'gabe_Entwaffnen',
-      text: 'Ein gegnerischer Held in Angriffsreichweite erhält −500 DEF bis zum Zugende. Aktivierbar nur in der eigenen Battlephase.' },
+      text: 'Ein gegnerischer Held in Angriffsreichweite erhält −500 DEF bis zum Zugende. Aktivierbar in der eigenen Battlephase oder der eigenen Konterphase.' },
     { id: 'doppelschlag', short: 'Ein oder zwei Gegner in Angriffsrichtung angreifen; König: zwei Treffer.', name: 'Doppelschlag', kind: 'permanent', crest: 'gabe_Doppelschlag',
       text: 'Wahlweise einen oder zwei gültige gegnerische Helden in Angriffsrichtung angreifen; gegen einen König zwei Treffer. Alle gewählten Treffer gelten gleichzeitig.' },
     { id: 'poison', short: 'Vergiftet Gegner im Kampf: Tod zu Beginn deines nächsten Zuges. Nie Könige.', name: 'Poison', kind: 'permanent', crest: 'gabe_Poison',
       text: 'Angreifende oder angegriffene gegnerische Helden werden vergiftet; niemals Könige. Ein vergifteter Held stirbt zu Beginn des nächsten eigenen Zuges des Besitzers des Poison-Helden, sofern Poison bis dahin nicht entfernt wurde. Ein Held kann nur einmal gleichzeitig vergiftet sein; eine erneute Vergiftung verlängert oder erneuert die Frist nicht.' },
-    { id: 'eisenpanzer', short: '+300 DEF für zwei Runden. Nur eigene Battlephase.', name: 'Eisenpanzer', kind: 'ct', ct: 5, crest: 'gabe_Eisenpanzer',
-      text: 'Der Held erhält +300 DEF für zwei Runden. Die Wirkung endet zu Beginn des zweiten folgenden eigenen Zuges. Aktivierbar nur in der eigenen Battlephase.' },
-    { id: 'blitzschritt', short: '1 Feld extra in erlaubter Bewegungsrichtung, danach angreifen. Nur eigene Battlephase.', name: 'Blitzschritt', kind: 'ct', ct: 3, cost: 3, role: 'Offensive Mobilität', crest: 'gabe_Blitzschritt',
-      text: 'Ein zusätzliches Feld in erlaubter Bewegungsrichtung in der eigenen Battlephase; danach regulärer Angriff, sofern noch angriffsberechtigt.' },
+    { id: 'eisenpanzer', short: '+300 DEF für zwei Runden. Eigene Battle- oder Konterphase.', name: 'Eisenpanzer', kind: 'ct', ct: 5, crest: 'gabe_Eisenpanzer',
+      text: 'Der Held erhält +300 DEF für zwei Runden. Die Wirkung endet zu Beginn des zweiten folgenden eigenen Zuges. Aktivierbar in der eigenen Battlephase oder der eigenen Konterphase.' },
+    { id: 'blitzschritt', short: '1 Feld extra in erlaubter Bewegungsrichtung, danach angreifen. Eigene Battle- oder Konterphase.', name: 'Blitzschritt', kind: 'ct', ct: 3, cost: 3, role: 'Offensive Mobilität', crest: 'gabe_Blitzschritt',
+      text: 'Ein zusätzliches Feld in erlaubter Bewegungsrichtung in der eigenen Battlephase oder der eigenen Konterphase; in der Battlephase danach regulärer Angriff, sofern noch angriffsberechtigt.' },
     { id: 'rueckzug', short: 'Gewähltes Monster zieht nach der Schadensberechnung 1 Feld zurück, auch ohne Angriff.', name: 'Rückzug', kind: 'ct', ct: 4, cost: 4, role: 'Taktischer Rückzug', crest: 'gabe_Rückzug',
-      text: 'In der eigenen Battlephase ein beliebiges eigenes oder gegnerisches Monster einschließlich des Anwenders wählen. Nach der gemeinsamen Schadensberechnung zieht es ein Feld gerade in Richtung seiner eigenen Spielfeldseite zurück, auch ohne eigenen Angriff; nur wenn es noch lebt und das Feld existiert und frei ist.' },
-    { id: 'tausch', short: 'Positionstausch mit einer eigenen Armeekarte. Nur eigene Battlephase.', name: 'Tausch', kind: 'ct', ct: 4, crest: 'gabe_Tausch',
-      text: 'Positionstausch mit einer eigenen Armeekarte. Zulässig, wenn beide Zielfelder gültig sind und keine ausdrückliche Feldsperre verletzt wird; normale Bewegungsschritte und -richtungen sind hierfür nicht erforderlich. Ein gefesselter Held darf an keinem Tausch beteiligt sein. Aktivierbar nur in der eigenen Battlephase.' },
+      text: 'In der eigenen Battlephase oder der eigenen Konterphase ein beliebiges eigenes oder gegnerisches Monster einschließlich des Anwenders wählen. Nach der gemeinsamen Schadensberechnung zieht es ein Feld gerade in Richtung seiner eigenen Spielfeldseite zurück, auch ohne eigenen Angriff; nur wenn es noch lebt und das Feld existiert und frei ist.' },
+    { id: 'tausch', short: 'Positionstausch mit einer eigenen Armeekarte. Eigene Battle- oder Konterphase.', name: 'Tausch', kind: 'ct', ct: 4, crest: 'gabe_Tausch',
+      text: 'Positionstausch mit einer eigenen Armeekarte. Zulässig, wenn beide Zielfelder gültig sind und keine ausdrückliche Feldsperre verletzt wird; normale Bewegungsschritte und -richtungen sind hierfür nicht erforderlich. Ein gefesselter Held darf an keinem Tausch beteiligt sein. Aktivierbar in der eigenen Battlephase oder der eigenen Konterphase.' },
     { id: 'goettlicher_segen', short: 'Wehrt alle negativen Effekte ab, auch Poison und Einfrieren.', name: 'Göttlicher Segen', kind: 'permanent', crest: 'gabe_Göttlicher_Segen',
       text: 'Negative Effekte, darunter ATK-/DEF-Senkungen, Poison und Einfrieren, werden vollständig abgewehrt und nicht angelegt.' },
     { id: 'heilung', short: 'Entfernt alle negativen Effekte einer eigenen Karte, auch Poison, auch beim Anwender.', name: 'Heilung', kind: 'ct', ct: 3, crest: 'gabe_Heilung',
-      text: 'Entfernt sämtliche negativen Effekte von einer eigenen oder verbündeten Karte einschließlich des Anwenders; entfernt auch Poison und verhindert dessen späteren Gifttod. Aktivierbar nur in der eigenen Battlephase.' },
+      text: 'Entfernt sämtliche negativen Effekte von einer eigenen oder verbündeten Karte einschließlich des Anwenders; entfernt auch Poison und verhindert dessen späteren Gifttod. Aktivierbar in der eigenen Battlephase oder der eigenen Konterphase.' },
     { id: 'fesseln', short: 'Ein Gegner ist zwei Runden bewegungsunfähig; Angriffe und Gaben bleiben erlaubt.', name: 'Fesseln', kind: 'ct', ct: 4, crest: 'gabe_Fesseln',
-      text: 'Ein gegnerischer Held ist zwei Runden bewegungsunfähig; Angriffe und Gaben bleiben zulässig. Aktivierbar nur in der eigenen Battlephase.' },
+      text: 'Ein gegnerischer Held ist zwei Runden bewegungsunfähig; Angriffe und Gaben bleiben zulässig. Aktivierbar in der eigenen Battlephase oder der eigenen Konterphase.' },
     { id: 'ansturm', short: 'Hebt die Beschwörungssperre auf.', name: 'Ansturm', kind: 'permanent', crest: 'gabe_Ansturm',
       text: 'Hebt die Beschwörungssperre auf: Der Held darf schon im Zug seiner Beschwörung laufen, angreifen und aktivierbare Gaben nutzen. Die Phasenreihenfolge bleibt bestehen.' },
     // Neu am 29.10.2026 auf Anweisung des Nutzers (noch nicht im Master-Regelwerk; Wappen = Werkstatt-Entwurf)
     { id: 'schuetze', short: 'Kann Ziele angreifen, die zwei Felder weiter weg sind.', name: 'Schütze', kind: 'permanent', crest: 'gabe_Schütze', crestStatus: 'Entwurf',
       text: 'Der Held kann gezielt gegnerische Ziele angreifen, die zwei Felder weiter weg sind. Die Gabe ist permanent.' },
     { id: 'durchbruch', short: 'Greift einen Helden zwei Felder entfernt in erlaubter Angriffsrichtung an.', name: 'Durchbruch', kind: 'ct', ct: 4, crest: 'gabe_Durchbruch',
-      text: 'Ein Held zwei Felder entfernt kann in einer erlaubten Angriffsrichtung angegriffen werden. Aktivierbar nur in der eigenen Battlephase.' }
+      text: 'Ein Held zwei Felder entfernt kann in einer erlaubten Angriffsrichtung angegriffen werden. Aktivierbar in der eigenen Battlephase oder der eigenen Konterphase.' }
   ];
   // Königliche Gaben (nur für Königskarten). Noch nicht festgelegt – hier eintragen, sobald sie feststehen:
   // { id, name, kind: 'ct'|'permanent', ct, crest, short, text }

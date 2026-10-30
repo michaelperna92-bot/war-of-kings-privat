@@ -11,7 +11,7 @@
   const ARROW = { n: '↑', ne: '↗', e: '→', se: '↘', s: '↓', sw: '↙', w: '←', nw: '↖' };
   const GRID9 = ['nw', 'n', 'ne', 'w', null, 'e', 'sw', 's', 'se'];
   const ELCOL = { feuer: '#8a3324', wasser: '#24527a', erde: '#5b4a2c', wind: '#3d6b5a', blitz: '#6b5a1c', licht: '#7a6f44', dunkelheit: '#3a2a4a' };
-  const VERSION = '4.2';
+  const VERSION = '4.3';
   const isSp = c => !!c && (c.type === 'spell' || c.type === 'curse');
   const TYPEN = c => c.type === 'king' ? 'König' : c.type === 'spell' ? 'Zauber' : c.type === 'curse' ? 'Fluch' : 'Held';
   const SPCOL = { spell: '#1f4a35', curse: '#3d2350' };
@@ -1243,7 +1243,7 @@
       want = true; if (ws || !url()) return;
       try { ws = new WebSocket(url()); } catch (e) { ws = null; again(); return; }
       ws.onopen = () => { ws.send(JSON.stringify({ t: 'hello', id: netId(), name: SET.name1 || 'Spieler' })); };
-      ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (x) { return; } if (m.t === 'hello') { up = true; retry = 0; while (queue.length) ws.send(queue.shift()); for (const f of stFns) f(true); } for (const f of fns) f(m); };
+      ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (x) { return; }  if (m.t === 'hello') { up = true; retry = 0; while (queue.length) ws.send(queue.shift()); for (const f of stFns) f(true); } for (const f of fns) f(m); };
       ws.onclose = ws.onerror = () => { if (!ws) return; ws.onclose = ws.onerror = ws.onmessage = null; ws = null; const was = up; up = false; if (was) for (const f of stFns) f(false); again(); };
     }
     function again() { if (!want) return; clearTimeout(timer); timer = setTimeout(start, Math.min(10000, 600 * Math.pow(2, retry++))); }
@@ -1428,19 +1428,20 @@
       offs.push(B.watch(c, x => { if (x && x.state === 'running' && x.seed && x.guestBy === who() && !G) { stopAll(); begin({ code: c, me: 1, kind: B.kind }, x); } else if (x && x.state === 'running' && x.guestBy && x.guestBy !== who()) { stopAll(); closeDialog(); toast('Jemand anderes war schneller – der Raum ist voll.'); } if (x && x.state === 'closed') { stopAll(); closeDialog(); toast('Der Gastgeber hat den Raum geschlossen.'); } }));
     }
     /* ---------- Spielserver (serverautoritativ) ---------- */
-    let srvOff = null, srvWait = null;
+    let srvOff = null, srvWait = null, syncAt = 0;
+    function resync() { if (!R || R.kind !== 'srv') return; const now = Date.now(); if (now - syncAt < 1500) return; syncAt = now; SRV.send({ t: 'resume', code: R.code, light: !!(G && G.online && G.online.code === R.code) }); }
     function srvListen() {
       if (srvOff) return;
       srvOff = SRV.on(m => {
         if (m.t === 'created') { if (srvWait) srvWait(m); return; }
         if (m.t === 'start') { srvStart(m); return; }
         if (m.t === 'act') { srvAct(m); return; }
-        if (m.t === 'reject') { if (R && R.kind === 'srv') { R.pending = false; if (m.error !== 'veraltet') toast(m.error, 5000); else SRV.send({ t: 'resume', code: R.code }); } return; }
+        if (m.t === 'reject') { if (R && R.kind === 'srv') { R.pending = false; if (m.error !== 'veraltet') toast(m.error, 5000); else resync(); } return; }
         if (m.t === 'img') { if (m.full && !fullURL(m.id)) urls.full[m.id] = m.full; if (m.art && !artURL(m.id)) urls.art[m.id] = m.art; if (G) render([]); return; }
         if (m.t === 'peer') { if (G && G.online === R) { const el = $('#netdot'); if (el) { el.hidden = false; el.className = m.online ? 'ok' : 'bad'; el.textContent = m.online ? '● Gegner online' : '○ Gegner getrennt'; } if (!m.online && !G.s.result) toast('Dein Gegner ist gerade nicht verbunden – die Partie wartet auf ihn.', 5000); } return; }
         if (m.t === 'error') { if (srvWait) srvWait(null); toast(m.msg, 8000); if (m.code === 'no_room' && LS.get(KEY) && LS.get(KEY).kind === 'srv') LS.del(KEY); return; }
       });
-      SRV.onState(on => { const el = $('#onl-srv'); if (el) { el.className = 'onl-net ' + (on ? 'ok' : 'bad'); el.textContent = on ? '● mit dem Spielserver verbunden' : '○ verbinde mit dem Spielserver …'; } if (on && R && R.kind === 'srv') SRV.send({ t: 'resume', code: R.code }); });
+      SRV.onState(on => { const el = $('#onl-srv'); if (el) { el.className = 'onl-net ' + (on ? 'ok' : 'bad'); el.textContent = on ? '● mit dem Spielserver verbunden' : '○ verbinde mit dem Spielserver …'; } if (on && R && R.kind === 'srv') { syncAt = 0; resync(); } });
     }
     async function srvHost() {
       const d = myDeck(); if (!d) return;
@@ -1469,6 +1470,8 @@
     function srvStart(m) {
       closeDialog();
       const same = G && G.online && G.online.kind === 'srv' && G.online.code === m.code;
+      // veraltete Antwort (während sie unterwegs war, kamen schon neuere Züge an) → ignorieren, sonst fiele der Stand zurück
+      if (same && R && R.code === m.code && m.acts.length < R.n) return;
       const res = W.newGame({ cards: Object.assign({}, m.decks[1].cards, m.decks[0].cards), decks: [m.decks[0].ids, m.decks[1].ids], fixedSides: true, seed: m.seed, sideNames: m.names, timer: false, counterReserve: false });
       let s = res.state; for (const a of m.acts) { const r = W.apply(s, a); if (r.error) { toast('Abweichung beim Nachspielen: ' + r.error, 8000); break; } s = r.state; }
       for (const [id, im] of Object.entries(m.imgs || {})) { if (im.full && !fullURL(id)) urls.full[id] = im.full; if (im.art && !artURL(id)) urls.art[id] = im.art; }
@@ -1488,12 +1491,12 @@
     function srvAct(m) {
       if (!G || !R || R.kind !== 'srv' || G.online !== R) return;
       if (m.n < R.n) return; // schon angewendet
-      if (m.n > R.n) { SRV.send({ t: 'resume', code: R.code }); return; } // Lücke → vollständig abgleichen
-      const r = W.apply(G.s, m.a); if (r.error) { SRV.send({ t: 'resume', code: R.code }); return; }
+      if (m.n > R.n) { resync(); return; } // Lücke → vollständig abgleichen
+      const r = W.apply(G.s, m.a); if (r.error) { resync(); return; }
       G.s = r.state; G.rec.acts.push(m.a); R.n++; if (m.p === R.me) R.pending = false;
       afterEvents(r.events);
     }
-    function srvSend(a) { if (!R || R.kind !== 'srv') return false; if (R.pending && a.type !== 'concede') { toast('Einen Moment – der letzte Zug ist unterwegs.'); return false; } R.pending = a.type !== 'concede'; SRV.send({ t: 'act', code: R.code, n: R.n, a }); setTimeout(() => { if (R && R.pending) { R.pending = false; SRV.send({ t: 'resume', code: R.code }); } }, 8000); return true; }
+    function srvSend(a) { if (!R || R.kind !== 'srv') return false; if (R.pending && a.type !== 'concede') { toast('Einen Moment – der letzte Zug ist unterwegs.'); return false; } R.pending = a.type !== 'concede'; SRV.send({ t: 'act', code: R.code, n: R.n, a }); setTimeout(() => { if (R && R.pending) { R.pending = false; syncAt = 0; resync(); } }, 6000); return true; }
     // Einladungslink ?raum=CODE: direkt in den Raum
     function openLink(code) {
       code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6); if (code.length !== 6) return;
@@ -1581,7 +1584,7 @@
     if (!myTurn()) return;
     const s = G.s;
     if (G.cast) { const st = castStep(); if (st && (st.type === 'place' || st.what === 'field') && st.cands.includes(f)) castToggle(f); return; }
-    if (G.gift && G.gift.id === 'blitzschritt') { if (G.gift.targets.includes(f)) { const g = G.gift; G.gift = null; dispatch({ type: 'gift', uid: g.uid, gift: g.id, target: f }); } else { G.gift = null; render([]); } return; }
+    if (G.gift && G.gift.id === 'blitzschritt') { if (G.gift.targets.includes(f)) { const g = G.gift; G.gift = null; giftGo({ type: 'gift', uid: g.uid, gift: g.id, target: f }); } else { G.gift = null; render([]); } return; }
     if (G.sel && G.sel.kind === 'hand' && W.summonOptions(s, G.sel.iid).includes(f)) {
       const P = s.players[s.active];
       if (P.hand.length === 1 && !P.deck.length) { dialog('<h2>Letzte Karte?</h2><p>Dein Stapel ist leer. Ohne Hand- und Stapelkarten verlierst du sofort.</p><div class="row"><button class="btn danger" data-act="yes">Trotzdem beschwören</button><button class="btn" data-act="no">Abbrechen</button></div>', act => { if (act === 'yes') { const iid = G.sel.iid; G.sel = null; dispatch({ type: 'summon', iid, field: f }); } }); return; }
@@ -1594,7 +1597,7 @@
     const s = G.s, u = s.units[uid]; if (!u) return;
     if (myTurn() && G.cast) { const st = castStep(); if (st && st.type === 'pick' && st.cands.includes(uid)) { castToggle(uid); return; } }
     if (myTurn()) {
-      if (G.gift && G.gift.targets.includes(uid)) { const g = G.gift; G.gift = null; dispatch({ type: 'gift', uid: g.uid, gift: g.id, target: uid }); return; }
+      if (G.gift && G.gift.targets.includes(uid)) { const g = G.gift; G.gift = null; giftGo({ type: 'gift', uid: g.uid, gift: g.id, target: uid }); return; }
       if (G.gift) { G.gift = null; }
       if (s.phase === 'battle' && G.sel && G.sel.kind === 'unit' && G.sel.uid !== uid) {
         const a = G.sel.uid, tg = W.attackTargets(s, a);
@@ -1644,6 +1647,7 @@
           if (tg.length) btn('pick', '⚔ ' + (s.decl[u.uid] ? 'Angriff ändern' : 'Angreifen') + ' – rotes Ziel wählen', 'primary'); else why(W.locked(s, u) ? 'Frisch beschworen: greift erst im nächsten Zug an.' : 'Kein Ziel in Angriffsreichweite.');
           if (!u.king) for (const o of W.giftOptions(s, u.uid)) out.push('<button class="btn small" data-ix="gift" data-gift="' + o.id + '" data-uid="' + u.uid + '" ' + (o.ok ? '' : 'disabled') + '>' + esc(o.name) + (o.ok ? '' : ' · ' + esc(o.why)) + '</button>');
         }
+        if (s.phase === 'counter' && u.owner === s.counter && !u.king && myTurn()) for (const o of W.giftOptions(s, u.uid)) out.push('<button class="btn small" data-ix="gift" data-gift="' + o.id + '" data-uid="' + u.uid + '" ' + (o.ok ? '' : 'disabled') + '>' + esc(o.name) + (o.ok ? '' : ' · ' + esc(o.why)) + '</button>');
       } else if (INS.iid) {
         const p = actor(s), h = s.players[p].hand.find(x => x.iid === INS.iid);
         if (h && isSp(c)) { const o = W.castOptions(s, p, h.iid); if (o.ok) btn('cast', (c.type === 'curse' ? '☾ Fluch' : '✦ Zauber') + ' ausspielen (' + c.energy + ' Energie' + (o.hpCost ? ', ' + fmt(o.hpCost) + ' König-HP' : '') + (o.discardCost ? ', ' + o.discardCost + ' Handkarte' + (o.discardCost > 1 ? 'n' : '') : '') + ')', 'primary'); else why('Jetzt nicht ausspielbar: ' + o.why + '.'); }
@@ -1744,10 +1748,61 @@
     qb.style.left = (P.left + P.w / 2) + '%'; qb.style.top = (below ? P.top + P.h : P.top) + '%'; qb.classList.toggle('below', below);
     qb.innerHTML = opts.map(o => '<button data-qg="' + o.id + '" data-uid="' + sel.uid + '" ' + (o.ok ? '' : 'disabled') + ' title="' + esc(giftInfo(o.id).short || giftInfo(o.id).text || '') + '"><b>' + esc(o.name) + '</b><small>' + (o.ok ? 'CT ' + o.ct : esc(o.why)) + '</small></button>').join('');
   }
+  /* ---------------- Taktische Spielhilfe für Heldengaben (Festlegung des Entwicklers vom 30.10.2026) ----------------
+   * Vor jeder Aktivierung: Gabe auf einer Kopie des Spielstands mit der echten Engine anwenden und die Kampfvergleiche
+   * (geplante Angriffe, mögliche eigene Angriffe, nächster gegnerischer Angriff auf den betroffenen Helden) vorher/nachher vergleichen.
+   * Warnt bei voraussichtlich wirkungslosen oder nachteiligen Gaben, verbietet nichts und aktiviert nie selbst. */
+  function giftAdvice(s, a) {
+    const p = actor(s), r = W.apply(s, Object.assign({}, a, { p })); if (r.error) return null;
+    const s2 = r.state, gid = a.gift, gname = giftInfo(gid).name;
+    const nm = uid => { const u = s.units[uid] || s2.units[uid]; return u ? (s.cards[u.cid] || {}).name || '?' : '?'; };
+    const fight = (st, x, t) => { const A = st.units[x], T = st.units[t]; if (!A || !T) return null; if (!W.targetsOf(st, x).some(o => o.uid === t)) return { kind: 'gone' }; if (!T.king && W.isProtected(st, T)) return { kind: 'protected' }; const pv = W.preview(st, x, t); return Object.assign({ atk: W.atkOf(st, A), def: T.king ? 0 : W.defOf(st, T) }, pv); };
+    const say = (pv, x, t) => !pv ? 'kein Kampf' : pv.kind === 'gone' ? 'der Angriff entfällt' : pv.kind === 'protected' ? nm(t) + ' ist geschützt' : pv.kind === 'king' ? 'der König verliert ' + fmt(pv.dmg) + ' HP' : pv.kind === 'win' ? nm(t) + ' wird zerstört' : pv.kind === 'lose' ? nm(x) + ' wird zerstört' : pv.kind === 'both' ? 'beide werden zerstört' : 'kein Schaden';
+    // Wert eines Kampfausgangs aus Sicht des Spielers p: gegnerische Verluste +, eigene Verluste −
+    const val = (pv, x, t) => { if (!pv) return 0; const ox = (s.units[x] || s2.units[x]).owner, ot = (s.units[t] || s2.units[t]).owner, sg = o => o === p ? -1 : 1; if (pv.kind === 'win') return sg(ot); if (pv.kind === 'lose') return sg(ox); if (pv.kind === 'both') return sg(ot) + sg(ox); if (pv.kind === 'king') return sg(ot) * 0.5; return 0; };
+    const pairs = [], add = (x, t, how) => { if (!pairs.some(q => q.x === x && q.t === t)) pairs.push({ x, t, how }); };
+    for (const [x, d] of Object.entries(s.decl || {})) for (const t of d.targets) add(x, t, 'geplant');
+    if (s.phase === 'battle') {
+      for (const st of [s, s2]) for (const x of Object.values(st.units)) if (x.owner === p && !st.decl[x.uid] && W.canAttack(st, x.uid)) for (const t of W.attackTargets(st, x.uid)) add(x.uid, t, 'möglich');
+      const hit = [a.uid, a.target].filter(Boolean);
+      for (const x of Object.values(s2.units)) if (x.owner !== p) for (const o of W.targetsOf(s2, x.uid)) if (hit.includes(o.uid) && s2.units[o.uid] && s2.units[o.uid].owner === p) add(x.uid, o.uid, 'nächster Zug');
+    }
+    const ch = [];
+    for (const q of pairs) { const b = fight(s, q.x, q.t), c = fight(s2, q.x, q.t); if (JSON.stringify(b && [b.kind, b.dmg]) !== JSON.stringify(c && [c.kind, c.dmg])) ch.push({ q, b, c, d: val(c, q.x, q.t) - val(b, q.x, q.t) }); }
+    // Werteänderung am betroffenen Helden
+    const tid = a.target && s.units[a.target] ? a.target : a.uid, T1 = s.units[tid], T2 = s2.units[tid], lines = [];
+    if (T1 && T2 && !T1.king) { const d1 = W.defOf(s, T1), d2 = W.defOf(s2, T2), a1 = W.atkOf(s, T1), a2 = W.atkOf(s2, T2); if (d1 !== d2) lines.push('Mit ' + gname + ' ' + (d2 > d1 ? 'steigt' : 'sinkt') + ' die DEF von ' + nm(tid) + ' von ' + fmt(d1) + ' auf ' + fmt(d2) + '.'); if (a1 !== a2) lines.push('Mit ' + gname + ' ' + (a2 > a1 ? 'steigt' : 'sinkt') + ' die ATK von ' + nm(tid) + ' von ' + fmt(a1) + ' auf ' + fmt(a2) + '.'); }
+    for (const c of ch.slice(0, 3)) lines.push((c.q.how === 'nächster Zug' ? 'Falls ' + nm(c.q.x) + ' im nächsten Zug so angreift' : (c.q.how === 'möglich' ? 'Möglicher Angriff ' : 'Angriff ') + 'von ' + nm(c.q.x)) + ' (' + fmt((c.c || c.b || {}).atk || 0) + ' ATK) auf ' + nm(c.q.t) + ': jetzt ' + say(c.b, c.q.x, c.q.t) + ' – mit ' + gname + ' ' + say(c.c, c.q.x, c.q.t) + '.');
+    if (gid === 'entwaffnen' && a.target && s.decl[a.target]) lines.push('Achtung: Entwaffnen senkt die DEF, nicht die ATK – der Angriff von ' + nm(a.target) + ' richtet trotzdem seinen Schaden an.');
+    const notes = [];
+    if (s.phase === 'battle') notes.push('Der Gegner kann in seiner Konterphase noch reagieren.');
+    if ((s.stack || []).length) notes.push('Noch nicht ausgewertete Zauber/Flüche können das Ergebnis ändern.');
+    if (pairs.some(q => q.how === 'nächster Zug')) notes.push('Für den nächsten Zug ist das eine Schätzung (Aufstellung kann sich ändern).');
+    const worse = ch.some(c => c.d < 0) && !ch.some(c => c.d > 0), better = ch.some(c => c.d > 0);
+    const combat = ['mordlust', 'entwaffnen', 'eisenpanzer', 'durchbruch'].includes(gid) || (gid === 'blitzschritt' && s.phase === 'battle');
+    if (worse) return { kind: 'warn', text: lines.concat([gname + ' verschlechtert dieses Ergebnis voraussichtlich für dich. Trotzdem aktivieren?']).join(' '), notes };
+    if (!ch.length && (combat || gid === 'durchbruch')) {
+      const why = gid === 'durchbruch' && s.phase === 'counter' ? 'In der Konterphase legst du keine Angriffe fest – Durchbruch bringt hier nichts.' : gname + ' verändert das Ergebnis ' + (pairs.length ? 'der geplanten und möglichen Kämpfe' : 'eines Kampfes – gerade ist keiner geplant –') + ' voraussichtlich nicht.' + (gid === 'eisenpanzer' ? ' (Die DEF bleibt zwei Runden erhöht und kann später noch helfen.)' : '');
+      return { kind: 'warn', text: lines.concat([why, 'Trotzdem aktivieren?']).join(' '), notes };
+    }
+    if (better) return { kind: 'good', text: lines.join(' '), notes };
+    return lines.length ? { kind: 'info', text: lines.join(' '), notes } : null;
+  }
+  // Gabe aktivieren: erst Prognose, bei Warnung nachfragen – nie verbieten, nie selbst auslösen
+  function giftGo(a) {
+    a = Object.assign({ p: actor(G.s) }, a);
+    const adv = SET.help === false ? null : giftAdvice(G.s, a);
+    if (adv && adv.kind === 'warn') {
+      dialog('<span class="eyebrow">Spielhilfe</span><h2>' + esc(giftInfo(a.gift).name) + '?</h2><p>' + esc(adv.text) + '</p>' + (adv.notes.length ? '<p class="muted" style="font-size:13px">' + esc(adv.notes.join(' ')) + '</p>' : '') + '<div class="row"><button class="btn primary" data-act="go">Trotzdem aktivieren</button><button class="btn" data-act="no">Abbrechen</button></div>', act => { if (act === 'go') dispatch(a); });
+      return;
+    }
+    const ok = dispatch(a);
+    if (ok !== false && adv && adv.text) toast('💡 ' + adv.text + (adv.notes.length ? ' ' + adv.notes[0] : ''), 8000);
+  }
   function useGiftUI(uid, gid) {
     const s = G.s, o = W.giftOptions(s, uid).find(x => x.id === gid); if (!o || !o.ok) return;
     const G0 = W.GIFTS[gid];
-    if (G0.target === 'self') { dispatch({ type: 'gift', uid, gift: gid }); return; }
+    if (G0.target === 'self') { giftGo({ type: 'gift', uid, gift: gid }); return; }
     G.gift = { uid, id: gid, targets: o.targets }; render([]);
     toast(gid === 'blitzschritt' ? 'Blitzschritt: Zielfeld antippen.' : giftInfo(gid).name + ': Ziel antippen (violett markiert).');
   }
@@ -1934,7 +1989,7 @@
       case 'summon1': case 'summon2': return (s.phase === 'summon1' ? 'Beschwören vor dem Laufen. ' : 'Nachbeschwörung mit der restlichen Energie. ') + 'Tippe eine Handkarte, dann ein goldenes Feld. Noch <b>' + P.energy + ' Energie</b>.';
       case 'move': return 'Tippe einen eigenen Helden, dann ein grünes Feld. Jeder Held läuft einmal pro Zug.';
       case 'battle': return 'Tippe einen eigenen Kämpfer, dann ein rot markiertes Ziel. Die Vorschau zeigt den Ausgang. Gaben stehen im Kartenfeld rechts, Zauber und Flüche spielst du aus der Hand.';
-      case 'counter': return '<b>Deine Konterphase:</b> Der Gegner hat seine Angriffe festgelegt (rote Pfeile). Spiele Zauber oder Flüche aus der Hand oder passe. Danach wird alles gemeinsam ausgewertet.';
+      case 'counter': return '<b>Deine Konterphase:</b> Der Gegner hat seine Angriffe festgelegt (rote Pfeile). Spiele Zauber oder Flüche aus der Hand, setze Gaben deiner Helden ein (Held antippen) oder passe. Danach wird alles gemeinsam ausgewertet.';
     }
     return '';
   }
@@ -1944,6 +1999,7 @@
     if (G.sel && G.sel.kind === 'unit' && s.units[G.sel.uid]) {
       const u = s.units[G.sel.uid], c = s.cards[u.cid];
       html = cardDetail(c, u, s);
+      if (myTurn() && s.phase === 'counter' && u.owner === s.counter && !u.king) { const opts = W.giftOptions(s, u.uid); if (opts.length) html += '<div class="gifts"><span class="eyebrow">Gaben in deiner Konterphase</span>' + opts.map(o => '<button class="btn small" data-gift="' + o.id + '" data-uid="' + u.uid + '" ' + (o.ok ? '' : 'disabled') + '>' + esc(o.name) + (o.ok ? '' : ' · ' + esc(o.why)) + '</button>').join('') + '</div>'; }
       if (myTurn() && s.phase === 'battle' && u.owner === s.active) {
         const opts = W.giftOptions(s, u.uid);
         if (opts.length) html += '<div class="gifts"><span class="eyebrow">Gaben einsetzen</span>' + opts.map(o => '<button class="btn small" data-gift="' + o.id + '" data-uid="' + u.uid + '" ' + (o.ok ? '' : 'disabled') + '>' + esc(o.name) + (o.ok ? '' : ' · ' + esc(o.why)) + '</button>').join('') + '</div>';

@@ -228,5 +228,31 @@ const pName = s => s.players[s.active].name;
   s3 = act(s3, { type: 'endPhase' }); s3 = act(s3, { type: 'cast', p: 1, iid: 'hy', choices: [[a3]] }); if (s3.phase === 'counter') s3 = act(s3, { type: 'pass', p: s3.counter });
   ok(!!s3.units[b3] && s3.units[a3].owner === 1, 'Verteidiger übernimmt den Angreifer – kein Angriff');
 }
+/* Heldengaben auch in der eigenen Konterphase (Festlegung des Entwicklers vom 30.10.2026) */
+{
+  const PZ = H('PZ', { atk: 500, def: 900, gifts: [{ id: 'eisenpanzer' }] }), EW = H('EW', { atk: 500, def: 900, gifts: [{ id: 'entwaffnen' }] });
+  let s = game([PZ, EW]); phase(s, 0, 'battle');
+  const a = put(s, 'F', 0, 'D4'), d = put(s, 'PZ', 1, 'D3');
+  eq(W.giftOptions(s, d).length, 0, 'Verteidiger: in der gegnerischen Battlephase keine Gabe');
+  s = act(s, { type: 'declare', uid: a, targets: [d] }); s = act(s, { type: 'endPhase' });
+  eq(s.phase, 'counter', 'Konterphase wird angeboten, weil eine Gabe bereit ist (keine Zauber auf der Hand)');
+  const o = W.giftOptions(s, d).find(x => x.id === 'eisenpanzer'); ok(o && o.ok, 'Eisenpanzer in der eigenen Konterphase aktivierbar');
+  ok(/nicht am Zug|Konterphase/.test(err(s, { type: 'gift', p: 0, uid: a, gift: 'mordlust' }) || ''), 'Angreifer kann in der Konterphase keine Gabe nutzen');
+  eq(W.preview(s, a, d).kind, 'win', 'ohne Eisenpanzer: 1000 ATK gegen 900 DEF → Verteidiger fällt');
+  s = act(s, { type: 'gift', p: 1, uid: d, gift: 'eisenpanzer' });
+  eq(W.defOf(s, s.units[d]), 1200, 'DEF 900 + 300 = 1200');
+  eq(s.phase, 'counter', 'nach der Gabe weiter in derselben Konterphase (keine neue Reaktionsphase)');
+  ok(!W.giftOptions(s, d).find(x => x.id === 'eisenpanzer').ok, 'Abklingzeit greift sofort');
+  s = act(s, { type: 'pass', p: 1 });
+  ok(!!s.units[d] && !s.units[a], 'Kampf mit Eisenpanzer: Angreifer (1000) scheitert an 1200 DEF');
+  // Entwaffnen in der Konterphase auf den Angreifer: senkt DEF, nicht ATK
+  let s2 = game([PZ, EW]); phase(s2, 0, 'battle'); const a2 = put(s2, 'F', 0, 'D4'), d2 = put(s2, 'EW', 1, 'D3');
+  s2 = act(s2, { type: 'declare', uid: a2, targets: [d2] }); s2 = act(s2, { type: 'endPhase' });
+  const e = W.giftOptions(s2, d2).find(x => x.id === 'entwaffnen'); ok(e && e.ok && e.targets.includes(a2), 'Entwaffnen in der Konterphase auf den Angreifer möglich');
+  s2 = act(s2, { type: 'gift', p: 1, uid: d2, gift: 'entwaffnen', target: a2 });
+  eq(W.defOf(s2, s2.units[a2]), 500, 'Angreifer DEF 1000 − 500'); eq(W.atkOf(s2, s2.units[a2]), 1000, 'ATK unverändert');
+  s2 = act(s2, { type: 'pass', p: 1 }); ok(!s2.units[d2], 'Angriffsschaden kommt trotzdem an (Entwaffnen verhindert ihn nicht)');
+  s2 = endTurn(s2); eq(W.defOf(s2, s2.units[a2]), 1000, 'Entwaffnen endet am Ende des laufenden Zuges');
+}
 console.log('Erweiterte Zauber/Fluch-Tests: ' + pass + ' bestanden, ' + failN + ' fehlgeschlagen.');
 process.exit(failN ? 1 : 0);

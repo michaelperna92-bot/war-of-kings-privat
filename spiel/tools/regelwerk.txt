@@ -120,8 +120,10 @@ WAR OF KINGS – MASTER-REGELWERK
  Effekten derselben Kategorie. Hover/Tippen zeigt sämtliche tatsächlich aktiven Effekte und deren Laufzeiten;
  Anzeigen werden dynamisch aktualisiert.
  9. Helden-Gaben – allgemeine Regeln • Ein Held besitzt 0–3 Gaben.
- Aktivierbare Heldengaben sind ausschließlich in der eigenen Battlephase
- zulässig, kosten 0 Energie und besitzen den jeweiligen Cooldown (CT).
+ Aktivierbare Heldengaben sind in der eigenen Battlephase und in der eigenen Konterphase
+ zulässig (Festlegung des Entwicklers vom 30.10.2026, ersetzt das frühere Verbot in der Konterphase),
+ kosten 0 Energie und besitzen den jeweiligen Cooldown (CT). Der Spieler wählt den Zeitpunkt; eine
+ aktivierte Gabe kann nicht zurückgenommen werden. Die Konterphase bleibt einmalig – keine weitere Reaktionsphase.
  • CT sinkt zu Beginn jedes folgenden eigenen Zuges um 1. Bei CT 0 ist die Gabe wieder verwendbar. Permanente
  Gaben wirken automatisch ohne CT und Energiekosten.
  • Bei Effekten mit der Dauer 'zwei Runden' endet die Wirkung zu Beginn des zweiten folgenden eigenen Zuges

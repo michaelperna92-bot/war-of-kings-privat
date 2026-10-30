@@ -27,7 +27,7 @@ import (
 
 const (
 	appName    = "War of Kings Probe-Spiel"
-	appVersion = "4.2"
+	appVersion = "4.3"
 	appID      = "wok-probespiel"
 	basePort   = 47851
 )

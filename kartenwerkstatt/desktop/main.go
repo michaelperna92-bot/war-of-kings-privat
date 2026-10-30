@@ -30,7 +30,7 @@ import (
 
 const (
 	appName    = "War of Kings Kartenwerkstatt"
-	appVersion = "12.5"
+	appVersion = "12.6"
 	appID      = "wok-kartenwerkstatt"
 	basePort   = 47831
 )

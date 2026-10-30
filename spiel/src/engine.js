@@ -62,6 +62,7 @@
   const RULES = { deckSize: 40, startHand: 5, handMax: 10, energyMax: 10, drawFailDamage: 1000, turnSeconds: 120, counterSeconds: 120, reconnectSeconds: 120 };
   // Stellen, die das Regelwerk offen lässt – hier sichtbar festgehalten statt still angenommen.
   const ASSUMPTIONS = [
+    'Heldengaben (Festlegung des Entwicklers vom 30.10.2026): Alle aktivierbaren Gaben gehen in der eigenen Battlephase und in der eigenen Konterphase, 0 Energie, Abklingzeiten unverändert, sofort und unwiderruflich. „Bis Zugende“ heißt in der Konterphase: bis zum Ende des laufenden (gegnerischen) Zuges. Die Konterphase bleibt einmalig. Werkstatt-Annahme: Durchbruch und Blitzschritt sind in der Konterphase erlaubt, Durchbruch bringt dort aber nichts (keine eigenen Angriffe).',
     'Kontrolle in der eigenen Battlephase (Festlegung des Entwicklers vom 30.10.2026): Ein Zauber oder Fluch mit „Kontrolle übernehmen“ wirkt sofort, noch vor den Angriffen und der Konterphase. Der übernommene Held kann so in derselben Battlephase Angriffe festlegen; der Gegner kann in seiner Konterphase darauf reagieren, danach folgt die Schadensberechnung. Werkstatt-Annahme: die ganze Karte wirkt dann sofort (auch weitere Effekte darauf) und kann nicht mehr neutralisiert werden. In der Konterphase auf einen Angreifer gewirkt, fällt dessen Angriff weg.',
     'Angriffe reichen nur auf unmittelbar angrenzende Felder (Festlegung des Entwicklers vom 30.10.2026). Nur Schütze erlaubt Ziele genau 2 Felder entfernt; ein Angriffspfeil der Länge 2 aus der Werkstatt allein verlängert die Reichweite nicht. Dazwischen stehende Karten blockieren Schütze nicht.',
     'Durchbruch: ein Held 2 Felder entfernt, nur in der Battlephase, in der die Gabe aktiviert wurde (so steht es im Gabentext).',
@@ -291,7 +292,8 @@
   }
   function giftOptions(s, uid) {
     const u = s.units[uid], out = [];
-    if (!u || u.king || s.phase !== 'battle' || u.owner !== s.active) return out;
+    // Festlegung des Entwicklers vom 30.10.2026: aktivierbare Heldengaben in der eigenen Battlephase ODER der eigenen Konterphase
+    if (!u || u.king || !((s.phase === 'battle' && u.owner === s.active) || (s.phase === 'counter' && u.owner === s.counter))) return out;
     for (const g of card(s, u).gifts) {
       const G = GIFTS[g.id]; if (!G || G.kind !== 'ct') continue;
       const o = { id: g.id, name: G.name, ct: G.ct, cd: u.cd[g.id] || 0, targets: [], ok: false, why: '' };
@@ -488,7 +490,8 @@
     if (s.phase === 'counter') {
       if (p !== s.counter) return fail('Jetzt ist die Konterphase des Verteidigers.');
       if (a.type === 'cast') { const r = castSpell(s, ev, p, a); if (r) return fail(r); checkWhile(s, ev); return { state: s, events: ev }; }
-      if (a.type !== 'pass' && a.type !== 'timeout') return fail('In der Konterphase sind nur Zauber und Flüche erlaubt.');
+      if (a.type === 'gift') { const r = useGift(s, ev, p, a); if (r) return fail(r.error); checkWhile(s, ev); return { state: s, events: ev }; }
+      if (a.type !== 'pass' && a.type !== 'timeout') return fail('In der Konterphase sind nur Zauber, Flüche und Heldengaben erlaubt.');
       ev.push({ t: 'counterPass', p }); log(s, s.players[p].name + ' passt in der Konterphase.', p);
       s.counter = null; resolveBattle(s, ev); return { state: s, events: ev };
     }
@@ -533,7 +536,7 @@
           ev.push({ t: 'battleClosed', decl: clone(s.decl) }); log(s, 'Battlephase abgeschlossen: ' + Object.keys(s.decl).length + ' Angriff(e) festgelegt.', p);
           s.phase = 'counter'; s.counter = 1 - p; ev.push({ t: 'phase', phase: 'counter', p: 1 - p });
           // Ohne ausspielbare Konterkarte wird automatisch gepasst
-          if (!counterPlayable(s, 1 - p)) { ev.push({ t: 'counterPass', p: 1 - p, auto: true }); log(s, 'Konterphase von ' + s.players[1 - p].name + ': kein ausspielbarer Zauber oder Fluch – automatisch gepasst.', 1 - p); s.counter = null; resolveBattle(s, ev); }
+          if (!counterPlayable(s, 1 - p)) { ev.push({ t: 'counterPass', p: 1 - p, auto: true }); log(s, 'Konterphase von ' + s.players[1 - p].name + ': kein ausspielbarer Zauber oder Fluch und keine einsetzbare Gabe – automatisch gepasst.', 1 - p); s.counter = null; resolveBattle(s, ev); }
         }
         else if (ph === 'summon2') endTurn(s, ev);
         else return fail('In dieser Phase nicht möglich.');
@@ -547,7 +550,7 @@
   }
   // Ältere Spielstände (vor Zaubern/Flüchen) ergänzen
   function upgrade(s) { s.stack = s.stack || []; s.auras = s.auras || []; s.locks = s.locks || []; for (const u of Object.values(s.units)) { u.attached = u.attached || []; u.fx = u.fx || []; } return s; }
-  function counterPlayable(s, p) { return s.players[p].hand.some(h => isSpell(s.cards[h.cid]) && castOptions(s, p, h.iid).ok); }
+  function counterPlayable(s, p) { return s.players[p].hand.some(h => isSpell(s.cards[h.cid]) && castOptions(s, p, h.iid).ok) || Object.values(s.units).some(u => u.owner === p && !u.king && giftOptions(s, u.uid).some(o => o.ok)); }
 
   function useGift(s, ev, p, a) {
     const fail = msg => ({ state: s, events: [], error: msg, keep: true });

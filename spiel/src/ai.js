@@ -50,13 +50,22 @@
     return best - danger(s, u, f, tm) * (level === 'leicht' ? 0.3 : 0.8) + forward * 0.25 + near * 0.3;
   }
 
+  // Konterphase: eine Gabe nur einsetzen, wenn sie einen festgelegten gegnerischen Angriff zu unseren Gunsten verändert
+  function counterGift(s, p, memo) {
+    memo.cg = memo.cg || {}; let best = null, bv = 0;
+    const score = st => { let v = 0; for (const [x, d] of Object.entries(st.decl || {})) for (const t of d.targets) { const A = st.units[x], T = st.units[t]; if (!A || !T || T.king || W.isProtected(st, T) || !W.targetsOf(st, x).some(o => o.uid === t)) continue; const k = W.preview(st, x, t).kind; if (k === 'win') v -= 1; else if (k === 'lose') v += 1; else if (k === 'both') v += 0; } return v; };
+    const base = score(s);
+    for (const u of Object.values(s.units)) { if (u.owner !== p || u.king) continue; for (const o of W.giftOptions(s, u.uid)) { if (!o.ok || memo.cg[u.uid + o.id + s.turn]) continue; const tg = W.GIFTS[o.id].target === 'self' ? [undefined] : o.targets; for (const t of tg) { const a = { type: 'gift', p, uid: u.uid, gift: o.id, target: t }; const r = W.apply(s, a); if (r.error) continue; const v = score(r.state) - base; if (v > bv) { bv = v; best = a; } } } }
+    if (best) memo.cg[best.uid + best.gift + s.turn] = 1;
+    return best;
+  }
   function decide(s, p, level, memo) {
     level = level || 'mittel'; memo = memo || {};
     if (memo.turn !== s.turn) { memo.turn = s.turn; memo.done = {}; memo.seed = memo.seed || (s.seed ^ 0x9e37) >>> 0; }
     const P = s.players[p], easy = level === 'leicht';
     if (s.result) return null;
     if (s.pendingDiscard === p) { const h = P.hand.slice().sort((a, b) => cardValue(s.cards[a.cid]) - cardValue(s.cards[b.cid]))[0]; return { type: 'discard', p, iid: h.iid }; }
-    if (s.phase === 'counter') { if (s.counter !== p) return null; const c = spellChoice(s, p, level, memo); return c || { type: 'pass', p }; }
+    if (s.phase === 'counter') { if (s.counter !== p) return null; const c = spellChoice(s, p, level, memo); return c || counterGift(s, p, memo) || { type: 'pass', p }; }
     if (s.active !== p) return null;
     const mine = () => Object.values(s.units).filter(u => u.owner === p);
 

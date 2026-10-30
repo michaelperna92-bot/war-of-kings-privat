@@ -50,7 +50,8 @@ function startRoom(r) {
   const res = W.newGame({ cards, decks: [r.decks[0].ids, r.decks[1].ids], fixedSides: true, seed: r.seed, sideNames: [r.names[0], r.names[1]], timer: false, counterReserve: false });
   r.state = res.state; r.acts = []; r.status = 'running'; r.started = Date.now();
 }
-function startMsg(r, slot) { return { t: 'start', code: r.code, me: slot, seed: r.seed, names: r.names, decks: r.decks.map(d => ({ name: d.name, ids: d.ids, cards: d.cards })), acts: r.acts, imgs: r.imgs, result: r.state && r.state.result || null }; }
+// light = Abgleich einer laufenden Partie: ohne Kartenbilder (die hat der Client schon) – hält die Nachricht klein
+function startMsg(r, slot, light) { return { t: 'start', code: r.code, me: slot, seed: r.seed, names: r.names, decks: r.decks.map(d => ({ name: d.name, ids: d.ids, cards: d.cards })), acts: r.acts, imgs: light ? {} : r.imgs, light: !!light, result: r.state && r.state.result || null }; }
 function actorOf(s) { return s.pendingDiscard !== null ? s.pendingDiscard : s.phase === 'counter' ? s.counter : s.active; }
 
 /* ---------- Verbindungen ---------- */
@@ -85,9 +86,9 @@ function handle(c, m) {
     case 'resume': {
       if (!r) return send(c, { t: 'error', code: 'no_room', msg: 'Diese Partie gibt es nicht mehr.' });
       const slot = r.ids.indexOf(c.id); if (slot < 0) return send(c, { t: 'error', code: 'not_member', msg: 'Du gehörst nicht zu diesem Raum.' });
-      r.conn[slot] = c; c.room = r.code; c.slot = slot; r.touched = Date.now();
+      const before = r.conn[slot]; r.conn[slot] = c; c.room = r.code; c.slot = slot; r.touched = Date.now(); if (process.env.WOK_DEBUG) log('resume', r.code, 'p' + slot, r.acts.length, m.light ? 'leicht' : 'voll');
       if (r.status === 'open') return send(c, { t: 'created', code: r.code });
-      send(c, startMsg(r, slot)); send(peerOf(r, slot), { t: 'peer', online: true });
+      const wasHere = before === c; send(c, startMsg(r, slot, !!m.light)); if (!wasHere) send(peerOf(r, slot), { t: 'peer', online: true });
       send(c, { t: 'peer', online: !!(peerOf(r, slot) && !peerOf(r, slot).dead) });
       return;
     }
@@ -95,7 +96,7 @@ function handle(c, m) {
       if (!r || r.status !== 'running') return send(c, { t: 'error', msg: 'Keine laufende Partie.' });
       const slot = r.ids.indexOf(c.id); if (slot < 0) return send(c, { t: 'error', msg: 'Nicht in diesem Raum.' });
       const a = m.a; if (!a || typeof a.type !== 'string') return;
-      if (m.n !== r.acts.length) { return send(c, { t: 'reject', n: m.n, error: 'veraltet', sync: r.acts.length }); } // doppelt oder zu früh → Client gleicht ab
+      if (m.n !== r.acts.length) { if (process.env.WOK_DEBUG) log('veraltet', r.code, 'p' + slot, 'n', m.n, 'server', r.acts.length, a.type); return send(c, { t: 'reject', n: m.n, error: 'veraltet', sync: r.acts.length }); } // doppelt oder zu früh → Client gleicht ab
       if (a.type === 'concede') a.p = slot; // Aufgeben nur für sich selbst
       else if (actorOf(r.state) !== slot) return send(c, { t: 'reject', n: m.n, error: 'Du bist nicht am Zug.' });
       if (a.p !== undefined && a.p !== slot) return send(c, { t: 'reject', n: m.n, error: 'Fremde Aktion.' });
@@ -104,6 +105,7 @@ function handle(c, m) {
       r.state = res.state; r.acts.push(a); r.touched = Date.now();
       const out = { t: 'act', n: m.n, a, p: slot };
       for (const s of [0, 1]) send(r.conn[s], out);
+      if (process.env.WOK_DEBUG) log('act', r.code, m.n, a.type, 'p' + slot, 'an', r.conn.map(x => x ? (x.dead ? 'tot' : 'ok') : '-').join('/'));
       if (r.state.result) { r.status = 'done'; r.ended = Date.now(); log('Raum', r.code, 'beendet:', r.state.result.reason); }
       return;
     }
@@ -122,6 +124,7 @@ function handle(c, m) {
   }
 }
 function gone(c) {
+  if (process.env.WOK_DEBUG && !c.dead) log('getrennt', c.room, 'p' + c.slot, c.id);
   c.dead = true; sockets.delete(c);
   const r = c.room && rooms.get(c.room); if (!r) return;
   if (r.conn[c.slot] === c) { r.conn[c.slot] = null; send(peerOf(r, c.slot), { t: 'peer', online: false }); }
