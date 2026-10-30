@@ -11,7 +11,7 @@
   const ARROW = { n: '↑', ne: '↗', e: '→', se: '↘', s: '↓', sw: '↙', w: '←', nw: '↖' };
   const GRID9 = ['nw', 'n', 'ne', 'w', null, 'e', 'sw', 's', 'se'];
   const ELCOL = { feuer: '#8a3324', wasser: '#24527a', erde: '#5b4a2c', wind: '#3d6b5a', blitz: '#6b5a1c', licht: '#7a6f44', dunkelheit: '#3a2a4a' };
-  const VERSION = '4.0';
+  const VERSION = '4.1';
   const isSp = c => !!c && (c.type === 'spell' || c.type === 'curse');
   const TYPEN = c => c.type === 'king' ? 'König' : c.type === 'spell' ? 'Zauber' : c.type === 'curse' ? 'Fluch' : 'Held';
   const SPCOL = { spell: '#1f4a35', curse: '#3d2350' };
@@ -1274,7 +1274,7 @@
   function netId() { let id = LS.get('wok-spiel-netid'); if (!id) { id = 'n' + Math.random().toString(36).slice(2, 12) + Math.random().toString(36).slice(2, 8); LS.set('wok-spiel-netid', id); } return id; }
 
   const ONLINE = (() => {
-    const LINK = 'https://claude.ai/artifact/XNX5xrW4rNwmjTJieSchEF', KEY = 'wok-spiel-online', FRESH = 3 * 3600 * 1000;
+    const LINK = 'https://war-of-kings.onrender.com/', KEY = 'wok-spiel-online', FRESH = 3 * 3600 * 1000;
     const IN_CLOUD = !IS_PC && !!(window.claude && window.claude.use) && /claude/.test(location.hostname + document.referrer);
     let WHY = '', db = null, me = null, offs = [], R = null, writing = Promise.resolve(), mine = [];
     const myId = () => { let id = LS.get('wok-spiel-netid'); if (!id) { id = 'n' + Math.random().toString(36).slice(2, 12); LS.set('wok-spiel-netid', id); } return id; };
