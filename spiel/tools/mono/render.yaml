@@ -1,0 +1,17 @@
+# Render.com Blueprint – kostenloser Web-Dienst für den War-of-Kings-Spielserver.
+# Render → New → Blueprint → dieses Repository wählen → Apply. Danach läuft das Spiel unter https://<name>.onrender.com
+services:
+  - type: web
+    name: war-of-kings
+    runtime: node
+    plan: free
+    rootDir: spiel
+    buildCommand: node -v
+    startCommand: node server/server.js
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: WOK_ADMIN_KEY
+        generateValue: true
+      - key: NODE_VERSION
+        value: "22"

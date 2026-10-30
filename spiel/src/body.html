@@ -1,0 +1,220 @@
+<main id="app">
+  <!-- Startseite: Hauptmenü nach der Vorlage „Wähle deine Schlacht“ (Bild = Grafik, Knöpfe liegen genau darauf) -->
+  <section id="v-home" class="home2">
+    <div class="hstage" id="hstage">
+      <div class="hp hp-logo" role="img" aria-label="War of Kings"></div>
+      <button class="hp hp-quick" data-hnav="quick" aria-label="Schnelles Spiel: sofort gegen die KI mit deinem Deck"></button>
+      <button class="hp hp-decks" data-go="decks" aria-label="Kriegsdecks: Karten und Decks"></button>
+      <button class="hp hp-bazar" data-go="bazar" aria-label="Königlicher Basar"></button>
+      <div class="hp hp-title" role="heading" aria-level="1" aria-label="Wähle deine Schlacht"></div>
+      <button class="hp hp-ai" data-hplay="ai" aria-label="Gegen die KI – Schärfe deine Strategie – Spielen"></button>
+      <button class="hp hp-on" data-hplay="online" aria-label="Online-Duell – Fordere andere Spieler heraus – Spielen"></button>
+      <button class="hp hp-set" data-hnav="settings" aria-label="Einstellungen"></button>
+      <button class="htut" data-go="tutorial"><span class="htut-ic" aria-hidden="true">📜</span><span>Tutorial<small>Lerne das Spiel Schritt für Schritt</small></span></button>
+      <div class="hextra">
+        <button class="hpill" id="resume" hidden>▶ Gespeicherte Partie fortsetzen</button>
+        <span class="hpill hdeck" id="hdeck"></span>
+      </div>
+    </div>
+    <!-- Schlachtvorbereitung -->
+    <div class="hsetup" id="hsetup" hidden role="dialog" aria-modal="true" aria-labelledby="hs-title">
+      <div class="hs-panel">
+        <div class="hs-head"><h2 id="hs-title">Schlachtvorbereitung</h2><button class="btn small" data-hs="close" aria-label="Schließen">✕</button></div>
+        <div class="seg modes2" id="modes"><button class="mode on" data-mode="ai">Gegen die KI</button><button class="mode" data-mode="hot">Zwei Spieler an einem Gerät</button></div>
+        <div class="avrow" id="avrow"></div>
+        <div class="row" id="ai-row"><span class="muted">Schwierigkeit</span><div class="seg" id="ai-level"><button data-lv="leicht">Leicht</button><button data-lv="mittel" class="on">Mittel</button></div></div>
+        <div class="row">
+          <label class="field">Name Spieler 1<input type="text" id="name1" value="Spieler 1" maxlength="24"></label>
+          <label class="field" id="name2-wrap" hidden>Name Spieler 2<input type="text" id="name2" value="Spieler 2" maxlength="24"></label>
+        </div>
+        <div class="decksum" id="decksum"></div>
+        <div class="row hs-go">
+          <button class="btn primary" id="start">Partie starten</button>
+          <button class="btn" id="editdeck">✎ Deck bearbeiten</button>
+        </div>
+        <details class="hs-more"><summary>Weitere Optionen</summary>
+          <label class="row"><input type="checkbox" id="timer"> Zuguhr: 120 Sekunden pro Zug (wie online)</label>
+          <label class="row"><input type="checkbox" id="help"> Spielhilfe: weist dich auf übersehene Möglichkeiten hin (Angriffe, Gaben, Gefahren, ungenutzte Energie)</label>
+          <label class="row"><input type="checkbox" id="rsides"> Decks zufällig auf die Spieler verteilen (wie im Regelwerk 15.7 für die interne Testversion)</label>
+          <label class="row"><input type="checkbox" id="creserve"> Testoption, keine Regel: Unverbrauchte Energie bleibt bis zur gegnerischen Konterphase erhalten (sonst sind dort nur Karten mit 0 Kosten spielbar – offene Regelfrage)</label>
+        </details>
+        <p class="muted" style="margin:0;font-size:14px">Ein Münzwurf bestimmt, wer beginnt.</p>
+        <p class="muted storeinfo" style="margin:0;font-size:13px"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tutorial: geführte Lektionen mit vorbereiteter Stellung -->
+  <section id="v-tutorial" class="wrap tutwrap" hidden>
+    <div class="topbar"><h2>Tutorial</h2><button class="btn small" data-go="home">Zum Hauptmenü</button></div>
+    <p class="muted">Kurze geführte Partien. Jede Lektion zeigt dir genau, was du tippen musst. Fortschritt wird gespeichert.</p>
+    <div class="tutgrid" id="tutgrid"></div>
+  </section>
+
+  <!-- Königlicher Basar: Händler-Video, endet im Standbild, dann erscheinen die Packs (nur Vorschau) -->
+  <section id="v-bazar" class="bazar" hidden>
+    <video id="bz-video" playsinline preload="auto"></video>
+    <div class="bz-shade"></div>
+    <div class="bz-top">
+      <span class="bz-tl"><button class="btn small" data-go="home">← Hauptmenü</button><button class="btn small" id="bz-replay" title="Händler-Video nochmal ansehen">↺ Video</button></span>
+      <span class="bz-tr"><span class="bz-gold" id="bz-gold" title="Goldmünzen verdienst du später mit Partien und Events">🪙 <b>0</b> Goldmünzen</span><span class="bz-pity" id="bz-pity"></span></span>
+    </div>
+    <button class="btn small bz-skip" id="bz-skip">Überspringen ⏭</button>
+    <div class="bz-offer" id="bz-offer" aria-live="polite">
+      <h2>Königlicher Basar</h2>
+      <div class="bz-packs" id="bz-packs"></div>
+      <p class="bz-note">Mit Gold gekaufte Karten kommen in deine Sammlung (zum Testen gibt es Test-Gold). Echtgeld kommt später.</p>
+    </div>
+  </section>
+
+  <!-- Decks -->
+  <section id="v-decks" class="wrap" hidden>
+    <div class="topbar"><h2>Karten &amp; Decks</h2><button class="btn small" data-go="home">Zur Startseite</button></div>
+    <div class="tabs dtabs" role="tablist" style="margin:14px 0 10px">
+      <button data-dtab="decks" class="on" role="tab">Meine Decks</button>
+      <button data-dtab="cards" role="tab">Kartensammlung</button>
+    </div>
+    <p class="hint storeinfo" style="margin:0 0 10px"></p>
+
+    <!-- Übersicht der Decks -->
+    <div id="dv-decks">
+      <div class="row dtools" style="margin-bottom:12px">
+        <button class="btn primary" id="newdeck">+ Neues Deck bauen</button>
+        <button class="btn" id="deckmulti">☑ Mehrere löschen …</button>
+        <button class="btn" id="ai-newdeck">✦ Deck von der KI bauen lassen</button>
+        <label class="btn" for="imp">Spielpaket laden</label>
+        <button class="btn" id="inbox" hidden>Aus der Werkstatt holen</button>
+        <label class="dsort"><span class="muted">Sortieren</span><select id="decksort" aria-label="Decks sortieren"><option value="saved">Zuletzt gespeichert</option><option value="name">Name A–Z</option><option value="ready">Spielbereit zuerst</option></select></label>
+      </div>
+      <div class="dpickbar" id="dpickbar" hidden></div>
+      <div class="deckgrid" id="deckgrid"></div>
+    </div>
+
+    <!-- Kartensammlung -->
+    <div id="dv-cards" hidden>
+      <div id="econbox"></div>
+      <div class="box" style="margin-bottom:12px">
+        <div class="row">
+          <label class="btn primary" for="imp">Spielpaket laden</label>
+          <input type="file" id="imp" accept=".wokspiel,.zip,.json,application/zip,application/json" multiple hidden>
+          <button class="btn" id="demo" hidden>Demo-Karten laden</button>
+          <button class="btn" id="imgcheck">Bilder prüfen</button>
+          <button class="btn" id="exportall" title="Alle eigenen Karten mit Bildern und alle Decks in eine Datei – zum Mitnehmen in die PC-Version oder die Browser-Datei">⬇ Alles als Datei (Karten + Decks)</button>
+          <button class="btn" id="offcheck" title="Aktuelle Karten des Entwicklers vom Spielserver laden">⟳ Offizielle Karten</button>
+          <button class="btn small" id="offpub" title="Nur für den Entwickler: Spielpaket auf dem Server veröffentlichen">⇪ Veröffentlichen</button>
+          <button class="btn danger" id="clearpool">Sammlung leeren</button>
+        </div>
+        <p class="hint">In der Kartenwerkstatt <b>„♛ Fürs Probe-Spiel exportieren“</b> wählen und die Datei hier laden (.zip aus der Cloud, .wokspiel am PC). Sie enthält die Spielwerte und die fertig gezeichneten Karten.</p>
+        <p class="hint" id="poolinfo"></p>
+      </div>
+      <div class="filters">
+        <input class="search" id="q" placeholder="Karten suchen (Name, Rasse, Gabe, Wirkung …)" aria-label="Karten suchen">
+        <div class="seg" id="ftype"><button data-ft="" class="on">Alle</button><button data-ft="king">Könige</button><button data-ft="hero">Helden</button><button data-ft="spell">Zauber</button><button data-ft="curse">Flüche</button></div>
+      </div>
+      <div class="filters facets" id="cfacets"></div>
+      <div class="cardgrid" id="pool"></div>
+    </div>
+
+    <!-- Deck bearbeiten: links dein Deck als Karten, rechts die Sammlung zum Hinzufügen -->
+    <div id="dv-edit" hidden>
+      <div class="editbar">
+        <button class="btn small" id="ed-back">← Decks</button>
+        <input type="text" class="search" id="deckname" maxlength="40" aria-label="Name des Decks" placeholder="Name des Decks">
+        <div class="edmeter" id="ed-count"></div>
+        <button class="btn" id="ed-aibtn">✦ Deck-KI</button>
+        <button class="btn primary" id="ed-save">Deck speichern</button>
+      </div>
+      <div class="edtabs" role="tablist"><button data-etab="deck" class="on" role="tab">Dein Deck <b id="ed-tabn"></b></button><button data-etab="pool" role="tab">Karten hinzufügen</button></div>
+      <div class="dk2" id="dk2" data-tab="deck">
+        <section class="deckpane" id="deckpane" aria-label="Dein Deck">
+          <div class="dsum">
+            <div id="ed-king"></div>
+            <div class="dsum-r"><div class="dtypes" id="ed-types"></div><div class="curve" id="ed-curve" aria-label="Kostenkurve"></div></div>
+          </div>
+          <details class="lookbox" id="lookbox"><summary>🎨 Aussehen: Kartenrücken, Spielfeld, Begleiter</summary><div id="lookctl" class="lookctl"></div></details>
+          <div id="ed-list" class="dlist"></div>
+          <div id="ed-msgs"></div>
+          <div class="row"><button class="btn small" id="autofill">Rest zufällig auffüllen</button><button class="btn small" id="cleardeck">Alle Karten entfernen</button></div>
+          <details class="aibox" id="aibox">
+            <summary><span class="eyebrow">✦ Deck-KI</span> <span class="muted">bauen, prüfen, Lücken füllen, Fragen</span></summary>
+            <div class="row"><button class="btn small primary" id="ai-build">Deck für mich bauen</button><button class="btn small" id="ai-check">Deck prüfen</button><button class="btn small" id="ai-fix">Lücken füllen</button></div>
+            <label class="field">Frag die KI zum Deck<textarea id="ai-q" rows="2" placeholder="z. B. Welche Karten passen zu meinem König? Was fehlt meinem Deck gegen Poison?"></textarea></label>
+            <div class="row"><button class="btn small" id="ai-send">Fragen</button><span class="hint" id="ai-state"></span></div>
+            <div id="ai-out" class="aiout" hidden></div>
+          </details>
+        </section>
+        <section class="poolpane" id="poolpane" aria-label="Karten hinzufügen">
+          <div class="filters">
+            <input class="search" id="eq" placeholder="Suchen: Name, Rasse, Klasse, Gabe, Wirkung …" aria-label="Karten für das Deck suchen">
+            <div class="seg" id="eftype"><button data-ft="" class="on">Alle</button><button data-ft="king">Könige</button><button data-ft="hero">Helden</button><button data-ft="spell">Zauber</button><button data-ft="curse">Flüche</button></div>
+          </div>
+          <div class="filters">
+            <select class="search" id="esort" aria-label="Sortieren"><option value="energy">Sortieren: Energie ↑ (günstig zuerst)</option><option value="energyDesc">Energie ↓ (teuer zuerst)</option><option value="name">Name A–Z</option><option value="atk">ATK (hoch zuerst)</option><option value="def">DEF (hoch zuerst)</option><option value="power">ATK + DEF (stark zuerst)</option><option value="rarity">Seltenheit (legendär zuerst)</option><option value="rarityAsc">Seltenheit (gewöhnlich zuerst)</option><option value="type">Kartenart</option></select>
+            <select class="search" id="erar" aria-label="Seltenheit"><option value="">Alle Seltenheiten</option><option value="gewoehnlich">Gewöhnlich</option><option value="ungewoehnlich">Ungewöhnlich</option><option value="selten">Selten</option><option value="legendaer">Legendär</option></select>
+            <label class="inline small"><input type="checkbox" id="eonly"> nur noch nicht im Deck</label>
+            <div class="seg" id="eview"><button data-ev="grid" class="on">▦ Kacheln</button><button data-ev="list">☰ Liste</button></div>
+          </div>
+          <div class="filters facets" id="efacets"></div>
+          <div class="ecost" id="ecost" aria-label="Nach Energie filtern"></div>
+          <p class="hint">Karte antippen = ins Deck legen · ⤢ = groß ansehen · am PC auch per Ziehen. Im Deck links antippen = eine entfernen.</p>
+          <div class="cardgrid pick" id="ed-pool"></div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- Regeln -->
+  <section id="v-rules" class="wrap" hidden>
+    <div class="topbar"><h2>Regeln &amp; offene Punkte</h2><button class="btn small" data-go="home">Zurück</button></div>
+    <div class="rules" id="rules"></div>
+  </section>
+
+  <!-- Spiel -->
+  <section id="v-game" class="wrap" hidden>
+    <div class="rpbar" id="rpbar" hidden>
+      <span class="rp-t" id="rp-title">Wiederholung</span>
+      <div class="rp-c"><button class="btn small" data-rp="start" aria-label="Zum Anfang">⏮</button><button class="btn small" data-rp="back" aria-label="Einen Schritt zurück">◀</button><button class="btn small primary" data-rp="play" id="rp-play" aria-label="Abspielen oder anhalten">⏸</button><button class="btn small" data-rp="next" aria-label="Einen Schritt vor">▶</button><button class="btn small" data-rp="end" aria-label="Zum Ende">⏭</button>
+        <select class="search" id="rp-speed" aria-label="Geschwindigkeit"><option value="0.5">0,5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></div>
+      <span class="rp-pos" id="rp-pos"></span><button class="btn small" data-rp="close">✕ Beenden</button>
+    </div>
+    <div class="game">
+      <div class="table">
+        <div class="pbar" id="pb-top"></div>
+        <div class="boardwrap"><div class="board" id="board"></div><div class="mate" id="mate" hidden><div class="mate-img"></div><div class="mate-say" id="mate-say"></div></div></div>
+        <div class="pbar" id="pb-bot"></div>
+        <div class="hand" id="hand" aria-label="Deine Handkarten"></div>
+      </div>
+      <aside class="side">
+        <div class="tutbox" id="tutbox" hidden></div>
+        <div class="box">
+          <div class="turninfo"><b id="turnwho"></b><span class="timer" id="clock"></span><span id="netdot" hidden></span></div>
+          <div class="phases" id="phases"></div>
+          <p class="hint" id="hint"></p>
+          <button class="tipbtn" id="tips" hidden></button>
+          <button class="btn primary mainbtn" id="mainbtn"></button>
+        </div>
+        <div class="box" id="detailbox"><div class="detail" id="detail"></div></div>
+        <div class="box">
+          <div class="topbar"><span class="eyebrow">Spielverlauf</span><span class="row"><button class="btn small" id="music" hidden aria-label="Musik">🔊</button><button class="btn small danger" id="concede" title="Partie aufgeben">🏳 Aufgeben</button><button class="btn small" id="menu">Menü</button></span></div>
+          <div class="log" id="log"></div>
+        </div>
+      </aside>
+    </div>
+  </section>
+</main>
+<div class="overlay" id="ov" hidden><div class="dialog" id="dlg"></div></div>
+<div class="toast" id="toast" hidden></div>
+<div class="fxlayer" id="fxlayer" hidden></div>
+<div class="packov" id="packov" hidden role="dialog" aria-modal="true" aria-label="Pack öffnen"></div>
+<div class="insp" id="insp" hidden role="dialog" aria-modal="true" aria-label="Karte ansehen">
+  <div class="insp-bg" data-ix="close"></div>
+  <div class="insp-stage">
+    <div class="insp-hold" id="insp-hold"><div class="insp-tilt" id="insp-tilt"><div class="insp-card" id="insp-card">
+      <div class="insp-face front" id="insp-front"></div>
+      <div class="insp-face back" aria-hidden="true"><div class="cb"><span>♛</span><b>War of Kings</b></div></div>
+      <i class="glare"></i>
+    </div></div></div>
+    <div class="insp-info" id="insp-info"></div>
+  </div>
+  <button class="insp-x" data-ix="close" aria-label="Schließen">✕</button>
+</div>

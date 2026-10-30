@@ -1,0 +1,12 @@
+{
+  "name": "war-of-kings-spiel",
+  "version": "4.0.0",
+  "private": true,
+  "description": "War of Kings – Probe-Spiel mit Spielserver (keine externen Pakete nötig)",
+  "scripts": {
+    "build": "node build.js",
+    "start": "node server/server.js",
+    "test": "node test/rules.js && node test/spells.js && node test/spells2.js && node test/srvproto.js"
+  },
+  "engines": { "node": ">=18" }
+}

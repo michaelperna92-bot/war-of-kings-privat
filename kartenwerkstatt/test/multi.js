@@ -1,0 +1,25 @@
+const { chromium } = require('playwright');
+const SH = '/home/claude/cc/test/';
+(async () => {
+  const b = await chromium.launch(); const ctx = await b.newContext({ viewport: { width: 1440, height: 1000 } });
+  await ctx.route(/^https?:\/\/(?!127\.0\.0\.1)/, r => r.abort());
+  const p = await ctx.newPage(); const errs = [];
+  p.on('pageerror', e => errs.push(e.message));
+  await p.goto('http://127.0.0.1:47831/'); await p.waitForSelector('#preview'); await p.waitForTimeout(1000);
+  await p.setInputFiles('#file-art', SH + 'akuma_art.png'); await p.waitForTimeout(800);
+  await p.fill('#in-name', 'Glutschwinge Kael'); await p.fill('#in-atk', '1800'); await p.fill('#in-def', '1500');
+  const pick = async (k, v) => { await p.click(`[data-pick="${k}"][data-val="${v}"]`); await p.waitForTimeout(150); };
+  await pick('element', 'feuer'); await pick('race', 'mensch'); await pick('class0', 'samurai');
+  const shot = async n => { await p.waitForTimeout(500); await p.locator('#preview').screenshot({ path: SH + n }); };
+  await shot('m1-zwei.png');
+  await pick('race2', 'drachen'); await shot('m2-drei.png');
+  await pick('class1', 'geist'); await pick('element2', 'wasser'); await shot('m3-vier.png');
+  console.log('Hinweise:', await p.$$eval('#issues .issue', e => e.map(x => x.textContent)));
+  await p.click('#btn-save'); await p.waitForTimeout(600);
+  await p.reload(); await p.waitForSelector('.libitem'); await p.waitForTimeout(1200);
+  console.log('Bibliothek:', await p.$$eval('.libitem small', e => e.map(x => x.textContent)));
+  await p.click('[data-act="layout"]'); await p.waitForTimeout(800); await p.selectOption('#ly-two', '4'); await p.waitForTimeout(600);
+  await p.screenshot({ path: SH + 'm4-layout.png' });
+  console.log('Fehler:', errs.length ? errs : 'keine');
+  await b.close();
+})();

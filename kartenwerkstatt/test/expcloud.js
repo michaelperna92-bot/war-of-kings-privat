@@ -1,0 +1,22 @@
+const { chromium } = require('playwright');
+const fs = require('fs');
+const SH = '/home/claude/cc/test/', TARGET = process.argv[2] || 'generic', WHAT = process.argv[3] || 'cards';
+(async () => {
+  const b = await chromium.launch(); const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  await ctx.route('https://fonts.googleapis.com/**', r => r.fulfill({ status: 302, headers: { location: 'http://localhost:8770/css?' + r.request().url().split('?')[1] } }));
+  await ctx.addInitScript(() => { const dl = { save: async ({ filename, data }) => { const buf = new Uint8Array(await data.arrayBuffer()); let s = ''; for (let i = 0; i < buf.length; i += 32768) s += String.fromCharCode.apply(null, buf.subarray(i, i + 32768)); window.__dl = { filename, b64: btoa(s) }; } }; window.claude = { use: async n => n === 'downloads' ? dl : null }; });
+  const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+  await p.goto('http://localhost:8770/'); await p.waitForSelector('#preview'); await p.waitForTimeout(1200);
+  await p.click('[data-tab="card"]').catch(() => {});
+  await require('./expsetup.js')(p, SH);
+  await p.click('[data-tab="lib"]'); await p.click('.lib-dl button[data-act="engine-export"]'); await p.waitForTimeout(400);
+  await p.screenshot({ path: SH + 'ex-phone.png' });
+  await p.click('input[name=ex-target][value=' + TARGET + ']'); await p.check('input[name=ex-what][value=' + WHAT + ']'); if (WHAT !== 'kit') await p.check('input[name=ex-scope][value=alle]'); await p.check('#ex-text');
+  await p.click('[data-act="ex-go"]');
+  await p.waitForFunction(() => /✓|fehlgeschlagen|abgebrochen/.test(document.querySelector('#ex-status').textContent), null, { timeout: 400000 });
+  console.log('Status:', (await p.textContent('#ex-status')).replace(/\s+/g, ' '));
+  const d = await p.evaluate(() => window.__dl);
+  fs.writeFileSync('/tmp/claude-0/chk/pack.zip', Buffer.from(d.b64, 'base64')); console.log('ZIP:', d.filename);
+  console.log('Fehler:', errs.length ? errs : 'keine');
+  await b.close();
+})();

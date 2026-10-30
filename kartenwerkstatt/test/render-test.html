@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@500;600;700;800&display=swap">
+</head><body style="margin:0;background:#222">
+<canvas id="c" width="1024" height="1536"></canvas>
+<script src="../assets.js"></script><script src="../data.js"></script><script src="../render.js"></script>
+<script>
+(async () => {
+  const R = WOK_RENDER, A = WOK_ASSETS, L = R.defaultLayout();
+  const t1 = await R.loadImage(A.templates['1']), t2 = await R.loadImage(A.templates['2']);
+  const f1 = R.computeFrame(t1, L.mask, 1), f2 = R.computeFrame(t2, L.mask, 2);
+  const crests = {}; for (const [k, v] of Object.entries(A.crests)) crests[k] = await R.loadImage(v);
+  const giftCrests = {}; for (const g of WOK_DATA.GIFTS) if (g.crest) giftCrests[g.id] = crests[g.crest];
+  const art = await R.loadImage(A.refs[location.hash.includes('raiden') ? 'raiden' : 'akuma']);
+  const cards = {
+    akuma: { name: 'Akuma no Klinge', energy: 6, atk: 900, def: 500, element: 'feuer', race: 'daemonen', classes: ['samurai'], rarity: 'selten',
+      attack: { dirs: { n: 1, w: 1, e: 1 } }, move: { dirs: { n: 1 } }, gifts: [{ id: 'mordlust' }, { id: 'poison' }], art: { x: 0, y: 0, scale: 1 } },
+    raiden: { name: 'Sturmklinge Raiden', energy: 7, atk: 800, def: 600, element: 'blitz', race: 'mensch', classes: ['samurai', 'geist'], rarity: 'legendaer',
+      attack: { dirs: { n: 1, w: 1, e: 1, s: 1 }, showNumber: true, number: 1 }, move: { dirs: { n: 2, w: 1, e: 1, s: 1, ne: 1 }, showNumber: true, number: 2 }, gifts: [{ id: 'mordlust' }, { id: 'entwaffnen' }, { id: 'doppelschlag' }], art: { x: 0, y: 0, scale: 1 } }
+  };
+  const card = cards[location.hash.includes('raiden') ? 'raiden' : 'akuma'];
+  await document.fonts.load('700 40px "EB Garamond"'); await document.fonts.load('500 20px "EB Garamond"');
+  const ctx = document.getElementById('c').getContext('2d');
+  const t0 = performance.now();
+  const issues = R.draw(ctx, card, L, { frame1: f1.canvas, frame2: f2.canvas, art, crests, giftCrests });
+  window.result = { issues, area: [f1.area, f2.area], ms: performance.now() - t0 };
+  document.title = 'done';
+})();
+</script></body></html>

@@ -1,0 +1,42 @@
+const { chromium } = require('playwright');
+const SH = '/home/claude/cc/test/';
+(async () => {
+  const b = await chromium.launch(); const ctx = await b.newContext({ viewport: { width: 1440, height: 950 } });
+  await ctx.route('https://fonts.googleapis.com/**', r => r.fulfill({ status: 302, headers: { location: 'http://localhost:8770/css?' + r.request().url().split('?')[1] } }));
+  await ctx.addInitScript(() => {
+    const calls = [];
+    const sample = async () => ({ text: '' });
+    sample.limits = async () => ({ maxPromptBytes: 262144, images: { maxCount: 4, maxInputBytes: 2e7, mediaTypes: ['image/jpeg', 'image/png'] } });
+    const names = ['Sturmklinge Raiden', 'Glutzahn Akuma', 'Königin Tharia', 'Eisenherz Varn', 'Nachtschwinge Mora'];
+    sample.json = async (prompt, opts) => { calls.push({ n: opts.images.length, len: prompt.length }); window.__aiCalls = calls; await new Promise(r => setTimeout(r, 300));
+      return opts.images.map((_, i) => ({ name: names[(calls.length - 1) * 4 + i] || 'Testheld', element: ['blitz', 'feuer', 'licht', 'erde', 'dunkelheit'][(calls.length - 1) * 4 + i] || 'wasser', race: i % 2 ? 'daemonen' : 'mensch', class1: 'samurai', class2: i === 1 ? 'geist' : null, reason: 'Testgrund ' + i })); };
+    window.claude = { use: async n => n === 'sample' ? sample : null };
+  });
+  const p = await ctx.newPage(); const errs = [];
+  p.on('pageerror', e => errs.push('pageerror: ' + e.message)); p.on('console', m => { if (m.type() === 'error' && !/ERR_TUNNEL/.test(m.text())) errs.push(m.text()); });
+  await p.goto('http://localhost:8770/'); await p.waitForSelector('#preview'); await p.waitForTimeout(1200);
+  await p.click('[data-act="ai"]'); await p.waitForTimeout(500);
+  await p.setInputFiles('#ai-files', [0, 1, 2, 3, 4].map(i => SH + 'ai' + i + '.jpg')); await p.waitForTimeout(400);
+  await p.click('[data-ai-rar="selten"]');
+  await p.screenshot({ path: SH + 'ai-1.png' });
+  await p.click('[data-ai="run"]');
+  await p.waitForFunction(() => !document.querySelector('[data-ai="stop"]') && document.querySelectorAll('.ai-item.fertig').length > 0, null, { timeout: 60000 });
+  await p.waitForTimeout(600);
+  console.log('Claude-Aufrufe:', JSON.stringify(await p.evaluate(() => window.__aiCalls)));
+  const rows = await p.$$eval('.ai-item', e => e.map(x => x.innerText.replace(/\n/g, ' | ')));
+  console.log(rows.join('\n'));
+  await p.screenshot({ path: SH + 'ai-2.png' });
+  await p.click('[data-ai-reroll="0"]'); await p.waitForTimeout(800);
+  console.log('Nach Neu würfeln:', (await p.$$eval('.ai-item', e => e[0].innerText)).replace(/\n/g, ' | '));
+  // gemischt ohne AI
+  await p.setInputFiles('#ai-files', [SH + 'ai0.jpg', SH + 'ai1.jpg']); await p.click('[data-ai-rar="gemischt"]'); await p.uncheck('#ai-useai'); await p.click('[data-ai="run"]');
+  await p.waitForFunction(() => !document.querySelector('[data-ai="stop"]') && document.querySelectorAll('.ai-item.fertig').length >= 7, null, { timeout: 60000 });
+  await p.click('[data-ai-open="1"]'); await p.waitForTimeout(1500);
+  console.log('Bibliothek:', (await p.$$eval('.libitem b', e => e.map(x => x.textContent))).length, 'Karten');
+  const sec = await p.$eval('.sec[data-sec="power"]', e => e.innerText.replace(/\n/g, ' | '));
+  console.log('Power-Abschnitt:', sec);
+  await p.evaluate(() => { const s = document.querySelector('.sec[data-sec="power"]'); document.querySelector('#panel').scrollTop = s.offsetTop - 60; });
+  await p.waitForTimeout(300); await p.screenshot({ path: SH + 'ai-3.png' });
+  console.log('Fehler:', errs.length ? errs : 'keine');
+  await b.close();
+})();

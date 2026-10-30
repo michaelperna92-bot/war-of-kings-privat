@@ -1,0 +1,22 @@
+const { chromium } = require('playwright');
+const SH = '/home/claude/cc/test/';
+(async () => {
+  const b = await chromium.launch(); const ctx = await b.newContext({ viewport: { width: 1440, height: 1000 } });
+  await ctx.route(/^https?:\/\/(?!127\.0\.0\.1)/, r => r.abort());
+  const p = await ctx.newPage(); const errs = [];
+  p.on('pageerror', e => errs.push(e.message));
+  await p.goto('http://127.0.0.1:47831/'); await p.waitForSelector('#preview'); await p.waitForTimeout(1000);
+  await p.setInputFiles('#file-art', SH + 'akuma_art.png'); await p.waitForTimeout(1500);
+  await p.fill('#in-name', 'Eisenwacht Toren');
+  const pick = async (k, v) => { await p.click(`[data-pick="${k}"][data-val="${v}"]`); await p.waitForTimeout(150); };
+  await pick('element', 'erde'); await pick('race', 'zwerge'); await pick('race2', 'mensch'); await pick('class0', 'tueftler'); await pick('class1', 'ritter');
+  await p.waitForTimeout(500); await p.locator('#preview').screenshot({ path: SH + 'c1-neu.png' });
+  await pick('class0', 'krieger'); await pick('class1', ''); await p.click('[data-pick="race2"][data-val=""]'); await p.waitForTimeout(500);
+  await p.locator('#preview').screenshot({ path: SH + 'c2-krieger.png' });
+  console.log('Klassen im Filter:', await p.$$eval('#f-cls option', e => e.map(x => x.textContent).slice(-4)));
+  console.log('Hinweise:', await p.$$eval('#issues .issue', e => e.map(x => x.textContent).filter(t => /Krieger|Ritter|Tüftler|fehlt/.test(t))));
+  await p.click('[data-act="crests"]'); await p.waitForTimeout(400); await p.click('[data-crtab="classes"]').catch(() => {}); await p.waitForTimeout(300);
+  await p.screenshot({ path: SH + 'c3-crests.png' });
+  console.log('Fehler:', errs.length ? errs : 'keine');
+  await b.close();
+})();

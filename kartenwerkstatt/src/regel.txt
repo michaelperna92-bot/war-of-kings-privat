@@ -1,0 +1,932 @@
+                                  WORLD OF KINGS
+                                         Master-Regelwerk · Version 1.1
+
+
+
+ Vollständige dokumentierte Projektfassung mit gekennzeichneter Regeländerung aus dem
+ Projektgespräch.
+
+ Quellen: Projekt_WoK.pdf (11 Seiten), Kartenlayout.docx sowie die im Projektgespräch ausdrücklich
+ beschlossenen Änderungen.
+
+ Stand: 26. Oktober 2026
+
+
+
+
+WORLD OF KINGS · Master-Regelwerk v1.1                                                               Seite 1
+ 1. Verbindliche Änderungen und Geltungsbereich
+ BESCHLOSSENE REGELÄNDERUNG: Könige können sich nicht mehr bewegen. Die ältere Formulierung im
+ Originaldokument („nach links und rechts“, standardmäßig 1 Schritt) ist außer Kraft gesetzt. Könige
+ werden zu Spielbeginn auf einem Beschwörungsfeld positioniert und bleiben dort. Ihre Angriffsrichtungen
+ werden weiterhin individuell durch die jeweilige Karte festgelegt.
+
+ KARTENPROTOKOLL: Es dürfen keine neuen Gaben erfunden und keine dokumentierten Gaben, Wirkungen
+ oder Cooldowns eigenmächtig verändert werden. Neue Fähigkeiten und Änderungen benötigen
+ ausdrückliche Genehmigung. Unbestimmte Kartenwerte bleiben offen und werden nicht als offiziell
+ ausgegeben.
+
+ Quellenhierarchie dieser Ausgabe: ausdrückliche neuere Beschlüsse zum jeweiligen Sachverhalt vor
+ älterem Originaltext; im Übrigen gilt das Originaldokument. Unklare Stellen werden nicht stillschweigend
+ ergänzt.
+
+
+ 2. Vollständiges ursprüngliches Regelwerk (mit einer
+ markierten Ersetzung)
+ Der folgende Teil übernimmt den gesamten extrahierbaren Text der 11 Originalseiten in ursprünglicher Reihenfolge. Die
+ veraltete Bewegungsregel der Könige ist ausdrücklich als ersetzt markiert. Tabellen sind textuell abgebildet; für
+ grafische Feld- und Kartenzeichnungen dienen die hochgeladenen Originaldateien als Referenz.
+
+
+ Originaldokument – Seite 1
+ Projekt-WoK
+
+ Spielidee:
+  • Online Gacha/Trading Card game
+  • Kombiniert neue und alte Elemente aus verschiedenen Spielen mit Schach
+
+ Spielprinzip:
+  • Jeder Spieler erstellt ein Deck aus 40 Karten
+  • Das Deck wird aus Helden, Zaubern, Flüchen und einem König erstellt
+  • Helden besitzen einen Angriffs/-Defensivwert und eine Lauf/-Angriffsrichtung
+  sowie Gaben. Können 1-3 Schritte laufen (Standard sind 2 Schritte)
+  • Der Angriffswert einer Karte muss höher sein als der gegnerische
+  Defensivwert, um diese zu zerstören. Sind beide gleich hoch, werden beide
+  Karten zerstört. Zerstörte Karten landen auf dem Friedhof
+  • [AKTUALISIERT v1.1] Könige besitzen Angriffswert, Lebenspunkte,
+  Angriffsrichtungen und Gaben. Könige können NICHT laufen.
+  • Jede ausgespielte Karte mit Ausnahme des Königs kostet Energie
+  • Die Energie wird durch die Seltenheit und Stärke der Karte bestimmt
+  • Ziel ist es die Lebenspunkte des Königs auf null zu setzen
+  • Wenn ein Spieler keine Karten mehr im Deck hat, läuft das Spiel normal weiter.
+  Das Spiel ist erst beendet, wenn einer der beiden Könige fällt oder beide
+  Spieler weder spielbare Karten noch Helden auf dem Feld haben.
+  Wenn beide Könige danach noch stehen, ist es ein Unentschieden.
+  Bei einem Unentschieden im gewerteten Modus, bleiben die Punkte beider
+  Spieler gleich
+
+ Spielaufbau:
+  • Das Feld besteht aus drei Fluch/Zauberfelder, die sich vor dem Spieler
+  befinden. Es können maximal 3 gleichzeitig gewirkt werden. Wenn ein anderer
+
+
+
+WORLD OF KINGS · Master-Regelwerk v1.1                                                                           Seite 2
+  Zauber oder Fluch gewirkt werden soll, muss ein bestehender aufgehoben
+  werden
+  • In der ersten Reihe sind die Beschwörungsfelder. Neben dem Beschwören von
+  Helden muss zu Beginn des Spiels der König auf eines dieser Felder positioniert
+  werden
+  • Es kann immer nur ein Held auf einem Feld stehen
+  • Wenn sich ein Held auf einem gegnerischen Beschwörungsfeld befindet, kann
+  der Gegner keine Helden mehr auf diesem Feld beschwören
+  • Helden müssen zum Angreifen unmittelbar neben anderen Helden stehen (bis
+  auf ein paar Ausnahmen). Die Angriffsrichtung gibt vor, ob ein Angriff auf das
+  Ziel möglich ist
+
+
+
+
+WORLD OF KINGS · Master-Regelwerk v1.1                                              Seite 3
+ Originaldokument – Seite 2
+   Zauber- und Fluch Felder
+
+
+   Beschwörungsfelder
+
+
+    Schlachtfeld Bridge
+
+
+   Beschwörungsfelder
+
+
+   Zauber- und Fluch Felder
+
+ Spielablauf:
+  • Jeder Spieler beginnt mit 5 Karten auf der Hand
+  • Durch Münzwurf wird entschieden wer beginnt
+  • Der Spieler der Beginnt zieht eine weitere Karte
+  • Es können maximal 10 Karten auf der Hand sein. Wenn eine weitere Karte,
+  gezogen wird, darf der Spieler entscheiden, welche er auf den Friedhof schickt
+  • Jeder Spieler muss zu Beginn des Spiels seinen König auf eines der dafür
+  vorgesehenen Beschwörungsfelder platzieren
+  • Jeder Spieler beginnt mit einer Energie, die pro Runde um eins steigen bis
+  beide Spieler 10 Energie haben
+  • Der weitere Spielablauf wird in folgende Phasen eingeteilt:
+    o Zugphase: Spieler A zieht eine Karte
+    o Erste Beschwörungsphase: Spieler A kann Helden auf seine
+    Beschwörungsfeldern rufen
+    o Bewegungsphase: Spieler A kann seine Helden entsprechend ihren
+    Laufrichtungen bewegen und in Position bringen. Helden, die in dieser
+    Beschwörungsphase aufs Feld gebracht wurden, können in dieser
+    Runde nicht laufen, angreifen oder Gaben nutzen
+
+      2
+
+
+
+
+WORLD OF KINGS · Master-Regelwerk v1.1                                             Seite 4
+ Originaldokument – Seite 3
+    o Battlephase: Spieler A kann mit seinen Helden, Zaubern und/oder
+     Flüchen Angriffsziele wählen
+    o Konterphase: Spieler B hat jetzt die Möglichkeit (mit nicht verwendeter
+     Energie von seiner vorherigen Runde) die Aktionen von Spieler A durch
+     Gaben, Zaubern oder Flüchen abzuwehren. Nach Abschluss der
+     Konterphase werden alle Aktionen von Spieler A nach der Reihe
+     ausgeführt
+    o Zweite Beschwörungsphase: Spieler A hat erneut die Möglichkeit mit
+     nicht verwendeter Energie Helden zu beschwören
+    o Endphase: Nach beenden der Runde ist Spieler B an der Reihe
+  • In der zweiten Beschwörungsphase muss sich der Spieler entscheiden, ob er
+  Energie für seine nächste Konterphase behält oder Helden beschwört.
+
+ Karten:
+  • Unterschiedliche Seltenheitsgrade:
+    o Gewöhnlich: max. 3x die gleiche Karte pro Deck
+    o Ungewöhnlich: max. 3x die gleiche Karte pro Deck
+    o Selten: max. 2x die gleiche Karte pro Deck
+    o Legendär: max. 1x die gleiche Karte pro Deck
+    o Seltenheit der Zauber und Flüche wird als Schriftfarbe angezeigt
+ Helden
+  • Helden haben unterschiedliche Rassen, Klassen und Typen:
+    o Rassen: Menschen, Tierwesen, Bestien, Drachen, Maschinen, Elfen,
+    Riesen, Dämonen, Engel, Vampire, Zwerge, Kobolde, Gargoyls
+    o Klassen: Pirat, Samurai, Zombie, Magier/Hexe, Geist, Bestien bändiger,
+    Demon Slayer, Cyborg
+    o Typen: Feuer, Wasser, Erde, Wind, Blitz, Licht, Dunkelheit
+      Þ Jeder Typ hat stärken und Schwächen gegenüber einem anderen
+      Þ Eine Ebene (Unterart von Zaubersprüchen siehe S.5) die Wasser
+      Typen stärkt, schwächt gleichzeitig alle Helden mit Typ Feuer
+
+      Þ Wasser > Feuer
+
+      Þ Feuer > Wind
+
+      Þ Wind > Erde
+
+      Þ Erde > Blitz
+
+      Þ Blitz > Wasser
+
+      Þ Licht = Dunkelheit
+
+
+      3
+
+
+
+
+WORLD OF KINGS · Master-Regelwerk v1.1                                          Seite 5
+ Originaldokument – Seite 4
+    o Ein Held kann nur eine Rasse, Typ und maximal zwei Klassen haben
+
+    o Kartenlayout von Helden (Gewöhnlich):
+     Kosten Name der Karte Typ
+
+
+      Bild
+
+
+      [Lauf/-
+     Atk Def
+      Angriffsrichtungen]
+     [Rasse/Klasse]
+
+     Gaben:
+     [Permanente Gaben]
+     [CT Gaben]
+     [Spezifische Gaben]
+
+ Könige
+  • die gleichen Rassen, Typen und Klassen möglich wie bei Helden
+  • haben zwischen 10 und 20k Lebenspunkte (bis auf ein paar Ausnahmen)
+  • Kartenlayout von Königen (Legendär):
+      Name der Karte
+
+
+      Bild
+
+
+     Atk HP [Angriffsrichtungen]
+     [Rasse/Klasse]
+
+     Gaben:
+     [Permanente Gaben]
+     [CT Gaben]
+     [Spezifische Gaben]
+      4
+
+
+
+
+WORLD OF KINGS · Master-Regelwerk v1.1                                    Seite 6
+ Originaldokument – Seite 5
+    Zauber und Flüche
+
+ Zauber Beschreibung Zusatzregel
+      Konter gegen Flüche oder attackierende
+ Schutzzauber Gegner. Um Gegnerische Flüche zu Kann nur in der Konterphase angewendet
+ (Symbol: Schild) annolieren oder Helden und den König werden
+      zu schützen.
+      Kann in der Battlepahse und Konterphase
+ Rüstungszauber angewendet werden
+      Zauber die Def erhöhen und/oder Gaben
+ (Symbol: Können permanent oder Rundenbasiert sein
+      verleihen können
+ Rüstung) Es kann immer nur ein Held als Ziel gewählt
+      werden
+      Kann nur in der eigenen Battlephase gewirkt
+ Waffenzauber werden
+      Zauber die Atk erhöhen und/oder Gaben
+ (Symbol: Können permanent oder Rundenbasiert sein
+      verleihen können
+ Schwert) Es kann immer nur ein Held als Ziel gewählt
+      werden
+ Segen Kann nur in der Battlephase gewirkt werden
+ (Symbol: Zauber die Atk und Def erhöhen können Können permanent oder Rundenbasiert sein
+ Lichtstrahl) Können auch mehrere Helden als Ziel haben
+      Kann nur in der Battlephase gewirkt werden
+ Ebenen Verändert den Zustand des Schlachtfelds
+      Jede Ebene ist einem Typ zugeordnet
+ (Symbol: erhöht die Atk und/oder Def von allen
+      Wirkt nur auf Helden mit dem gleichen Typ
+ Gebirge) Helden oder nur bestimmten permanent
+      (Verbündete und Feinde)
+ Flüche
+      Kann in der Battlephase und Konterphase
+      angewendet werden
+      Können permanent oder Rundenbasiert sein
+      Können gegnerische Zauber, Ebenen,
+      Es kann immer nur ein Held als Ziel gewählt
+      zerstören und Helden manipulieren.
+      werden
+      Können auch direkt dem König schaden.
+      Können auch das Spielgeschehen
+      Felder verfluchen:
+ Hexerei beeinflussen
+      kann nur in der Battlephase gewirkt werden
+ (Symbol: Buch)
+      Beschwörungsfelder können nicht verflucht
+      Können Felder verfluchen:
+
+
+
+
+WORLD OF KINGS · Master-Regelwerk v1.1                                                     Seite 7
+      werden.
+      verfluchte Felder können die Def des
+      Eigene Helden werden von diesem Effekt
+      Gegnerischen Helden zwischen 100-300
+      nicht beeinflusst.
+      verringern oder es direkt Zerstören
+      Gegner kann das verfluchte Feld nicht sehen
+      Der Effekt wirkt nur einmal und endet sobald
+      der Held das Feld verlassen hat.
+ Blutflüche Der Anwender erleidet Schaden. Können Kann nur in der Battlephase gewirkt werden
+ (Symbol: auf unterschiedliche Arten dem Gegner Können permanent oder Rundenbasiert sein
+ Bluttropfen) Stark schaden oder einem selbst helfen Können auch mehrere Helden als Ziel haben
+
+      5
+
+
+
+
+WORLD OF KINGS · Master-Regelwerk v1.1                                                           Seite 8
+ Originaldokument – Seite 6
+      Kartenlayout von Zaubern (z.B. Schutzzauber) / Flüchen (Hexerei):
+      Kosten Name der Karte Symbol Kosten Name der Karte Symbol
+
+
+      Bild Bild
+
+
+      [Beschreibung] [Beschreibung]
+
+
+     Gaben:
+      • Es gibt Allgemeine Gaben die sowohl Helden als auch Könige haben können
+      und Königliche Gaben die nur Könige haben Können
+      • Gaben werden aufgeteilt in Permanente, CT (Cool-Time) und spezifische
+      Gaben
+      • Spezifische Gaben können sehr unterschiedliche Fähigkeiten sein. Sie sind
+      selten und passen nicht in eine der beiden anderen Kategorien
+
+     Permanente Gaben
+
+ Permanente Gaben Beschreibung Zusatzregel
+ Poison Angegriffene oder angreifende Helden werden vergiftet wirkt nicht gegen Könige
+      und haben nur noch eine weitere Runde, bevor sie vom
+      Feld genommen werden müssen
+ Immunität Held ist immun gegen Flüche, Gaben oder gegen beide
+      je nach Immunitätsform:
+      Fluchimmunität: Nur gegen Flüche Immun
+      Gabenimmunität: Nur gegen Gaben Immun
+      Göttliche Immunität: Gegen Alle Arten Immun
+
+ Unverwundbar Held kann nicht durch direkte Angriffe zerstört werden
+ Letzter Wille Nach dem Tod können 1 bis 3 Karten gezogen werden Muss auf der Karte
+      stehen
+      6
+
+
+
+
+WORLD OF KINGS · Master-Regelwerk v1.1                                                   Seite 9
+ Originaldokument – Seite 7
+ Doppelschlag Kann zwei Helden in Angriffsrichtung attackieren, der
+      gegnerische König kann doppelt angegriffen werden
+ Schütze Kann Ziele in Angriffsrichtung über ein Feld hinweg
+      angreifen. Wird nicht von Poison getroffen, wenn aus
+      der Distanz angegriffen wird
+ Fliegen Kann sich auf Gebannten Feldern bewegen. Verfluchte
+      Felder haben keine Wirkung
+
+     CT-Gaben
+
+ CT-Gaben Beschreibung Zusatzregel
+      Kann nur in der eigenen Battlephase gewirkt
+ Exekution [4] Direkter Tod eines Helden. werden
+      Poison hat keinen Effekt
+      Kann einen Helden der in Reichweite
+      ist, für eine Runde Bewegungs- und Kann nur in der eigenen Battlephase gewirkt
+ Freeze [2]
+      Angriffsunfähig machen. Auch Gaben werden
+      können nicht genutzt werden
+      Ein Held der in Angriffsreichweite liegt
+      Kann nur in der eigenen Battlephase gewirkt
+ Entwaffnen [2] hat bis zum Ende des Spielzugs 500
+      werden
+      weniger Def
+      Kann nur in der eigenen Battlephase gewirkt
+      Kann in Laufrichtung über ein Feld werden
+ Überspringen [3]
+      springen eigene Helden und gebannte Felder können
+      ebenfalls übersprungen werden
+      Kann mit einem Verbündeten Helden Kann in der Battlepahse und Konterphase
+ Tausch [3]
+      die Position Tauschen angewendet werden
+      Held hat bis zum Ende des Zuges 500 Kann nur in der eigenen Battlephase gewirkt
+ Mordlust [2]
+      mehr Atk werden
+      Kann in der Battlepahse und Konterphase
+ Eisenpanzer [5] Held hat 2 Runden lang 300 mehr Def
+      angewendet werden
+      Kann nur in der eigenen Battlephase gewirkt
+      Kann ein Feld das in Angriffsrichtung werden
+ Bann [3]
+      liegt für zwei runden Sperren Felder auf dem bereits ein Held steht können
+      nicht gebannt werden
+      Kann einen gegnerischen Helden
+      Kann nur in der eigenen Battlephase gewirkt
+ Gravitation [4] zwingen, einen Schritt in eine beliebige
+      werden
+      Richtung zu machen
+
+
+
+
+WORLD OF KINGS · Master-Regelwerk v1.1                                                  Seite 10
+      7
+
+
+
+
+WORLD OF KINGS · Master-Regelwerk v1.1   Seite 11
+ Originaldokument – Seite 8
+     Königliche Gaben
+
+ CT-Gaben Beschreibung Zusatzregel
+      Belebt einen Helden wieder
+      Kann nur in der eigenen
+ Wiedergeburt [10]
+      (Gegnerische Helden können auch wiederbelebt Battlephase gewirkt werden
+      werden?)
+      Kann nur in der eigenen
+ Auslöschen [8] Löscht eine Gabe eines Helden aus
+      Battlephase gewirkt werden
+      Verknüpft einen verbündeten und einen
+      Kann nur in der eigenen
+ Seelenverknüpfung [8] gegnerischen Helden miteinander. Stirbt dein
+      Battlephase gewirkt werden
+      Held, stirbt der gegnerische Held auch
+      Zwingt einen gegnerischen Helden dazu eine Gabe Kann nur in der eigenen
+      einzusetzen oder einen Schritt in eine Richtung zu Battlephase gewirkt werden
+ Befehl [6]
+      laufen die nicht mit seiner laufrichtig kompatibel Der gegnerische Held muss
+      sein muss die Gabe anwenden können.
+ Permanente Gaben
+      Erhöht die Atk aller Helden oder nur die von
+ Schlachtruf
+      bestimmten Helden zwischen 100 und 300 Atk
+      Erhöht die Def aller Helden oder nur die von
+ Schildwall
+      bestimmten Helden zwischen 100 und 300 Atk
+      Ziehe eine Karte immer, wenn der König Schaden
+ Verstärkung
+      nimmt
+ Aura Gegnerische Helden können nur 1 Schritt laufen
+      Alle oder nur bestimmte Helden Kosten zwischen 1 Helden können nicht
+ Blitzkrieg
+      und 2 weniger Energie. weniger als 1 Kosten
+      Alle gegnerischen Helden oder nur bestimmte
+ Luftwache Helden können kein Jump oder Tausch nutzen.
+      Helden mit Fliegen verlieren diese Gabe
+      Alle verbündeten Helden oder nur bestimmte
+ Gegengift verbündete Helden können nicht mehr durch Gift
+      getötet werden.
+      Der König kann keinen Schaden durch Flüche
+ Königliche Immunität
+      nehmen.
+ Doppelter Schmerz Alle verbündeten Helden haben Doppelschlag
+
+     Spielinhalt:
+      • Spielwährung: Kristalle
+
+
+
+
+WORLD OF KINGS · Master-Regelwerk v1.1                                                Seite 12
+      • Packungen mit je 5 Helden können mit Kristallen oder Geld gekauft werden
+      o Eine Packung kosten 100 Kristalle
+      o 50 Kristalle kosten 1,49 Euro
+      o 100 Kristalle kosten 2,49 Euro
+
+      8
+
+
+
+
+WORLD OF KINGS · Master-Regelwerk v1.1                                             Seite 13
+ Originaldokument – Seite 9
+   o 500 Kristalle kosten 11,99 Euro
+   o 1000 Kristalle kosten 19,99 Euro
+ • Königs-Pull kosten ebenfalls 100 Kristalle
+   o Immer nur ein König
+ • Dungeons:
+   o 5 Dungeons mit je 10 Ebenen
+   o Belohnungen nach jeder Ebene:
+      Þ Ebene 1 bis 8: 5 Kristalle
+      Þ Ebene 9: 10 Kristalle
+      Þ Ebene 10: 50 Kristalle
+   o Dungeon 1: Festung der Stürme (Wind)
+   o Dungeon 2: Ruf von Atlantis (Wasser)
+   o Dungeon 3: Endlose Wüste (Erde)
+   o Dungeon 4: Zorn des Himmels (Blitz)
+   o Dungeon 5: Gefangen im Vulkan (Feuer)
+ • Tausch- Lizenz einmal im Monat:
+   o Ermöglicht den Tausch einer Karte mit einem anderen Spieler
+   o Karten müssen die gleiche Seltenheit haben
+   o Ist einmal pro Monat kostenlos
+   o Tausch-Lizenz kaufen: Einmalig für 30 Euro erwerbbar + 30 Kristalle
+    (einmal Kaufbar)
+ • Tausch-Pass:
+   o Es können drei Karten getauscht werden
+   o 100 Kristalle enthalten
+   o Kosten: 90 Euro
+   o Max. einmal pro Monat kaufbar
+ • Season Pack:
+   o 5 Packungen der aktuellen Season
+   o 3 König-Pull
+   o Kosten: 16,99Euro
+   o Max. zweimal kaufbar
+ • Doppelte Karten können zerstört werden
+   o durch Zerstören erhält man Prozente für einen Schlüssel
+   o der Schlüssel öffnet einen Dungeon mit einem Gegner
+   o Wenn man verliert: 100 Kristalle
+   o Wenn man Gewinnt: 100 Kristalle und einen Königs-Pull
+   o Prozente pro Karte:
+      Þ Gewöhnlich: 0,5%
+      Þ Ungewöhnlich: 1%
+      Þ Selten: 5%
+      Þ Legendär: 10%
+ • Helden aufwerten:
+   o Bestimmte Helden können aufgewertet werden, wenn man die gleiche
+    Karte mehrfach besitzt.
+
+      9
+
+
+
+
+WORLD OF KINGS · Master-Regelwerk v1.1                                     Seite 14
+ Originaldokument – Seite 10
+   o Aufwerten erhöht dauerhaft den Atk/Def-Wert der Karte, kann die
+    Lauf/-Angiffsrichtung erweitern und eine zusätzliche Gabe verleihen
+     Þ Stufe 1: Karte 50x besitzen – Atk/Def plus 100
+     Þ Stufe 2: Karte 75x besitzen – zusätzliche Lauf/-Angiffsrichtung
+     Þ Stufe 3: Karte 100x besitzen – zusätzliche Gabe
+   o Die Art der Verbesserung ist für jede Karte vorbestimmt und kann nicht
+    selbst ausgewählt werden
+
+ Ranglistensystem
+   o Jede Season läuft vier Monat
+   o Insgesamt 5 Stufen. Die ersten vier haben nochmal drei Unterstufen:
+
+      Der Spieler mit den meisten Punkte ist der „König des Spiels“
+      500 Kristalle + eine Legendäre Karte + 5 König-Pull
+      Die Legendäre Karte ist einzigartig
+
+      ab 1300: 300 Kristalle + 5 König-Pull
+      Diamant
+      Platin III: 1200 – 1300 Punkte (150 Kristalle + 3 König-Pull)
+      Platin II: 1100 – 1200 Punkte (140 Kristalle + 2 König-Pull)
+      Platin I: 1000 – 1100 Punkte (130 Kristalle + 1 König-Pull)
+      Platin I – III
+      Gold III: 900 – 1000 Punkte (100 Kristalle + 1 König-Pull)
+      Gold II: 800 – 900 Punkte (90 Kristalle + eine Seltene Karten)
+      Gold I: 700 – 800 Punkte (80 Kristalle + eine Seltene Karten)
+      Gold I – III
+      Silber III: 600 – 700 Punkte (60 Kristalle)
+      Silber II: 500 – 600 Punkte (50 Kristalle)
+      Silber I: 400 – 500 Punkte (40 Kristalle)
+      Silber I – III
+      Bronze III: 300 – 400 Punkte (30 Kristalle)
+      Bronze II: 200 – 300 Punkte (20 Kristalle)
+      Bronze I: 100 – 200 Punkte (10 Kristalle)
+      Bronze I – III
+
+   o Nach der Season werden alle Spieler auf die erste Unterstufe der
+    vorherigen Stufe gesetzt (Gold III auf Silber I)
+   o Punktesystem:
+     Þ Ein Sieg gibt 10 Punkte
+     Þ Bei einer Siegesserie ab 5, gibt es pro Sieg 30 Punkte
+     Þ Bei einer Niederlage verliert man 5 Punkte
+   o Belohnungssystem:
+     Þ Jede Stufe hat Ihre eigene Belohnung
+      10
+
+
+
+
+WORLD OF KINGS · Master-Regelwerk v1.1                                        Seite 15
+ Originaldokument – Seite 11
+      Þ In Diamant erhält nur der „König des Spiels“ eine besondere
+       Karte. Erst in der Übernächsten Season ist es möglich diese Karte
+       auf normalen Weg zu ziehen. Die Wahrscheinlichkeit ist aber
+       geringer als bei Legendären Karten
+
+
+ • Spielinhalt am Anfang (Season 1)
+  o Rassen: Menschen, Tierwesen, Bestien, Maschinen, Drachen
+  o Klassen: Pirat, Samurai, Magier/Hexe, Bestien bändiger
+  o Typen: Feuer, Wasser, Wind, Erde, Blitz
+  o Zauber: Schutz-, Rüstungs-, Waffenzauber und Ebenen
+  o Flüche: Hexerei und Blutflüche
+  o Permanente Gaben:
+      Þ Poison, Doppelschlag, Immunität, Letzter Wille, Schütze
+  o CT-Gaben: Alle außer Gravitation
+  o Königliche Gaben: Alle
+  o
+
+
+       11
+
+
+
+
+WORLD OF KINGS · Master-Regelwerk v1.1                                     Seite 16
+ 3. Offene Punkte – nicht als Regeln festgelegt
+ • Es gibt keine dokumentierte allgemeine Formel, die Energiekosten aus ATK, DEF, Seltenheit und Gaben
+ berechnet. Die für Sturmklinge Raiden vorgeschlagenen 6 Energie sind deshalb nicht offiziell bestätigt.
+
+ • Konkrete Grundwerte für die entworfenen Karten Sturmklinge Raiden und König Alexander wurden nicht
+ verbindlich festgelegt. Die Illustrationen enthalten teils widersprüchliche Zahlen.
+
+ • Die exakte Darstellung und Zuordnung von Lauf- und Angriffsrichtung jeder neuen Heldenkarte muss
+ separat freigegeben werden.
+
+ • Die Frage im Original, ob Wiedergeburt auch gegnerische Helden wiederbeleben darf, ist ausdrücklich
+ offen („?“).
+
+ • Die neue Unbeweglichkeit der Könige ist eine Grundregel und keine zusätzliche Gabe. „Unbeweglicher
+ Thron“, „Königliche Aura“, „Gewitterhaltung“, „Blitzschritt“ und „Donnerschlag“ sind keine freigegebenen
+ offiziellen Gaben.
+
+ • Die im Original aufgeführten Season-1-Beschränkungen bleiben erhalten. Die vollständige Liste aller
+ Gaben ist nicht identisch mit der Auswahl der in Season 1 verfügbaren permanenten Gaben.
+
+
+ 4. Dokumentenstatus
+ Diese Ausgabe ist eine konsolidierte Arbeitsfassung aus Originalquelle und ausdrücklich beschlossenen
+ Änderungen, keine Behauptung einer bereits separat genehmigten finalen Spielbalance. Das Original sollte
+ als Archiv erhalten bleiben. Diese PDF kann nach Prüfung als aktuelle Projektgrundlage hochgeladen
+ werden.
+
+
+
+
+WORLD OF KINGS · Master-Regelwerk v1.1                                                                 Seite 17
+World of Kings – Regelwerk v1.2
+Verbindlicher Nachtrag: Seltenheitskristall
+Bei jeder Heldenkarte befindet sich unten in der Mitte ein Kristall. Dieser Kristall zeigt die
+Seltenheitsstufe der Karte an. Seine Funktion ist ausschließlich die eindeutige Kennzeichnung der
+Seltenheit.
+
+Die im Regelwerk bestehenden Seltenheitsstufen bleiben erhalten:
+
+
+ Seltenheitsstufe                                 Maximal gleiche Karten pro Deck
+
+
+ Gewöhnlich (Common)                              3
+
+
+ Ungewöhnlich (Uncommon)                          3
+
+
+ Selten (Rare)                                    2
+
+
+ Legendär (Legendary)                             1
+
+
+
+Gestaltungsstatus: Die genaue Farbe, Anzahl und Form der Kristalle je Seltenheitsstufe sind noch nicht
+verbindlich beschlossen. Der Kristall an der unteren Kartenmitte als Seltenheitsanzeige ist hingegen
+festgelegt.
+
+Versionshinweis: Dieser Nachtrag ergänzt das unverändert übernommene Master-Regelwerk v1.1. Bei
+widersprüchlichen Angaben zur Seltenheitsanzeige gilt dieser Nachtrag.
+              World of Kings – Master-Regelwerk v1.3
+Verbindlicher Design- und Balance-Nachtrag
+Dieser Nachtrag erweitert das Master-Regelwerk v1.2. Er dokumentiert die vom Projektinhaber bestätigten
+Seltenheitswappen und die aktuelle Einstufung des Helden Sturmklinge Raiden.
+
+
+1. Seltenheitswappen
+Der Kristall beziehungsweise das Wappen unten mittig auf der Heldenkarte zeigt verbindlich die
+Seltenheitsstufe. Die folgende Zuordnung ist bestätigt:
+
+
+   Seltenheit                       Wappen / Kristall                                  Decklimit
+
+   Gewöhnlich                       Silber / Grau                                      3
+
+   Ungewöhnlich                     Grün                                               3
+
+   Selten                           Blau                                               2
+
+   Legendär                         Gold mit Krone                                     1
+
+
+
+2. Kriterien für Seltenheit und Energiekosten
+Die Einstufung erfolgt anhand des Zusammenspiels von ATK/DEF, Laufweite, Angriffsrichtungen,
+vorhandenen regelkonformen Gaben und taktischem Einfluss. Entscheidend ist die Gesamtleistung im
+Verhältnis zu den Energiekosten, nicht ein einzelner Wert.
+
+Balancegrundsatz: Starke Kombinationen aus Kampfwerten, Beweglichkeit, Angriffsrichtungen und Gaben
+müssen durch angemessene Energiekosten oder andere regelkonforme Nachteile ausgeglichen werden.
+Seltenheit und Energiekosten sind getrennte Größen: Legendär bedeutet nicht automatisch maximal teuer.
+Eine feste numerische Formel wurde noch nicht beschlossen.
+
+
+3. Verbindlicher Raiden-Entwurfsstand
+Sturmklinge Raiden – Mensch / Samurai, Typ Blitz. Seltenheit: Legendär. Energie: 7 (aktueller
+Entwurfswert für Balancetests). ATK 800, DEF 600, Bewegung 1 Feld, Angriffsrichtungen vorne / links / rechts.
+Gaben: Mordlust [2], Entwaffnen [2] und Doppelschlag (permanent). Die Kampfwerte und die Energiekosten
+sind bis zur endgültigen Balancefreigabe Entwurfswerte.
+
+Regelgetreue Doppelschlag-Beschreibung: „Kann zwei Helden in Angriffsrichtung attackieren, der
+gegnerische König kann doppelt angegriffen werden“. Keine frei erfundenen oder abgewandelten Gaben.
+
+
+4. Bewegungs- und Königsregeln aus unseren Änderungen
+Helden/Monster: 1 Schritt ist Standard, 2 Schritte sind besonders gut, 3 Schritte absolute Ausnahme.
+Könige: Platzierung auf einem der eigenen hinteren Beschwörungsfelder zu Spielbeginn, danach
+unbeweglich; Angriff nach vorne immer, nach links und rechts nur, wenn die jeweilige Königskarte dies
+vorsieht. Könige haben HP und ATK, aber keinen DEF-Wert.
+
+
+5. Bildreferenzen
+Die folgenden Abbildungen sind visuelle Designreferenzen. Für regeltechnische Angaben ist der Text dieses
+Nachtrags maßgeblich.
+           Seltenheitswappen – verbindliche Farbreihe
+
+
+
+
+Visuelle Referenz für die vier Wappen und ihre Position am unteren Kartenrand. Bei Abweichungen in Begleittexten gelten
+die verbindlichen Regeln auf der vorherigen Seite.
+STURMKLINGE RAIDEN
+Originalillustration · offizielles Heldenkarten-Layout
+
+
+
+
+Mensch / Samurai · Blitz · 7 Energie · 800 ATK · 600 DEF · Legendär
+
+Wichtig: Bild hat 4 Angriffspfeile; der ältere schriftliche Entwurf nennt nur 3.
+AKUMA NO KLINGE
+Dämonen-Samurai · Beispielbild / Balanceentwurf
+
+
+
+
+Dämonen / Samurai · Feuer · 6 Energie · 900 ATK · 500 DEF · Selten
+
+Poison ist hier korrekt als permanent gekennzeichnet. Akuma-Werte noch Entwurf.
+WoK – Nachtrag: Könige und Königlicher Befehl
+Aktualisierte, im Gespräch festgelegte Regeln. Dieser Nachtrag hat bei Widersprüchen zu älteren
+Fassungen Vorrang.
+
+
+Könige – gültige Eckdaten
+• Ein König wird zu Spielbeginn auf einem eigenen hinteren Beschwörungsfeld platziert und bleibt dort
+für die gesamte Partie. Könige können sich nicht bewegen.
+
+• Jeder König greift nach vorne an. Angriffe nach links und rechts sind nur möglich, wenn sie auf seiner
+Karte angegeben sind. Ein Angriff nach hinten ist ausgeschlossen.
+
+• Könige besitzen ATK und HP, aber keine DEF und keine Energiekosten.
+
+• Wertebereich: 15.000–30.000 HP; 1.000–2.500 ATK; 0–3 königliche Gaben.
+
+• Die Seltenheit (Gewöhnlich, Ungewöhnlich, Selten, Legendär) wird aus der Gesamtstärke bewertet:
+Werte, Angriffsrichtungen, Gaben und deren Zusammenspiel. Keine feste Punkteformel beschlossen.
+
+• Seltenheitswappen unten mittig: Silber/Grau = Gewöhnlich; Grün = Ungewöhnlich; Blau = Selten; Gold
+mit Krone = Legendär.
+
+• Helden bewegen sich üblicherweise 1 Feld; 2 Felder kennzeichnen stärkere/seltenere Karten; 3 Felder
+sind eine sehr seltene Ausnahme.
+
+
+Königlicher Befehl [7] – verbindliche Neufassung
+Typ: Königliche CT-Gabe. Einsetzbar: nur in der eigenen Battlephase. Eigener Cooldown: 7 Runden.
+
+Bewegt einen gegnerischen Helden um genau 1 Feld in eine beliebige Richtung, auch entgegen seiner
+normalen Laufrichtungen. Zusätzlich wird der Cooldown einer ausgewählten CT-Gabe dieses
+gegnerischen Helden auf deren volle Wartezeit gesetzt – so, als wäre die Gabe gerade eingesetzt
+worden. Die gegnerische Gabe wird dabei nicht tatsächlich ausgeführt.
+
+Beispiel: Bei Exekution [4] muss der betroffene Held erneut vier Runden warten, bevor er Exekution
+einsetzen darf.
+
+Diese Fassung ersetzt die ältere Gabe „Befehl [6]“ vollständig.
+
+
+Hinweis zum Beispielbild auf der folgenden Seite
+Bild 1 zeigt König Tharion als illustratives Layoutkonzept. Seine konkreten Werte, Gaben-Kombination und Seltenheit
+sind nicht als zusätzlich beschlossene Spielregeln zu verstehen. Für den exakten Wortlaut von Königlicher Befehl gilt
+ausschließlich die obige Textfassung.
+KÖNIG THARION – KÖNIGSKARTEN-REFERENZ
+Gewöhnlich · Mensch / König · Licht · keine Energiekosten
+
+
+
+
+Festgelegte Kartendaten und Layout:
+1.500 ATK · 20.000 HP · Angriff nur nach vorne · keine Bewegung · 0 Gaben.
+Krone oben links; Mensch-Profil und Königskrone links; Licht oben rechts.
+Volle Kartenhöhe mit drei leeren Gabenfeldern, Seltenheit unten mittig.
+Bildabweichung: Die Aufschrift 'Comon' muss regelkonform 'Gewöhnlich' heißen.
+Die Karte ist die bestätigte visuelle Referenz; schriftliche Regeln bleiben maßgeblich.
+            World of Kings – Master-Regelwerk v1.5
+Nachtrag: Einheitliche Wappen für Heldenkarten
+Dieser Nachtrag ergänzt Version 1.4. Sämtliche bisherigen Regeln bleiben bestehen. Die nachfolgende
+Wappenübersicht wird als visuelle Designreferenz aufgenommen; Abweichungen im generierten Bild sind
+ausdrücklich unten dokumentiert.
+
+Verbindliche Rassen und Klassen
+13 Rassen: Menschen, Tierwesen, Bestien, Drachen, Maschinen, Elfen, Riesen, Dämonen, Engel,
+Vampire, Zwerge, Kobolde, Gargoyls.
+
+8 Klassen: Pirat, Samurai, Zombie, Magier/Hexe, Geist, Bestienbändiger, Demon Slayer, Cyborg.
+
+Jede Rasse und jede Klasse erhält ein festes, wiederverwendbares Wappen. Ein identischer Eintrag muss
+auf jeder Heldenkarte dasselbe Symbol verwenden. Die Rasse beschreibt, was ein Held ist; die Klasse
+bezeichnet seine Rolle. Ein Held besitzt genau eine Rasse und höchstens zwei Klassen.
+
+Bereits bestätigte Symbolmotive
+Mensch: stilisiertes menschliches Gesichtsprofil, ohne Ritterhelm oder Königskrone. Samurai:
+Samurai-Kopf mit Kabuto-Helm. Die übrigen Motive der Übersicht sind Entwürfe zur weiteren Freigabe,
+keine separat bestätigten endgültigen Wappen.
+
+Feste Positionen auf Heldenkarten
+Für Helden gilt das Layout von Sturmklinge Raiden als Vorlage, nicht das separate Königslayout.
+Energiekosten stehen oben links, das Element oben rechts; Rassen- und Klassenwappen erscheinen an
+festen Stellen im linken Bereich. ATK und DEF sowie Lauf- und Angriffsrichtungen stehen im Wertebereich.
+Das Seltenheitswappen steht unten mittig. Helden besitzen DEF, nicht HP.
+
+Elemente und Seltenheit
+7 Elemente: Feuer, Wasser, Erde, Wind, Blitz, Licht, Dunkelheit. 4 Seltenheiten: Gewöhnlich (silber/grau),
+Ungewöhnlich (grün), Selten (blau), Legendär (gold mit Krone). Keine zusätzlichen Elemente oder
+Seltenheitsstufen.
+
+Wichtige Abweichungen im Referenzbild
+Das Bild beschriftet das Element Dunkelheit als „Schatten“ und bezeichnet die sieben abgebildeten
+Elemente irrtümlich als „6 Elemente“. Der legendäre Kristall ist ohne die verbindlich festgelegte Krone
+gezeichnet. Diese Darstellungen ändern das Regelwerk nicht. Maßgeblich sind die oben genannten
+Bezeichnungen und Kennzeichen. Für die endgültige Produktion sind die Wappen einzeln als
+reproduzierbare Originaldateien zu fixieren.
+
+Status: Die Bildübersicht ist als Konzeptreferenz aufgenommen. Noch nicht bestätigte Einzelwappen sind nicht automatisch
+final freigegeben.
+Wappenuebersicht – Designreferenz; Korrekturen und verbindliche Bezeichnungen siehe vorherige Seite.
+FESTE GABENWAPPEN
+Aus dem zuletzt freigegebenen Raiden-Bild extrahiert
+
+
+
+
+                              Mordlust [2]
+                              CT 2 · Nur eigene Battlephase
+
+                              Held hat bis zum Ende des Zuges 500 mehr ATK.
+
+
+
+
+                              Entwaffnen [2]
+                              CT 2 · Nur eigene Battlephase
+
+                              Ein Held in Angriffsreichweite hat bis zum Ende des Spielzugs 500 weniger DEF.
+
+
+
+
+                              Doppelschlag
+                              Permanent · Kein Cooldown
+
+                              Kann zwei Helden in Angriffsrichtung attackieren, der gegnerische König kann
+                              doppelt angegriffen werden.
+
+
+
+
+Wappenregel
+Das Motiv jeder Gabe ist künftig auf jeder Heldenkarte identisch zu verwenden. Diese drei Wappen sind aus Raiden
+übernommen; Poison besitzt ein eigenes Motiv, ist aber noch nicht Teil dieser Drei-Wappen-Freigabe.
+LAYOUTPROTOKOLL UND ABWEICHUNGEN
+
+1 · Raiden
+Letztes freigegebenes Raiden-Bild unverändert eingebunden. Es zeigt bei der Angriffsrichtung vier Pfeile (vorne,
+hinten, links, rechts). Im älteren Raiden-Entwurfsstand stehen hingegen vorne, links, rechts. Keine stillschweigende
+Regeländerung.
+
+
+
+2 · Akuma
+Eingebunden ist das vorhandene Akuma-Bild mit korrigierter permanenter Poison-Kennzeichnung. Zwei Gaben:
+Mordlust [2] und Poison. Akumas Energie 6, ATK 900, DEF 500, Selten und die Bewegung sind nicht abschließend
+freigegebene Balancewerte.
+
+
+
+3 · Poison
+Poison ist eine permanente Gabe ohne Cooldown. Sie vergiftet angegriffene oder angreifende Helden, die nur eine
+weitere Runde bleiben, und wirkt nicht gegen Könige.
+
+
+
+4 · Gaben
+Mordlust, Entwaffnen und Doppelschlag werden nach Originalregelwerk geführt. Doppelschlag ist permanent. Das
+Wiederverwenden der Emblem-Bilddateien ist verpflichtend; bloß ähnliche Neuzeichnungen sind keine identischen
+Wappen.
+
+
+
+5 · Seltenheit
+Die verbindlichen Stufen sind Gewöhnlich, Ungewöhnlich, Selten und Legendär. Es gibt keine fünfte Stufe. Der
+Kristall gehört unten mittig hin. Nicht separat bestätigte Rassen-/Klassenwappen aus der Übersichtsillustration
+bleiben Entwürfe.
+WORLD OF KINGS – REGELWERKSNACHTRAG
+Freigabe durch ausdrückliche Nutzeranweisung vom 26.10.2026. Dieser Nachtrag hat für die hier
+geregelten Punkte Vorrang vor widersprechenden älteren Aussagen in Master-Regelwerk v1.8.
+
+
+1. Neue offizielle Gabe: Blitzschritt [3]
+
+Typ: CT-Gabe    Cooldown: 3 Runden
+
+Wirkung: Der Held kann durch Blitzschritt ein zusätzliches Feld weitergehen. Um einem gegnerischen
+Angriff auszuweichen, kann er stattdessen ein Feld nach links, rechts oder hinten gehen. Das
+Ausweichen funktioniert nicht, wenn das gewählte Zielfeld blockiert ist.
+
+Hinweis zur Auslegung: Die genaue zeitliche Einordnung des zusätzlichen Bewegungsschritts und die
+Frage, ob weitere Bewegungsbeschränkungen gelten, sind nicht ausdrücklich festgelegt und dürfen
+nicht stillschweigend ergänzt werden.
+
+
+2. Bereits bestehende Gaben
+
+Mordlust [2], Entwaffnen [2], Doppelschlag, Poison, Eisenpanzer [5] und Schütze sind bereits im
+Master-Regelwerk enthalten. Ihre offiziellen Regeltexte und Einschränkungen bleiben unverändert. Die
+hochgeladene Gabenwappenübersicht ist eine Designreferenz, keine Ersetzung der Regeltexte.
+
+
+3. Verbindliche Designreferenzen
+
+Sturmklinge Raiden ist die verbindliche Anordnung für Heldenkarten. Die bereitgestellte
+Wappenübersicht dient als visuelle Referenz für Rasse, Klasse, Element und Seltenheit; die
+Gabenwappenübersicht für Gaben. Neue Kartenwerte bleiben bis zur ausdrücklichen Freigabe Entwürfe.
+
+
+4. Dokumentationsstand
+
+Dieser Nachtrag dokumentiert die neue Freigabe, ohne sonstige Regeln zu verändern. Die Bilddateien
+bleiben als gesonderte Originalreferenzen erhalten.
+

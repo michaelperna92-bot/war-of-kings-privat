@@ -1,0 +1,268 @@
+WAR OF KINGS – MASTER-REGELWERK
+ Konsolidierte Fassung · Stand: 29. Oktober 2026 · Maßgeblich sind das hochgeladene Master-Regelwerk und die
+ anschließend ausdrücklich bestätigten Entscheidungen. Ältere widersprechende Formulierungen sind in dieser
+ Fassung ersetzt.
+ 1. Spielziel und Niederlage • Zwei Spieler treten mit je einem König und
+ ihrer Armee gegeneinander an. Ein König mit 0 oder weniger HP verliert;
+ bei gleichzeitigem Erreichen von 0 HP durch beide Könige im selben
+ vollständigen Angriffspaket endet die Partie unentschieden.
+ • Hat ein Spieler gleichzeitig keine Handkarten und keinen Nachziehstapel mehr, verliert er sofort, auch mitten in
+ der Battlephase und vor Konterphase oder Schadensberechnung. Diese sofortige Niederlage wird nicht durch
+ später hypothetisch entstehenden Königsschaden aufgehoben.
+ • Wenn ein regulärer Nachzug bei leerem Stapel scheitert, verliert der eigene König sofort 1.000 HP. Der
+ Ablagestapel wird niemals neu gemischt.
+ 2. Spielfeld • Das verbindliche symmetrische Spielfeld besitzt ein
+ zentrales Schlachtfeld mit Brücke; die offizielle Spielfeldreferenz ist als
+ Bildanlage enthalten.
+ • Jeder König steht auf dem vorgesehenen K-Feld und bleibt dort. Helden werden auf der gesamten eigenen
+ Beschwörungsreihe oder unmittelbar links und rechts des eigenen Königs beschworen.
+ • Nur die zwei Felder direkt links und rechts eines Königs sind Königliche-Wache-Felder: Gegner dürfen sie nicht
+ betreten oder besetzen, können dort stehende Verteidiger jedoch angreifen. Andere Beschwörungsfelder sind
+ nicht geschützt.
+ 3. Deckbau, Spielbeginn und Hand • Jedes Deck umfasst genau 40
+ Karten, darunter genau einen König. Die übrigen 39 Karten werden
+ gemischt. Jeder Spieler zieht fünf Starthandkarten; ein Münzwurf
+ bestimmt den Startspieler.
+ • Zu Beginn jedes eigenen Zuges wird genau eine Karte gezogen, auch im allerersten Zug des Startspielers.
+ • Maximal zehn Handkarten: Kommt eine elfte hinzu, muss der Besitzer sofort eine selbst gewählte Handkarte auf
+ seinen Ablagestapel legen.
+ • Identische Karten je Seltenheit: Gewöhnlich höchstens 3, Ungewöhnlich 3, Selten 2, Legendär 1 (Festlegung des Entwicklers vom 30.10.2026; vorher Gewöhnlich 4). Verschiedene legendäre Karten sind unbegrenzt erlaubt, jede nur einmal.
+ • Angriffe treffen nur unmittelbar angrenzende Felder; weiter (2 Felder) nur mit der Gabe Schütze (Festlegung vom 30.10.2026).
+ 4. Könige • Könige besitzen ATK und 10.000–20.000 HP, jedoch keine
+ DEF. Sie können sich nicht bewegen.
+ • Ein König kann pro eigener Battlephase höchstens einmal angreifen: ein Feld gerade nach vorn oder diagonal
+ nach vorn links/rechts.
+ • Ein gültiger Treffer gegen einen König zieht die wirksame ATK von seinen HP ab.
+ • Jeder König kann höchstens drei königliche Gaben besitzen. Die bisher bestätigten Gaben heißen Gebot der
+ Krone, Zorn des Imperators und Ewiges Bollwerk.
+ • Gebot der Krone reduziert die Energiekosten passender eigener Monster entsprechend dem jeweiligen
+ Kartentext (z. B. um 1 oder 2), niemals unter 0. Zorn des Imperators verleiht passenden eigenen Monstern +100
+ ATK, Ewiges Bollwerk +200 DEF.
+ • Blitzkrieg (Festlegung des Entwicklers vom 30.10.2026): senkt die Energiekosten jedes passenden eigenen
+ Monsters um den eingestellten Wert (1–3), niemals unter 0. Wirkt für alle eigenen Monster oder nur für eine
+ Rasse, Klasse oder ein Element. Bei Zorn des Imperators und Ewiges Bollwerk ist die Stärke einstellbar (100–1.000).
+ • Die drei genannten Königsgaben wirken permanent, ohne Energie oder Cooldown. Eine Gabe kann laut
+ Kartentext auf bestimmte Rassen, Klassen oder Elemente beschränkt sein; ohne solche Einschränkung gilt sie für
+ passende eigene Monster allgemein. Aktivierbare Königsgaben sind nur zulässig, wenn ein ausdrücklich
+ bestätigter Kartentext die jeweilige Battle- oder Konterphase erlaubt; derzeit wird dadurch keine zusätzliche
+ Gabe erfunden.
+ 5. Energie und Beschwörung • Im ersten eigenen Zug stehen 1 Energie,
+ im zweiten 2 usw. bis maximal 10 zur Verfügung. Der Vorrat wird zu
+ Beginn jedes eigenen Zuges aufgefüllt; unverbrauchte Energie verfällt
+ am Zugende.
+ • Beschwörungen sowie Zauber und Flüche kosten die auf der Karte ausgewiesene Energie. Gaben kosten keine
+ Energie.
+ • Mehrere anwendbare Kostenreduzierungen addieren sich. Kosten können 0, aber niemals negativ werden. Auch
+ kostenlose Beschwörungen müssen sämtliche normalen Karten-, Feld- und Phasenbedingungen erfüllen.
+ • In beiden Beschwörungsphasen dürfen beliebig viele Helden beschworen werden, soweit Energie, Handkarten,
+ freie Felder und Kartenbedingungen dies erlauben. Beschwörung ist freiwillig.
+ • Neu beschworene Helden dürfen bis zum nächsten eigenen Zug weder ziehen noch angreifen oder aktivierbare
+ Gaben einsetzen. Permanente Gaben wirken sofort. Ansturm hebt die Beschwörungssperre auf, nicht die
+ Phasenreihenfolge.
+ 6. Zugablauf und Kampfphasen • Vorbereitung: Karte ziehen
+ beziehungsweise den Verlust durch fehlenden Nachzug abwickeln;
+ Energie auffüllen und fällige Cooldowns sowie Dauerabläufe zu
+ Zugbeginn bearbeiten.
+ • Erste Beschwörungsphase: freiwillig Monster beschwören.
+ • Bewegungsphase: bewegungsberechtigte Helden bewegen.
+ • Battlephase des aktiven Spielers: alle Angriffe und Ziele festlegen, erlaubte Zauber und Flüche ausspielen,
+ aktivierbare Heldengaben und dafür geeignete Königsgaben nutzen; anschließend die Battlephase verbindlich
+ abschließen.
+ • Einmalige Konterphase des Verteidigers für die gesamte Battlephase: zulässige Zauber, Flüche und
+ gegebenenfalls dafür geeignete Königsgaben ausspielen oder passen. Aktivierbare Heldengaben sind hier
+ verboten; der Angreifer kann nicht erneut reagieren.
+ • Nach Abschluss der Konterphase: die gespielten Zauber und Flüche gemeinsam auswerten, Neutralisierungen
+ und relevante Effekte berücksichtigen, danach alle noch gültigen Angriffe gleichzeitig berechnen und die Folgen
+ anwenden.
+ • Nachbeschwörungsphase des aktiven Spielers: mit verbleibender Energie weitere Monster beschwören. Danach
+ Zugende.
+ • Eine sofortige Niederlage, insbesondere bei gleichzeitig leerer Hand und leerem Stapel, unterbricht die Phasen
+ vor ihrer noch ausstehenden Auswertung.
+ 7. Bewegung und Angriff • Jeder Held hat seine eigenen erlaubten
+ Bewegungsrichtungen und 1–3 Bewegungsschritte. Bei mehreren
+ Schritten darf die Richtung zwischen erlaubten Richtungen gewechselt
+ werden. Besetzte Felder dürfen ohne ausdrückliche Ausnahme weder
+ betreten noch durchquert werden.
+ • Bewegungsmuster und Angriffsmuster sind unabhängig. Grundsätzlich höchstens ein Angriff pro Held in der
+ eigenen Battlephase, außer eine bestätigte Gabe erlaubt mehr.
+ • Alle nach der Konterphase gültigen Angriffe werden gleichzeitig berechnet. Ein Monster, das bereits durch zuvor
+ wirksame Zauber/Flüche besiegt wurde, kann nicht mehr angreifen.
+ • Jeder Angriff gegen einen Helden wird unabhängig berechnet: ATK > DEF: Verteidiger stirbt; ATK < DEF:
+ Angreifer stirbt; ATK = DEF: beide sterben. Dies gilt auch für Fernkampf. Mehrere Angreifer addieren ihre ATK
+ nicht; die DEF des Ziels wird für jeden Vergleich separat verwendet. Ein besiegtes Monster wird höchstens einmal
+ entfernt.
+ • Mehrere ATK-/DEF-Boni und -Abzüge addieren sich; die effektive DEF ist mindestens 0. Ein passendes Merkmal
+ reicht für einen entsprechend eingeschränkten Effekt aus.
+ • Bei Doppelschlag werden beide gewählten Angriffe gleichzeitig ausgewertet, selbst wenn der Angreifer durch
+ einen der Vergleiche stirbt. Gegen einen König werden beide Treffer gleichzeitig verrechnet. Das vollständige
+ Angriffspaket wird vor der Feststellung eines HP-bedingten Sieges ausgewertet.
+ 8. Zauber, Flüche, Dauer und Neutralisierung • Zauber und Flüche
+ dürfen nur in der eigenen Battlephase oder eigenen Konterphase
+ eingesetzt werden, soweit Energie und Kartentext dies zulassen. Der
+ Verteidiger hat nur eine Konterphase.
+ • Alle in diesen Phasen ausgespielten Zauber und Flüche werden erst nach Abschluss der Konterphase
+ gemeinsam ausgewertet. Eine ausdrücklich ausgespielte Neutralisierung hebt ihren betroffenen Zauber auf.
+ Beide Karten sind verbraucht und ihre Energiekosten bleiben bezahlt.
+ • Die Dauer bestimmt der Kartentext. 'Bis zum Ende des Zuges' endet am Zugende; fehlt eine Befristung, ist die
+ Wirkung permanent. Sonstige ausdrücklich angegebene Fristen gelten entsprechend.
+ • Permanente Einzelziel-Effekte werden am betroffenen Monster geführt und enden, wenn das Monster das
+ Spielfeld verlässt oder die Wirkung entfernt wird. Monster und an ihm angebrachte Karten gelangen bei dessen
+ Tod jeweils auf die Ablagestapel ihrer Besitzer. Wird nur eine ausgerüstete Karte zerstört, bleibt das Monster
+ bestehen.
+ • Pro Monster sind beliebig viele unterschiedliche permanente Zauber/Flüche zulässig, aber nicht zwei identische
+ permanente Karten gleichzeitig.
+ • Permanente Flächeneffekte bleiben unabhängig vom Tod einzelner betroffener Monster bestehen und erfassen
+ später neu beschworene passende Monster. Eine gezielte Neutralisierung kann ein Monster dauerhaft von genau
+ diesem noch bestehenden Flächeneffekt ausnehmen. Eine Neutralisierung des gesamten Flächenzaubers
+ beendet sämtliche Wirkungen dieses Flächenzaubers.
+ • Könige sind nur dann Ziel von Zaubern/Flüchen, wenn der jeweilige Kartentext sie ausdrücklich einschließt.
+ • Online-Anzeige: Ein betroffenes Monster zeigt höchstens ein Zauber- und ein Fluchsymbol, auch bei mehreren
+ Effekten derselben Kategorie. Hover/Tippen zeigt sämtliche tatsächlich aktiven Effekte und deren Laufzeiten;
+ Anzeigen werden dynamisch aktualisiert.
+ 9. Helden-Gaben – allgemeine Regeln • Ein Held besitzt 0–3 Gaben.
+ Aktivierbare Heldengaben sind ausschließlich in der eigenen Battlephase
+ zulässig, kosten 0 Energie und besitzen den jeweiligen Cooldown (CT).
+ • CT sinkt zu Beginn jedes folgenden eigenen Zuges um 1. Bei CT 0 ist die Gabe wieder verwendbar. Permanente
+ Gaben wirken automatisch ohne CT und Energiekosten.
+ • Bei Effekten mit der Dauer 'zwei Runden' endet die Wirkung zu Beginn des zweiten folgenden eigenen Zuges
+ des Anwenders.
+ 10. Verbindliche Heldengaben Mordlust · CT 2 – +500 ATK bis zum
+ Zugende.
+ Entwaffnen · CT 2 – Ein gegnerischer Held in Angriffsreichweite erhält −500 DEF bis zum Zugende.
+ Eisenpanzer · CT 5 – +300 DEF für zwei Runden.
+ Tausch · CT 4 – Positionstausch mit einer eigenen Armeekarte. Zulässig, wenn beide Zielfelder gültig sind und
+ keine ausdrückliche Feldsperre verletzt wird; normale Bewegungsschritte/-richtungen sind hierfür nicht
+ erforderlich. Ein gefesselter Held darf an keinem Tausch beteiligt sein.
+ Blitzschritt · CT 3 – Ein zusätzliches Feld in erlaubter Bewegungsrichtung in der eigenen Battlephase; danach
+ regulärer Angriff, sofern noch angriffsberechtigt.
+ Rückzug · CT 4 – In der eigenen Battlephase ein beliebiges eigenes oder gegnerisches Monster einschließlich des
+ Anwenders wählen. Nach der gemeinsamen Schadensberechnung zieht es ein Feld gerade in Richtung seiner
+ eigenen Spielfeldseite zurück, auch ohne eigenen Angriff; nur wenn es noch lebt und das Feld existiert und frei
+ ist.
+ Heilung · CT 3 – Entfernt sämtliche negativen Effekte von einer eigenen oder verbündeten Karte einschließlich
+ des Anwenders; entfernt auch Poison und verhindert dessen späteren Gifttod.
+ Fesseln · CT 4 – Ein gegnerischer Held ist zwei Runden bewegungsunfähig; Angriffe und Gaben bleiben zulässig.
+ Durchbruch · CT 4 – Ein Held zwei Felder entfernt kann in einer erlaubten Angriffsrichtung angegriffen werden.
+ Doppelschlag · permanent – Wahlweise einen oder zwei gültige gegnerische Helden in Angriffsrichtung angreifen;
+ gegen einen König zwei Treffer. Alle gewählten Treffer gelten gleichzeitig.
+ Poison · permanent – Angreifende oder angegriffene gegnerische Helden können vergiftet werden; niemals
+ Könige. Details im folgenden Abschnitt.
+ Göttlicher Segen · permanent – Negative Effekte, darunter ATK-/DEF-Senkungen, Poison und Einfrieren, werden
+ vollständig abgewehrt und nicht angelegt.
+ Ansturm · permanent – Hebt die Beschwörungssperre auf.
+ 11. Poison – abschließend bestätigte Sonderregeln • Ein Held kann nur
+ einmal gleichzeitig vergiftet sein. Eine erneute Poison-Auslösung
+ erzeugt weder einen zweiten Giftstatus noch eine verlängerte oder neu
+ gestartete Frist.
+ • Ein vergifteter Held stirbt zu Beginn des nächsten eigenen Zuges des Besitzers des Poison-Helden, der die
+ Vergiftung verursacht hat, sofern Poison bis dahin nicht entfernt wurde.
+ • Eine bereits übertragene Vergiftung bleibt auch dann bestehen, wenn der verursachende Poison-Held im selben
+ oder einem späteren Kampf stirbt.
+ • Wenn beide beteiligten Helden in derselben Kampfberechnung sterben, muss der bereits besiegte Held nicht
+ zusätzlich vergiftet werden. Überlebt der Gegner dagegen, bleibt die übertragene Vergiftung bestehen, auch bei
+ gleichzeitigem Tod des Giftträgers.
+ • Heilung entfernt Poison; Göttlicher Segen verhindert die Übertragung vollständig. Könige sind von Poison
+ ausgenommen.
+ 12. Rassen, Klassen, Elemente und Seltenheiten • Je Karte sind bis zu
+ zwei Rassen, zwei Klassen und zwei Elemente möglich.
+ • 13 Rassen: Mensch, Tierwesen, Bestien, Drachen, Maschinen, Elfen, Riesen, Dämonen, Engel, Vampire, Zwerge,
+ Kobolde, Gargoyls.
+ • 11 Klassen: Pirat, Samurai, Zombie, Magier/Hexe, Geist, Bestienbändiger, Demon Slayer, Cyborg, Tüftler,
+ Krieger, Ritter.
+ • 7 Elemente: Feuer, Wasser, Wind, Erde, Licht, Dunkelheit, Blitz.
+ • Vier Seltenheiten: Gewöhnlich, Ungewöhnlich, Selten, Legendär. Die Seltenheit steht auf jeder Karte unten
+ mittig.
+ 13. Aufhebbarkeit und widersprüchliche Karteneffekte
+ • Grundsätzlich kann ein Karteneffekt durch einen anderen ausdrücklich dafür geeigneten Effekt aufgehoben
+ werden. Eine Ausnahme gilt, wenn der zu schützende Kartentext ausdrücklich bestimmt, dass die Wirkung nicht
+ durch andere Effekte aufgehoben werden kann.
+ • „Permanent“ bedeutet zeitlich unbefristet, nicht automatisch unaufhebbar. Eine bloß andere Wirkung
+ (beispielsweise ein ATK-Bonus gegenüber einer Bewegungsblockade) neutralisiert keinen Effekt ohne
+ entsprechende Aufhebungswirkung.
+ • Zauber und Flüche werden weiterhin nach der einzigen Konterphase gemeinsam ausgewertet. Ausdrückliche
+ Neutralisierungen gelten im Rahmen der Kartentexte; ausgegebene Energie wird nicht zurückerstattet.
+ • Für einen Widerspruch zwischen zwei Kartentexten, die keine geeignete Aufhebung oder ausdrückliche
+ Vorrangregel enthalten, wurde keine zusätzliche allgemeine Prioritätsreihenfolge festgelegt.
+ 14. Geltungsbereich und technische Umsetzung
+ • Dieses Master-Regelwerk beschreibt die verbindlichen Spielregeln der War-of-Kings Spiel-App. Die
+ Kartenbewertung und sämtliche Berechnungen zur Kartenbalance gehören ausschließlich zur separaten
+ Kartenwerkstatt-App und sind kein Bestandteil dieses Spielregelwerks.
+ • Das offizielle Spielfeld ist als Bildanlage beigefügt. Seine Koordinaten, Felder und Richtungen sind bei der
+ technischen Umsetzung unverändert aus der offiziellen Referenz zu übernehmen.
+ • Es werden keine neuen Königsgaben, Klassen, Rassen, Elemente oder Karteneffekte durch technische
+ Auslegung ergänzt.
+15. Bestätigte Ergänzungen – War of Kings
+Dieser Nachtrag konsolidiert die nach der Masterfassung ausdrücklich bestätigten Entscheidungen. Er hat bei
+Widersprüchen Vorrang vor älteren Formulierungen. Die Abschnitte 1–14 bleiben ansonsten inhaltlich unverändert. Der
+offizielle Spielfeldplan bleibt als Originalbild erhalten.
+15.1 Verbindliche Aktionen und Angriffsplanung
+In der eigenen Battlephase dürfen bereits festgelegte Angriffe und ihre Ziele bis zum verbindlichen Abschluss dieser
+Battlephase geändert werden. Danach sind sie gesperrt. Bestätigte Zauber und Flüche sowie aktivierte Gaben sind
+dagegen sofort verbindlich und können nicht zurückgenommen werden. Bereits gezahlte Energie wird nicht erstattet;
+ausgelöste Cooldowns bleiben bestehen. Zauber und Flüche werden ungeachtet ihrer verbindlichen Ausspielung erst
+nach der einzigen Konterphase gemeinsam ausgewertet, wie in Abschnitt 8 geregelt. Nach Abschluss der Battlephase
+sind keine Änderungen an Angriffen und Zielen mehr zulässig.
+15.2 Zugbeginn: Dauerabläufe vor Poison
+Wenn zu Zugbeginn mehrere Vorgänge fällig sind, enden zunächst sämtliche zu diesem Zeitpunkt ablaufenden
+Dauerwirkungen. Anschließend werden Poison und weitere fällige Auswirkungen geprüft. Eine während der eigenen
+Battlephase aktivierbare Heilung kann einen bereits zu Zugbeginn fälligen Gifttod nicht nachträglich verhindern. Bereits
+vor diesem Zeitpunkt entfernte Vergiftungen lösen keinen Tod aus. Die genauen Prioritäten zwischen anderen, nicht
+ausdrücklich geregelten konkurrierenden Effekten bleiben offen; es wird keine allgemeine Vorrangregel erfunden.
+15.3 Gleichzeitig fällige Poison-Todesfälle
+Alle zum selben Zugbeginn fälligen Poison-Todesfälle werden gemeinsam festgestellt und die betroffenen Helden
+gleichzeitig entfernt. Die Prüfung darf nicht von der zufälligen Reihenfolge gespeicherter Karten abhängen. Die bereits
+in Abschnitt 11 bestätigten Sonderregeln gelten unverändert: Poison wird nicht gestapelt oder zeitlich zurückgesetzt,
+überdauert den Tod des verursachenden Helden, kann durch Heilung entfernt werden und betrifft keine Könige.
+15.4 Permanente Gaben und ihre Quellen
+Ein laufender Bonus aus einer permanenten Heldengabe endet, sobald der Held stirbt, von dem diese Gabe stammt.
+Die Wirkung ist quellengebunden; der Bonus wird nicht dauerhaft in die Grundwerte der begünstigten Karten
+eingerechnet. Ausdrücklich bereits ausgelöste eigenständige Wirkungen, insbesondere ein bereits übertragener
+Poison-Status, bleiben nach den dafür geltenden Sonderregeln bestehen. Permanente Einzelziel-Zauber und -Flüche
+sowie permanente Flächeneffekte folgen weiterhin Abschnitt 8; insbesondere endet ein permanenter Flächeneffekt
+nicht durch den Tod eines lediglich betroffenen Monsters. Königsgaben gelten, solange ihre Königsquelle wirksam im
+Spiel ist; bei Königstod greifen die Niederlagebedingungen.
+15.5 Simultane Angriffe und Niederlagebedingungen
+Die neue gemeinsame Poison-Verarbeitung ändert nicht die Kampfregeln aus Abschnitt 7. Alle nach der Konterphase
+noch gültigen Angriffe werden gleichzeitig berechnet. Die ausdrücklich geregelte Unentschieden-Bedingung bei
+gleichzeitigem Königstod innerhalb desselben vollständigen Angriffspakets wird nicht ohne ausdrückliche Freigabe auf
+andere Niederlagekonstellationen übertragen. Poison selbst kann Könige nicht treffen.
+15.6 Offizielle digitale Spielfeldstruktur – bestätigte Feldanordnung
+Die bestätigte schematische Zuordnung umfasst 39 Felder. Spalten A–G verlaufen von links nach rechts; Reihen 1–7
+von oben nach unten: Reihe 1 = C1, D1 (K), E1; Reihen 2 und 3 = A–G; Reihe 4 = B4–F4; Reihen 5 und 6 = A–G; Reihe
+7 = C7, D7 (K), E7. Das ergibt 3 + 14 + 5 + 14 + 3 = 39 Felder. Diese Koordinaten sind eine technische Benennung der
+bestätigten Anordnung, keine Veränderung der Originalgrafik. Die exakten Bewegungsverbindungen an den
+Übergängen und die Bedeutung der Brückenverbindung sind noch nicht abschließend bestätigt; sie dürfen nicht frei
+ergänzt werden.
+15.7 Interne digitale Testversion – technische Projektfestlegungen
+Die interne Spiel-App verwendet genau zwei vom Entwickler bereitgestellte Decks A und B mit je 40 Karten. In jeder
+Partie werden A und B den zwei Seiten zufällig zugewiesen; es wird stets A gegen B gespielt, auch gegen die KI. Die
+privaten Deckdaten werden ausschließlich über eine geschützte Entwickler-/Administrationsfunktion importiert. Die
+Testversion enthält weder öffentliche Kartenwerkstatt noch Deckbau, Packs, Punkte oder Sammlung. Geplant sind
+Onlinepartien zwischen Menschen, private Partien, internes Matchmaking und drei KI-Schwierigkeitsgrade. Diese
+Produktfestlegungen verändern die eigentlichen Karten- und Kampfregeln nicht.
+Online gilt: 120 Sekunden für den eigenen Zug; während der gegnerischen Konterphase pausiert dieser Zuguhr. Für die
+Konterphase stehen gesondert 120 Sekunden zur Verfügung. Nach Zeitablauf endet die aktuelle Phase automatisch;
+bereits bestätigte Angriffe werden beim Abschluss übernommen, nicht bestätigte Aktionen werden nicht erfunden. Bei
+Verbindungsabbruch läuft die aktive Uhr weiter. Es gilt eine Wiederverbindungsfrist von 120 Sekunden ab Abbruch;
+nach deren Ablauf verliert der weiterhin getrennte Spieler. Endet eine Phase während seiner Abwesenheit, wartet die
+Partie auf die Wiederverbindung, statt unkontrolliert weitere Züge abzuwickeln. Die Wiederverbindungsfrist läuft dabei
+weiter.
+15.8 Nicht bestätigte technische Grenzfälle
+Noch nicht ausdrücklich bestätigt ist, ob bei Tod einer Quelle durch einen vor dem Schadensschritt wirksamen
+Kontereffekt sämtliche bereits deklarierten Angriffe zwingend mit neu berechneten ATK-/DEF-Werten abgewickelt
+werden oder ob in bestimmten Fällen ein Werte-Snapshot gilt. Ebenso sind nicht sämtliche Übergangsverbindungen
+des Spielfelds und nicht jede Priorität denkbarer zukünftiger Kartenwirkungen festgelegt. Diese Punkte dürfen nicht
+durch stillschweigende Annahmen ersetzt werden.
+Namenskorrektur: Der verbindliche Spielname lautet WAR OF KINGS (nicht World of Kings). Die historischen
+Quelldateinamen bleiben zur Nachvollziehbarkeit unverändert.
+
+SPIELFELD (technisch): Spalten A–G, Reihen 1–7. Reihe 1: C1, D1 (König oben), E1. Reihen 2–3: A–G. Reihe 4: B4–F4. Reihen 5–6: A–G. Reihe 7: C7, D7 (König unten), E7. Beschworen wird auf der ganzen Reihe vor dem eigenen König (Reihe 6 bzw. 2) und auf den beiden Feldern neben dem König.
+ERGÄNZUNG DER KARTENWERKSTATT (noch nicht im Regelwerk): Gabe „Schütze“ (permanent): Der Held kann gezielt gegnerische Ziele angreifen, die zwei Felder weiter weg sind.
+
+Starter-Set und Packs (Festlegung des Entwicklers vom 30.10.2026):
+- Jeder Spieler startet mit dem gleichen Starter-Set: hoechstens 50 Karten, Kopien zaehlen mit. Alle anderen Karten gibt es nur aus Packs.
+- Pro Pack: Legendaere Helden, Zauber und Flueche zusammen 3 % - sicher nach 50 Packs ohne; legendaere Koenige 0,5 % - sicher nach 150 Packs ohne.
+  Zwei getrennte Zaehler; ein Zaehler springt auf 0, sobald eine Karte seiner Gruppe gezogen wird. Ein 12er-Pack zaehlt als 1 Pack.
+- Seltene Karten: 40 % eine, 5 % zwei. Der Rest Gewoehnlich und Ungewoehnlich.
+- Doppelte gegen Gold: Legendaer 1500, Selten 100, Ungewoehnlich 2, Gewoehnlich 1.
+- Werkstatt-Annahmen (aenderbar): Gewoehnlich : Ungewoehnlich = 70 : 30; 12er-Pack mit gleichen Chancen wie 7er; doppelt = mehr als das Deck-Limit (3/3/2/1, Koenig 1); Starter-Karten werden nicht getauscht.

@@ -1,0 +1,7 @@
+node_modules/
+test/*.png
+test/out_*
+release/
+desktop/app/index.html
+dist/test.html
+*.bak.js

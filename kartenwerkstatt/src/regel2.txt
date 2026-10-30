@@ -1,0 +1,462 @@
+ WORLD OF KINGS
+ Master-Regelwerk – Spielregeln und Balance-System
+ Ohne Kartenbilder, Layouts oder Layoutprotokolle.
+ Stand: 27. Oktober 2026 · Bestätigte Ergänzungen aus dem Gespräch integriert. Die originale Master-Datei
+ bleibt
+ unverändert.
+ Quellen: bisherige konsolidierte WoK-Regelwerks-Arbeitsfassung, aktuelle Bestätigungen, „WoK Helden Layout
+ mit
+ König“ und Power-Scaling V1.5 (Entwurf). Die Referenzseiten sind an den passenden Abschnitten eingefügt.
+
+
+ 1. Spielziel
+ Zwei Spieler treten mit ihren Königen und Armeen gegeneinander an. Sobald ein König 0 HP erreicht,
+ endet das Spiel sofort; sein Spieler verliert. Nach dem Spielende ist keine weitere Ablage der
+ Königsausrüstung erforderlich.
+
+
+ 2. Spielfeld
+ Das Spielfeld entspricht der freigegebenen symmetrischen Spielfeldreferenz mit zentralem Schlachtfeld
+ und Brücke. Jeder König steht fest auf K und kann sich nicht bewegen. Helden werden auf der gesamten
+ eigenen Beschwörungsreihe sowie unmittelbar links und rechts des eigenen Königs beschworen.
+ Königliche Wache: Nur die beiden Felder direkt links und rechts des Königs sind geschützt. Gegner
+ dürfen sie nicht betreten oder besetzen, wohl aber die dortigen Verteidiger angreifen und besiegen.
+ Andere Beschwörungsfelder sind nicht geschützt.
+
+
+ 3. Deck und Spielbeginn
+ Jedes Deck umfasst genau 40 Karten einschließlich genau eines Königs. König platzieren, die übrigen 39
+ Karten mischen, fünf Starthandkarten ziehen, Startspieler per Münzwurf bestimmen. Zu Beginn jedes
+ eigenen Zuges – auch des ersten – genau eine Karte ziehen. Ist der Nachziehstapel leer, den
+ Ablagestapel mischen und als neuen Nachziehstapel verwenden.
+ Seltenheit Höchstzahl identischer Karten
+ Gewöhnlich 4 Exemplare
+ Ungewöhnlich 3 Exemplare
+ Selten 2 Exemplare
+ Legendär 1 Exemplar
+ Die Grenzen gelten nur für identische Karten. Beliebig viele verschiedene Karten derselben Seltenheit
+ sind innerhalb des 40-Karten-Decks erlaubt. Genau ein König bleibt Pflicht.
+
+
+ 4. Handkartenlimit
+ Ein Spieler darf höchstens 7 Handkarten besitzen. Sobald eine achte Handkarte hinzukommt, legt er
+ sofort eine selbst gewählte Handkarte auf seinen Ablagestapel. Die Karte wird nicht zufällig bestimmt.
+ 1
+
+
+ 5. Könige
+ Könige besitzen ATK und HP, aber keine DEF. Die HP liegen je nach König zwischen 10.000 und 20.000.
+ Könige bewegen sich nicht. Alle Könige können genau ein Feld gerade nach vorne, diagonal nach
+
+
+World of Kings · Spielregeln und Balance-System                                                               1
+SPIELFELD · OFFIZIELLE REFERENZ
+
+
+
+
+Spielfeldreferenz zum Abschnitt 2: Beschwoerungsfelder, Koenigsfelder und Bruecke.
+ vorne links und diagonal nach vorne rechts angreifen. Diese drei Angriffsrichtungen gelten
+ für jeden König. Erfolgreiche Angriffe reduzieren die HP um die wirksame ATK nach der
+ Konterphase. König Tharion wird nicht als Kartenreferenz aufgeführt.
+
+
+ 6. Energie
+ Im ersten eigenen Zug 1 Energie, danach pro eigenem Zug +1 bis maximal 10. Zu Beginn jedes
+ eigenen Zuges wird der verfügbare Vorrat aufgefüllt. Nicht verwendete Energie verfällt am Zugende.
+ Keine Energiekarten. Beschwörungen, Gaben und Zauber/Flüche nutzen denselben Vorrat.
+
+
+ 7. Zugablauf
+ • Vorbereitung: eine Karte ziehen und Energie auffüllen.
+ • Phase 1 – Beschwörung: beliebig viele Helden, soweit Restenergie und Bedingungen reichen.
+ • Phase 2 – Bewegung: bewegungsberechtigte Helden bewegen.
+ • Phase 3 – Battlephase: Angriffe erklären, erlaubte Zauber, Flüche und Gaben nutzen.
+ • Phase 4 – Konterphase: nur der Verteidiger handelt mit zulässigen Gegenmaßnahmen; der Angreifer
+ handelt nicht.
+ • Phase 5 – Angriffe auflösen; anschließend Nachbeschwörung: beliebig viele Helden, solange
+ Restenergie vorhanden ist.
+ • Phase 6 – Zugende.
+ Beide Beschwörungsphasen verwenden denselben Energievorrat. Es gibt kein Limit für die Anzahl
+ beschworener Helden außer Energie, freien Feldern und Kartenbedingungen.
+
+
+ 8. Beschwörungssperre
+ Frisch beschworene Helden dürfen bis zum nächsten eigenen Zug nicht bewegen, angreifen oder
+ aktivierbare Gaben nutzen. Permanente Gaben wirken sofort. Ansturm (permanent) hebt die
+ Beschwörungssperre auf, nicht jedoch die Zugphasen-Reihenfolge.
+
+
+ 9. Bewegung
+ Jeder Held besitzt eigene Bewegungsrichtungen und 1–3 Bewegungsschritte. Er darf bei mehreren
+ Schritten zwischen erlaubten Richtungen wechseln. Besetzte Felder dürfen nicht betreten oder
+ durchquert werden, außer eine ausdrückliche Gabe erlaubt es. Gegner dürfen Königliche-Wache-Felder
+ nicht betreten. Bewegung und Angriff sind voneinander getrennte Muster.
+
+
+ 10. Kampf
+ Grundsätzlich ein Angriff pro Held und eigener Battlephase, sofern keine ausdrückliche Ausnahme
+ vorliegt. Das gedruckte Angriffsmuster entscheidet die erreichbaren Ziele. Sowohl im Nah- als auch
+ Fernkampf gilt nach der Konterphase:
+ 2
+ Vergleich Folge
+ ATK > DEF Verteidiger stirbt
+ ATK < DEF Angreifer stirbt
+ ATK = DEF Beide sterben
+ Auch ein Fernkampfangreifer kann sterben. Bei Königen wird stattdessen die wirksame ATK direkt von
+ HP abgezogen.
+
+
+
+
+World of Kings · Spielregeln und Balance-System                                                       2
+ 11. Zauber und Flüche
+ Einsatz: Nur während der eigenen Battlephase beim Angreifen oder der eigenen Konterphase beim
+ Verteidigen. Beliebig viele Karten pro erlaubter Phase, sofern die Energie und jeweiligen Bedingungen
+ reichen. Der Angreifer darf während der gegnerischen Konterphase nicht handeln.
+ Dauer: Der Kartentext entscheidet. Mit „Permanent“ gekennzeichnete Karten bleiben bis zur Zerstörung
+ oder bis zum Verlassen des Spielfelds durch das ausgerüstete Monster wirksam. Andere Effekte enden
+ nach Kartentext; es gibt keine pauschale Sofort-Ablage aller Zauber/Flüche.
+ Ausrüstung: Beliebig viele unterschiedliche permanente Zauber und Flüche pro Monster; jede
+ identische permanente Karte höchstens einmal gleichzeitig auf demselben Monster. Energie und
+ Kartenbedingungen gelten weiter.
+ Monster stirbt: Monster und alle daran ausgerüsteten Zauber/Flüche gehen auf die jeweiligen
+ Ablagestapel ihrer Besitzer; Wirkungen enden. Permanente Karte wird zerstört: Wirkung endet sofort;
+ die Karte geht auf den Ablagestapel ihres Besitzers; das Monster bleibt, wenn es nicht selbst zerstört
+ wurde.
+ Könige: Ein Zauber oder Fluch darf einen König ausschließlich dann betreffen, wenn der Kartentext dies
+ ausdrücklich erlaubt. Das gilt für permanente und nicht permanente Karten.
+
+
+ 12. Gaben
+ Helden besitzen 0–3 Gaben. Aktivierbare Gaben haben Kosten und Cooldown (CT); CT sinkt in jedem
+ folgenden eigenen Zug um 1, bei 0 erneut verwendbar. Permanente Gaben gelten sofort, ohne
+ Cooldown, sofern nicht ausdrücklich blockiert.
+ Gabe Bestätigte Wirkung
+ Mordlust [2], CT 2 +500 ATK bis Zugende; nur eigene
+ Battlephase.
+ Entwaffnen [2], CT 2 Held in Angriffsreichweite −500 DEF bis
+ Zugende; nur eigene Battlephase.
+ Doppelschlag, Permanent Zwei Helden in Angriffsrichtung attackierbar;
+ König kann zweimal angegriffen werden.
+ Poison, Permanent Angegriffene oder angreifende Helden
+ vergiftet; bleiben eine weitere Runde; nicht
+ gegen Könige.
+ Eisenpanzer [5], CT 5 +300 DEF für zwei Runden; Battle- oder
+ Konterphase.
+ 3
+ Blitzschritt [3], CT 3 Zusätzlicher Schritt oder ein
+ Rückwärtsschritt zum Ausweichen; Zielfeld
+ frei.
+ Rückzug [4], CT 4 Ein Rückwärtsschritt zum Ausweichen;
+ Zielfeld frei.
+ Tausch [4], CT 4 Positionstausch mit einer Karte der eigenen
+ Armee; Battle- oder Konterphase.
+ Göttlicher Segen, Permanent Schutz gegen negative Effekte inkl.
+ ATK-/DEF-Reduktion, Poison, Einfrieren.
+
+
+
+World of Kings · Spielregeln und Balance-System                                                           3
+ Heilung [3], CT 3 Hälfte der negativen Effekte eines
+ Verbündeten entfernen; eigene
+ Battle-/Konterphase.
+ Fesseln [4], CT 4 Gegnerischer Held zwei Runden
+ bewegungsunfähig, kann angreifen/Gaben
+ nutzen.
+ Durchbruch [4], CT 4 Held zwei Felder in Angriffsrichtung
+ attackierbar; eigene Battlephase.
+ Ansturm, Permanent Hebt Beschwörungssperre auf.
+
+
+ 13. Rassen, Klassen und Elemente
+ Je Karte bis zu zwei Rassen, zwei Klassen und zwei Elemente.
+ 13 Rassen: Mensch, Tierwesen, Bestien, Drachen, Maschinen, Elfen, Riesen, Dämonen, Engel, Vampire,
+ Zwerge, Kobolde, Gargoyls.
+ 11 Klassen: Pirat, Samurai, Zombie, Magier / Hexe, Geist, Bestienbändiger, Demon Slayer, Cyborg,
+ Tüftler, Krieger, Ritter.
+ 7 Elemente: Feuer, Wasser, Wind, Erde, Licht, Dunkelheit, Blitz. Die ältere Überschrift „6 Elemente“ ist
+ ein Referenzfehler.
+
+
+ 14. Seltenheiten
+ Es gibt ausschließlich vier Seltenheiten: Gewöhnlich (Silber/Grau), Ungewöhnlich (Grün), Selten (Blau) und
+ Legendär
+ (Gold mit Krone).
+
+
+ 15. Power-Scaling V1.5 – Entwurf
+ Die Grundlagen des Power-Scaling-Entwurfs V1.5 folgen im Anhang. Er ist ein vorläufiges Balanceinstrument
+ und keine
+ abschließend bestätigte Spielregel.
+ Grundwert = ATK-Punkte + DEF-Punkte + Bewegungsreichweite + Bewegungsrichtungen + Angriffsfelder +
+ Gabenpunkte
+ + Gabenanzahlbonus + Gabensynergien + besondere Synergien.
+ Energiepunkte = Grundwert × (Energiefaktor tatsächlicher Energie ÷ Energiefaktor fairer Energiepreis − 1).
+ Gesamt-Power
+ = Grundwert + Energiepunkte.
+ Seltenheitsbereiche: Gewöhnlich unter 30; Ungewöhnlich 30 bis unter 50; Selten 50 bis unter 75; Legendär ab
+ 75. Über
+ 100 manuell prüfen.
+ Balance-Ergänzung (Entwurf): Heilung 8, Fesseln 10, Durchbruch 9, Ansturm 12 Power-Punkte.
+ Für Könige wird ein eigenes Power-Scaling zu einem späteren Zeitpunkt ausgearbeitet.
+
+
+
+
+World of Kings · Spielregeln und Balance-System                                                                4
+HELDENKARTEN · LAYOUTBEISPIELE
+Beispiel 1: Eisenwalze
+
+
+
+
+Layoutbeispiel · Kartenwerte und Balance nicht automatisch bestaetigt.
+HELDENKARTEN · LAYOUTBEISPIELE
+Beispiel 2: Feytan der Schatten
+
+
+
+
+Layoutbeispiel · Kartenwerte und Balance nicht automatisch bestaetigt.
+HELDENKARTEN · LAYOUTBEISPIELE
+Beispiel 3: Sturmharpune Brakk
+
+
+
+
+Layoutbeispiel · Kartenwerte und Balance nicht automatisch bestaetigt.
+ Anhang – Power-Scaling V1.5 (Entwurf)
+ Zusätzliche vorläufige Gabenwerte: Heilung 8 · Fesseln 10 · Durchbruch 9 · Ansturm 12. Das Power-Scaling für
+ Könige wird separat zu einem späteren Zeitpunkt erarbeitet.
+
+
+ WAR OF KINGS – Power-Scaling V1.5
+ Punktesystem der Kartenwerkstatt · Entwurf vom 27.10.2026 · aufbauend auf
+ Power-Scaling V1.4
+ Status: Provisorischer Balance-Entwurf. Keine Änderung des verbindlichen Master-Regelwerks. Alle
+ Werte aus V1.4 bleiben gültig. Neu in V1.5: Energiekosten zählen als Preis-Leistung in die
+ Seltenheit, dazu Punkte für Laufrichtungen, Gabenanzahl und Gaben-Harmonie. Die
+ Kartenwerkstatt (Cloud- und PC-Version) rechnet genau nach diesem Dokument.
+
+
+ 1. Berechnungsmodell
+ Grundwert = ATK + DEF + Bewegung (Reichweite + Laufrichtungen) + Angriffsfelder + Gaben +
+ Gabenanzahl + Gaben-Harmonie + Sonder-Synergie
+ Energiepunkte = Grundwert × (Energiefaktor der Karte ÷ Energiefaktor zum fairen Preis − 1)
+ Gesamt-Power = Grundwert + Energiepunkte. Die Seltenheit richtet sich nach der Gesamt-Power.
+ Kostet eine Karte weniger als ihr fairer Preis, gibt es Pluspunkte, die mit ihrer Stärke wachsen.
+ Kostet sie mehr, gibt es Minuspunkte. Eine schwache, billige Karte bleibt deshalb gewöhnlich; eine
+ starke, billige Karte mit Gaben steigt auf.
+
+
+ 2. Seltenheiten
+ Seltenheit Gesamt-Power Typische Energie
+ Gewöhnlich unter 30 1–3
+ Ungewöhnlich 30 bis unter 50 3–5
+ Selten 50 bis unter 75 5–7
+ Legendär ab 75 7–10
+ Werte über 100 Punkte erfordern Einzelprüfung. Grenzen unverändert aus V1.4.
+
+
+ 3. Angriff und Verteidigung
+ ATK oder DEF Punkte
+ 500 3
+ 1.000 6
+ 1.500 9
+ 2.000 12
+ 2.500 15
+ 3.000 18
+ 3.500 21
+ Zwischenwerte: Wert ÷ 500 × 3. Testskala, keine offizielle Wertebegrenzung.
+ Seite 1
+
+
+ 4. Bewegung und Angriffsrichtungen
+ Reichweite Punkte Laufrichtungen Punkte Angriffsfelder Punkte
+ 1 Feld (Standard) 3 1 (Standard) 0 1 2
+ 2 Felder 8 2 +1 2 5
+ 3 Felder (sehr selten) 13 3 +2 3 8
+ 4 +3 4 11
+ 5 +4 5–8 14
+ 6–8 +5
+ Neu in V1.5: Die Anzahl der Laufrichtungen zählt dezent mit, weil mehr Richtungen strategisch flexibler sind.
+ Reichweite und Laufrichtungen werden addiert. Fernangriffe zählen nicht als zusätzliche Angriffsfelder; besondere
+ Bewegungsgaben werden separat über die Gabe bewertet.
+
+
+
+
+World of Kings · Spielregeln und Balance-System                                                                      5
+ 5. Gaben
+ Gabe Art Punkte
+ Rückzug CT 4 6
+ Eisenpanzer CT 5 7
+ Mordlust CT 2 8
+ Entwaffnen CT 2 8
+ Blitzschritt CT 3 9
+ Tausch CT 4 10
+ Poison permanent 13
+ Doppelschlag permanent 14
+ Göttlicher Segen permanent 15
+ Werte unverändert aus V1.4. Noch nicht bewertet (offene Entwürfe): Heilung [3], Fesseln [4], Durchbruch [4].
+ Karten mit diesen Gaben werden zu niedrig eingestuft und in der Werkstatt markiert.
+
+
+ 6. Gabenanzahl (neu)
+ Anzahl Gaben Bonus
+ 00
+ 10
+ 2 +2
+ 3 +5
+ Mehrere Gaben bedeuten mehr Handlungsmöglichkeiten pro Zug; dieser Bonus kommt zu den Punkten der
+ einzelnen Gaben dazu.
+ Seite 2
+
+
+ 7. Gaben-Harmonie (neu, automatisch)
+ Gabenpaar Warum es harmoniert Bonus
+ Poison + Doppelschlag vergiftet zwei Gegner pro Angriff +6
+ Mordlust + Doppelschlag +500 ATK auf beide Ziele +4
+ Mordlust + Entwaffnen 1.000 Punkte Unterschied in einem Kampf +3
+ Eisenpanzer + Göttlicher Segen Panzer, der nicht geschwächt werden kann +3
+ Poison + Göttlicher Segen Giftträger ohne Schwächen +3
+ Entwaffnen + Doppelschlag geschwächtes Ziel plus zweiter Angriff +2
+ Tausch + Rückzug doppelte Fluchtmöglichkeit +2
+ Tausch + Blitzschritt hohe Beweglichkeit +2
+ Blitzschritt + Rückzug zweifaches Ausweichen +2
+ Mehrere Paare zählen zusammen, höchstens +9 pro Karte. Poison + Doppelschlag gilt laut V1.4 als besonders
+ starke Kombination; der Zufallsgenerator vergibt sie nur bei Legendär.
+
+
+ 8. Sonder-Synergie (von Hand)
+ Gesamtpaket Bonus
+ Keine Sonder-Synergie 0
+ Sinnvolles Gesamtpaket +3
+ Sehr starkes Gesamtpaket +6
+ Außergewöhnliches Gesamtpaket +9
+ Für das große Ganze, das die automatische Harmonie nicht erfasst, z. B. wenn Werte, Richtungen und Gaben
+ zusammen eine besondere Rolle ergeben. Wird im Editor gewählt.
+ Seite 3
+
+
+ 9. Energie als Preis-Leistung (neu)
+ Zuerst wird aus dem Grundwert ein fairer Preis bestimmt (stufenlos aus den Energie-Richtwerten
+ von V1.4). Dann wird der Energiefaktor der tatsächlichen Kosten mit dem Faktor des fairen Preises
+ verglichen.
+ Grundwert Fairer Preis Energie Faktor (V1.4)
+ 10 1,1 → 1 1 ×1,35
+
+
+
+World of Kings · Spielregeln und Balance-System                                                                 6
+ 20 2 2 ×1,30
+ 30 3 3 ×1,25
+ 40 4 4 ×1,15
+ 50 5 5 ×1,00
+ 60 5,8 → 6 6 ×0,95
+ 75 7 7 ×0,90
+ 90 8,8 → 9 8 ×0,85
+ 100 10 9 ×0,80
+ 10 ×0,75
+ Mit Energie-Automatik setzt die Werkstatt den fairen Preis (gerundet); dann sind die Energiepunkte etwa 0. Wer
+ die Energie von Hand senkt, bekommt Pluspunkte, wer sie erhöht, Minuspunkte, und die Seltenheit folgt
+ automatisch.
+ Energiepunkte je nach Grundwert und Energiekosten
+ Grundwert 1 2 3 4 5 6 7 8 9 10
+ 20 +0,8 0 -0,7 -2,3 -4,6 -5,4 -6,1 -6,9 -7,7 -8,4
+ 40 +7 +5,2 +3,5 0 -5,2 -7 -8,7 -10,4 -12,2 -13,9
+ 60 +24,4 +21,3 +18,1 +11,9 +2,5 -0,6 -3,7 -6,9 -10 -13,1
+ 80 +44,1 +39,5 +34,9 +25,7 +12 +7,4 +2,8 -1,8 -6,4 -11
+ Grün: deutlich günstiger als fair. Rot: deutlich teurer als fair. Man sieht: Je stärker die Karte, desto mehr wirkt sich
+ der Preis aus.
+
+
+ 10. Rechenbeispiele
+ Karte Grund Energie E-Punkte Gesamt Seltenheit
+ Schwache Karte, sehr billig 11 1 (fair ≈ 1,2) +0,1 11,1 Gewöhnlich
+ Mittlere Karte mit Rückzug 27,2 2 (fair ≈ 2,7) +0,8 28 Gewöhnlich
+ Testkarte A aus V1.4 (3
+ 54 3 (fair ≈ 5,3) +14,6 68,6 Selten
+ Energie)
+ Testkarte A aus V1.4 (7
+ 54 7 (fair ≈ 5,3) -4,6 49,4 Ungewöhnlich
+ Energie)
+ Starke Karte, billig (2
+ 60 2 (fair ≈ 5,8) +21,3 81,3 Legendär
+ Energie)
+ Dieselbe Karte, teuer (8
+ 60 8 (fair ≈ 5,8) -6,9 53,1 Selten
+ Energie)
+ Allrounder: 2 Felder in 8
+ 52 5 (fair ≈ 5,2) +0,4 52,4 Selten
+ Richtungen
+ Seite 4
+ Raiden (800/600, Mordlust,
+ Entwaffnen, Doppelschlag), 3 63,4 3 (fair ≈ 6,1) +20,3 83,7 Legendär
+ Energie
+ Grund = Grundwert, E-Punkte = Energiepunkte. Die schwache Karte bleibt trotz 1 Energie gewöhnlich; dieselbe
+ starke Karte ist für 2 Energie legendär, für 8 Energie nur selten.
+ Ausführlich: Starke Karte, billig (2 Energie)
+ Baustein Punkte
+ ATK 2000 12
+ DEF 1500 9
+ Bewegung 1 Feld 3
+ 3 angreifbare Nachbarfelder 8
+ Doppelschlag 14
+ Mordlust [2] 8
+ 2 Gaben (mehr Möglichkeiten pro Zug) 2
+ Harmonie Mordlust + Doppelschlag (+500 ATK auf beide Ziele) 4
+
+
+
+World of Kings · Spielregeln und Balance-System                                                                             7
+ Energie 2 (fairer Preis ≈ 5,8) +21,3
+ Grundwert 60
+ Gesamt-Power → Legendär 81,3
+ Ausführlich: Raiden (800/600, Mordlust, Entwaffnen, Doppelschlag), 3 Energie
+ Baustein Punkte
+ ATK 800 4,8
+ DEF 600 3,6
+ Bewegung 1 Feld 3
+ 3 angreifbare Nachbarfelder 8
+ Mordlust [2] 8
+ Entwaffnen [2] 8
+ Doppelschlag 14
+ 3 Gaben (mehr Möglichkeiten pro Zug) 5
+ Harmonie Mordlust + Doppelschlag (+500 ATK auf beide Ziele) 4
+ Harmonie Mordlust + Entwaffnen (1000 Punkte Unterschied in einem
+ 3
+ Kampf)
+ Harmonie Entwaffnen + Doppelschlag (geschwächtes Ziel plus zweiter
+ 2
+ Angriff)
+ Energie 3 (fairer Preis ≈ 6,1) +20,3
+ Grundwert 63,4
+ Gesamt-Power → Legendär 83,7
+ Seite 5
+
+
+ 11. Änderungen gegenüber V1.4
+ Bereich V1.4 V1.5
+ nur Diagnose (Balancepunkte), Preis-Leistung: fließt als Energiepunkte in die
+ Energie
+ ändert die Seltenheit nicht Gesamt-Power und damit in die Seltenheit
+ Laufrichtungen nicht bewertet +1 je zusätzliche Richtung, höchstens +5
+ Gabenanzahl nicht bewertet 2 Gaben +2, 3 Gaben +5
+ nur Hinweis (Poison + Doppelschlag
+ Gaben-Harmonie feste Paarliste, automatisch, höchstens +9
+ manuell prüfen)
+ Synergiebonus 0 / 3 / 6 / 9 bleibt als Sonder-Synergie für das Gesamtpaket
+ ATK/DEF, Reichweite,
+ Angriffsfelder, wie festgelegt unverändert
+ Gabenwerte, Grenzen
+ Hinweis für die Weitergabe: Sämtliche Zahlen sind provisorische Balancing-Vorschläge. Bestätigte Regeln und
+ Kartendaten des aktuellen WoK-Master-Regelwerks haben Vorrang.
+ Seite 6
+
+
+
+
+World of Kings · Spielregeln und Balance-System                                                                8
+

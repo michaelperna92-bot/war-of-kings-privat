@@ -1,0 +1,32 @@
+const { chromium } = require('playwright');
+const SH = '/home/claude/cc/test/';
+(async () => {
+  const b = await chromium.launch(); const ctx = await b.newContext({ viewport: { width: 1440, height: 1000 } });
+  await ctx.route(/^https?:\/\/(?!127\.0\.0\.1)/, r => r.abort());
+  const p = await ctx.newPage(); const errs = [];
+  p.on('pageerror', e => errs.push(e.message));
+  await p.goto('http://127.0.0.1:47831/'); await p.waitForSelector('#preview'); await p.waitForTimeout(1000);
+  await p.fill('#in-name', 'Testheld'); await p.fill('#in-atk', '2000'); await p.fill('#in-def', '1500');
+  for (const d of ['n', 'w', 'e']) await p.click(`[data-dir="atk:${d}"]`);
+  await p.click('[data-dir="mov:n"]');
+  await p.click('[data-act="gift-add"]'); await p.click('[data-giftpick="doppelschlag"]');
+  await p.click('[data-act="gift-add"]'); await p.click('[data-giftpick="mordlust"]'); await p.waitForTimeout(400);
+  const state = async t => console.log(t.padEnd(28), 'Energie', await p.inputValue('#in-energy'), '|', (await p.textContent('#pw-live')).trim(), '| markiert:', await p.$eval('[data-pick="rarity"].on', e => e.textContent).catch(() => '-'));
+  await state('Automatisch (fair):');
+  await p.fill('#in-energy', '2'); await p.waitForTimeout(400); await state('Energie von Hand 2:');
+  await p.fill('#in-energy', '8'); await p.waitForTimeout(400); await state('Energie von Hand 8:');
+  await p.fill('#in-energy', '2'); await p.waitForTimeout(400);
+  const sec = await p.$eval('.sec[data-sec="power"]', e => e.innerText.replace(/\n+/g, ' | '));
+  console.log('Power-Abschnitt:', sec.slice(0, 700));
+  await p.evaluate(() => { const s = document.querySelector('.sec[data-sec="power"]'); s.scrollIntoView(); });
+  await p.waitForTimeout(300); await p.locator('.sec[data-sec="power"]').screenshot({ path: SH + 'v15-power.png' });
+  // AI-Modus legendär
+  await p.click('[data-act="ai"]'); await p.waitForTimeout(500);
+  await p.setInputFiles('#ai-files', ['ai0.jpg', 'ai1.jpg', 'ai2.jpg', 'ai3.jpg'].map(f => SH + f)); await p.click('[data-ai-rar="legendaer"]'); await p.click('[data-ai="run"]');
+  await p.waitForFunction(() => !document.querySelector('[data-ai="stop"]'), null, { timeout: 60000 }); await p.waitForTimeout(400);
+  console.log('AI-Modus legendär:\n  ' + (await p.$$eval('.ai-item small:nth-of-type(2)', e => e.map(x => x.innerText))).join('\n  '));
+  await p.click('[data-ai-open="0"]'); await p.waitForTimeout(1500);
+  console.log('Geöffnet:', (await p.textContent('#pw-live')).trim(), '| Energie', await p.inputValue('#in-energy'));
+  console.log('Fehler:', errs.length ? errs : 'keine');
+  await b.close();
+})();

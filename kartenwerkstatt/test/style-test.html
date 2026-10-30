@@ -1,0 +1,36 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0;background:#222">
+<canvas id="c" width="2048" height="1536"></canvas>
+<script src="../assets.js"></script><script src="../data.js"></script><script src="../render.js"></script>
+<script>
+(async () => {
+  const R = WOK_RENDER, A = WOK_ASSETS, L = R.defaultLayout();
+  const t1 = await R.loadImage(A.templates['1']);
+  const f1 = R.computeFrame(t1, L.mask, 1).canvas;
+  const crests = {}; for (const [k, v] of Object.entries(A.crests)) crests[k] = await R.loadImage(v);
+  const giftCrests = {}; for (const g of WOK_DATA.GIFTS) giftCrests[g.id] = crests[g.crest];
+  const art = await R.loadImage(A.refs.akuma);
+  const styles = (location.search.slice(1) || 'rot').split(',');
+  const sets = {
+    a: { theme: 'karmesin', name: 'blattgold', energy: 'original', atk: 'original', def: 'topas', element: 'rubin', atkArrow: '#e8b13a', movArrow: '#22b8c4' },
+    b: { theme: 'obsidian', name: 'silber', energy: 'amethyst', atk: 'rubin', def: 'mondstein', element: 'amethyst', atkArrow: '#d4202a', movArrow: '#d8dee6' },
+    c: { theme: 'elfenbein', name: 'altgold', energy: 'topas', atk: 'smaragd', def: 'saphir', element: 'aquamarin', atkArrow: '#d4202a', movArrow: '#2f7fe6' },
+    d: { theme: 'smaragd', name: 'praegung', energy: 'smaragd', atk: 'granat', def: 'onyx', element: 'jade', atkArrow: '#1fa463', movArrow: '#e8b13a' },
+    e: { theme: 'amethyst', name: 'rosegold', energy: 'amethyst', atk: 'rubin', def: 'amethyst', element: 'amethyst' },
+    f: { theme: 'bernstein', name: 'bronze', energy: 'topas', atk: 'rubin', def: 'citrin', element: 'topas' }
+  };
+  const ctx = document.getElementById('c').getContext('2d');
+  for (let i = 0; i < 2; i++) {
+    const st = sets[styles[i]];
+    const frame = R.styleFrame(f1, L, st);
+    const small = false;
+    const card = { name: 'Akuma no Klinge', energy: 6, atk: 900, def: 500, element: 'feuer', race: 'daemonen', classes: ['samurai'], rarity: 'legendaer', style: st,
+      attack: { dirs: { n: 1, w: 1, e: 1 } }, move: { dirs: { n: 1, s: 1 }, showNumber: true, number: 2 }, gifts: [{ id: 'durchbruch' }, { id: 'goettlicher_segen' }, { id: 'heilung' }],
+      art: small ? { x: 300, y: 300, scale: 0.4 } : { x: 0, y: 0, scale: 1 } };
+    ctx.save(); ctx.translate(i * 1024, 0);
+    const t0 = performance.now();
+    R.draw(ctx, card, L, { frame1: frame, frame2: frame, art, crests, giftCrests });
+    ctx.restore();
+  }
+  document.title = 'done';
+})();
+</script></body></html>
