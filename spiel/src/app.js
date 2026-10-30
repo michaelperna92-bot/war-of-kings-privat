@@ -11,7 +11,7 @@
   const ARROW = { n: '↑', ne: '↗', e: '→', se: '↘', s: '↓', sw: '↙', w: '←', nw: '↖' };
   const GRID9 = ['nw', 'n', 'ne', 'w', null, 'e', 'sw', 's', 'se'];
   const ELCOL = { feuer: '#8a3324', wasser: '#24527a', erde: '#5b4a2c', wind: '#3d6b5a', blitz: '#6b5a1c', licht: '#7a6f44', dunkelheit: '#3a2a4a' };
-  const VERSION = '4.3';
+  const VERSION = '4.4';
   const isSp = c => !!c && (c.type === 'spell' || c.type === 'curse');
   const TYPEN = c => c.type === 'king' ? 'König' : c.type === 'spell' ? 'Zauber' : c.type === 'curse' ? 'Fluch' : 'Held';
   const SPCOL = { spell: '#1f4a35', curse: '#3d2350' };
@@ -1958,8 +1958,8 @@
   function pbar(p) {
     const s = G.s, P = s.players[p], k = W.kingOf(s, p), kc = s.cards[k.cid];
     const pct = Math.max(0, Math.min(100, k.hp / kc.hp * 100));
-    const live = s.active === p || (s.phase === 'counter' && s.counter === p);
-    const en = '<span class="energy" title="Energie ' + P.energy + '">' + Array.from({ length: Math.min(10, Math.max(P.turns, 1)) }, (_, i) => '<i class="' + (i < P.energy && live ? 'on' : '') + '"></i>').join('') + '</span>';
+    const live = s.active === p || (s.phase === 'counter' && s.counter === p) || !!P.reserve;
+    const en = '<span class="energy" title="Energie ' + P.energy + (P.reserve && s.active !== p ? ' – aufgehoben für Konter im gegnerischen Zug' : '') + '">' + Array.from({ length: Math.min(10, Math.max(P.turns, 1)) }, (_, i) => '<i class="' + (i < P.energy && live ? 'on' : '') + '"></i>').join('') + '</span>';
     return '<div class="pwho">' + avHTML((G.avatars || [])[p], 'pb-av') + '<div class="pname"><b>' + esc(P.name) + '</b><small>Deck ' + P.deckName + ' · ' + esc(kc.name) + '</small></div></div>'
       + '<div class="hp"><div class="hpbar"><i style="width:' + pct + '%"></i></div><span>♛ ' + fmt(Math.max(0, k.hp)) + ' / ' + fmt(kc.hp) + ' HP</span></div>'
       + (p !== G.view || G.replay ? '<div class="hbacks" aria-label="' + P.hand.length + ' Handkarten">' + Array.from({ length: Math.min(10, P.hand.length) }, () => '<i></i>').join('') + '</div>' : '')
@@ -2313,7 +2313,7 @@
   const TUT = (() => {
     const EFX = window.WOK_EFFECTS, D = window.WOK_DATA;
     const H = (id, name, o) => W.normalizeCard(Object.assign({ id, type: 'hero', name, rarity: 'gewoehnlich', energy: 2, atk: 1000, def: 1000, move: { dirs: { n: 1, e: 1, s: 1, w: 1 }, showNumber: true, number: 1 }, attack: { dirs: { n: 1 } }, gifts: [] }, o));
-    const K = (id, name, o) => W.normalizeCard(Object.assign({ id, type: 'king', name, rarity: 'legendaer', atk: 2000, hp: 20000, attack: { dirs: { n: 1, ne: 1, nw: 1 } }, gifts: [] }, o));
+    const K = (id, name, o) => W.normalizeCard(Object.assign({ id, type: 'king', name, rarity: 'legendaer', atk: 2000, hp: 12000, attack: { dirs: { n: 1, ne: 1, nw: 1 } }, gifts: [] }, o));
     function SP(id, name, type, effects, o) {
       const raw = Object.assign({ id, type, name, rarity: 'gewoehnlich', energy: 1, ruleText: '' }, o || {}); raw.spell = Object.assign(EFX.blankSpell(type), (o && o.spell) || {});
       raw.spell.effects = effects.map(([k, ch]) => { const e = EFX.blankEffect(k, type); for (const [p, v] of Object.entries(ch || {})) { const ks = p.split('.'); let x = e; while (ks.length > 1) x = x[ks.shift()]; x[ks[0]] = v; } return e; });

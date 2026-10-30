@@ -13,6 +13,12 @@
 ## 3.x
 Siehe `LIESMICH.txt` im jeweiligen PC-Release (Online-Duell MQTT/Cloud, Starter-Set/Packs, Deck-Übersicht, Kontrolle sofort u. v. m.).
 
+## 4.4 (30.10.2026)
+- **Neue Energieregel (Festlegung des Entwicklers):** Unverbrauchte Energie verfällt am Zugende nicht mehr. Sie bleibt für Konter in der gegnerischen Konterphase (Zauber, Flüche) und verfällt erst nach dessen Schadensberechnung bzw. am Ende seines Zuges. Zu Beginn des eigenen Zuges wird wie bisher aufgefüllt – kein Ansparen. Gilt lokal, gegen die KI und online (Server). Die bisherige Testoption entfällt. Die Energieanzeige zeigt die aufgehobene Energie auch im gegnerischen Zug.
+- **Neue Königsregel (Festlegung des Entwicklers):** Könige haben 8.000–12.000 HP. Ältere Karten werden beim Laden umgerechnet: Grabeskönig Vorhaltar → 10.000; andere Könige anteilig aus dem alten Bereich 10.000–20.000 (Werkstatt-Vorschlag). Offizielles Kartenpaket auf dem Server aktualisiert (König 10.000 HP). Demo- und Tutorial-Könige angepasst.
+- Regelwerk-Text (Abschnitte 4 und 5) entsprechend ergänzt. Neuer Test `test/energiereserve.js`.
+- Kartenwerkstatt 12.7: Königs-HP 8.000–12.000 (Editor, Zufallsgenerator, KI-Modus, Power-Scaling 3.6), bestehende Könige in der Bibliothek werden automatisch umgerechnet.
+
 ## 4.3 (30.10.2026)
 - **Neue Gabenregel:** Aktivierbare Heldengaben gehen in der eigenen Battlephase **und** in der eigenen Konterphase (0 Energie, Abklingzeiten unverändert, unwiderruflich). Die Konterphase bleibt einmalig. Sie wird jetzt auch angeboten, wenn der Verteidiger nur eine einsetzbare Gabe hat.
 - **Taktische Spielhilfe für Gaben:** Vor jeder Aktivierung rechnet das Spiel die Wirkung mit der echten Engine durch (geplante und mögliche Angriffe, nächster gegnerischer Angriff, Schutz, laufende Flüche). Hinweis bei sinnvollen Gaben, Rückfrage bei voraussichtlich wirkungslosen oder nachteiligen – nichts wird verboten oder automatisch ausgelöst. Abschaltbar über „Spielhilfe“.

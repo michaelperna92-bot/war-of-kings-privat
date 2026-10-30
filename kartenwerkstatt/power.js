@@ -9,8 +9,8 @@
 window.WOK_POWER = (function () {
   'use strict';
   const D = window.WOK_DATA;
-  const SOURCE = 'Power-Scaling-System 3.5 (Teststand)';
-  const VERSION = '3.5';
+  const SOURCE = 'Power-Scaling-System 3.6 (Teststand)';
+  const VERSION = '3.6';
   const STAT_MAX = 3500;
   // Abschnitt 13 (vorläufig), angepasst am 28.10.2026: Gewöhnlich bis unter 70, Legendär ab 140; ab 200 Balancewarnung
   const BANDS = [
@@ -117,16 +117,16 @@ window.WOK_POWER = (function () {
 
   /* Gesamt-Power einer Karte mit offengelegter Aufschlüsselung, Prüfungen A–E und Statusmeldungen */
   /* ================= Könige (Vorgabe des Entwicklers vom 30.10.2026) =================
-   * Höchstwerte: 20.000 HP, 3.500 ATK, höchstens 3 königliche Gaben (permanent oder mit CT).
+   * Werte (Festlegung des Entwicklers vom 30.10.2026): 8.000–12.000 HP, 2.000–3.500 ATK, höchstens 3 königliche Gaben (permanent oder mit CT).
    * Bewertung auf einer Skala bis 200 Punkte (gleiche Seltenheitsgrenzen wie bei Helden):
-   *   HP + ATK zusammen 25 % (50 Punkte), HP über 15.000 bekommt einen deutlichen Schub,
+   *   HP + ATK zusammen 25 % (50 Punkte), HP über 10.000 bekommt einen deutlichen Schub,
    *   drei Gaben +20 % (40 Punkte), die Stärke der Gaben den Rest (55 %, 110 Punkte = bis zu 36,7 je Gabe).
    * Die genaue Aufteilung innerhalb dieser Anteile ist ein Werkstatt-Vorschlag. Die Seltenheit kann von Hand umgestellt werden.
    */
-  const KING = { atk: [2000, 3500], hp: [10000, 20000], dirs: ['nw', 'n', 'ne'], gifts: 3 };
+  const KING = { atk: [2000, 3500], hp: [8000, 12000], dirs: ['nw', 'n', 'ne'], gifts: 3 };
   const KING_SCALE = 200, KING_SHARE = { stats: 0.25, three: 0.20, gifts: 0.55 };
-  // HP: 10.000 → 0, 15.000 → 8, 20.000 → 30 (über 15.000 steiler = „guter Schub“); ATK: 2.000 → 0, 3.500 → 20. Zusammen höchstens 50.
-  const KING_HP_TABLE = [[0, 0], [10000, 0], [15000, 8], [20000, 30]];
+  // HP: 8.000 → 0, 10.000 → 8, 12.000 → 30 (über 10.000 steiler = „guter Schub“; gleiche Kurve wie vorher auf den neuen Bereich übertragen); ATK: 2.000 → 0, 3.500 → 20. Zusammen höchstens 50.
+  const KING_HP_TABLE = [[0, 0], [8000, 0], [10000, 8], [12000, 30]];
   const KING_ATK_TABLE = [[0, 0], [2000, 0], [3500, 20]];
   const KING_GIFT_MAX = KING_SCALE * KING_SHARE.gifts / 3;          // 36,67 je Gabe
   const KING_GIFT_BASE = 0.35;                                       // schon die schwächste Stufe einer Gabe zählt 35 %
@@ -145,7 +145,7 @@ window.WOK_POWER = (function () {
     const has = v => v !== '' && v !== null && v !== undefined && !isNaN(+v);
     const bad = text => { notes.push({ level: 'error', text: STATUS.invalid + ': ' + text }); status.add('invalid'); };
     if (has(card.atk)) { if (+card.atk < KING.atk[0] || +card.atk > KING.atk[1]) bad('Königs-ATK ' + card.atk + ' liegt nicht zwischen 2.000 und 3.500.'); else if (+card.atk % 100) bad('ATK ' + card.atk + ' ist kein 100er-Schritt.'); }
-    if (has(card.hp)) { if (+card.hp < KING.hp[0] || +card.hp > KING.hp[1]) bad('HP ' + Number(card.hp).toLocaleString('de-DE') + ' liegt nicht zwischen 10.000 und 20.000 (Höchstwert 20.000).'); }
+    if (has(card.hp)) { if (+card.hp < KING.hp[0] || +card.hp > KING.hp[1]) bad('HP ' + Number(card.hp).toLocaleString('de-DE') + ' liegt nicht zwischen 8.000 und 12.000 (Festlegung vom 30.10.2026).'); }
     const atk = katkPts(card.atk), hp = hpPts(card.hp);
     rows.push(['ATK ' + (has(card.atk) ? card.atk : 0) + ' (Werte zusammen höchstens 50)', r2(atk)], ['HP ' + (has(card.hp) ? Number(card.hp).toLocaleString('de-DE') : 0) + (+card.hp > 15000 ? ' – Schub über 15.000' : ''), r2(hp)]);
     const dirs = Object.keys((card.attack || {}).dirs || {}).filter(k => card.attack.dirs[k]);
@@ -178,7 +178,7 @@ window.WOK_POWER = (function () {
     const want = rollRarity(rng, rarityChoice), band = BANDS.find(b => b.id === want);
     for (let attempt = 0; attempt < 400; attempt++) {
       const n = 1 + Math.floor(rng() * 3), dirs = F.attack ? JSON.parse(JSON.stringify(F.attack)) : { dirs: Object.fromEntries(shuffle(rng, KING.dirs).slice(0, n).map(k => [k, 1])), showNumber: false, number: 1 };
-      const card = { type: 'king', atk: F.atk !== undefined ? +F.atk : 2000 + Math.floor(rng() * 16) * 100, hp: F.hp !== undefined ? +F.hp : 10000 + Math.floor(rng() * 21) * 500,
+      const card = { type: 'king', atk: F.atk !== undefined ? +F.atk : 2000 + Math.floor(rng() * 16) * 100, hp: F.hp !== undefined ? +F.hp : 8000 + Math.floor(rng() * 9) * 500,
         attack: dirs, move: { dirs: {}, showNumber: false, number: 1 }, gifts: F.giftObjs ? JSON.parse(JSON.stringify(F.giftObjs)) : (F.gifts || []).map(id => ({ id })), energy: '' };
       if (F.rollGifts) { const R = (D.ROYAL_GIFTS || []).filter(g => g.param), cnt = { gewoehnlich: [0, 1], ungewoehnlich: [1, 2], selten: [2, 3], legendaer: [3, 3] }[want] || [0, 1], k = Math.min(R.length, cnt[0] + Math.floor(rng() * (cnt[1] - cnt[0] + 1)));
         card.gifts = shuffle(rng, R).slice(0, k).map(g => { const p = g.param, steps = Math.round((p.max - p.min) / p.step); return { id: g.id, scope: 'all', amount: p.min + Math.floor(rng() * (steps + 1)) * p.step }; }); }

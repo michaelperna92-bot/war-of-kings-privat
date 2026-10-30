@@ -407,7 +407,7 @@ function hitSection(p) {
   return null;
 }
 // Werte direkt auf der Karte ändern: Energie, ATK oder DEF antippen und nach oben/unten ziehen (oder Mausrad)
-const VALUE_DRAG = { energy: { step: 1, min: 0, max: 10, label: 'Energie' }, atk: { step: 100, min: 0, max: 3500, label: 'ATK' }, def: { step: 100, min: 0, max: 3500, label: 'DEF' }, hp: { step: 500, min: 10000, max: 20000, label: 'HP' } };
+const VALUE_DRAG = { energy: { step: 1, min: 0, max: 10, label: 'Energie' }, atk: { step: 100, min: 0, max: 3500, label: 'ATK' }, def: { step: 100, min: 0, max: 3500, label: 'DEF' }, hp: { step: 500, min: 8000, max: 12000, label: 'HP' } };
 function hitValue(p) {
   const L = G.layout, near = (P, r) => P && Math.hypot(p.x - P.x, p.y - P.y) <= r, king = G.card && G.card.type === 'king';
   if (near(L.energy, 82)) return king ? null : 'energy';
@@ -568,7 +568,7 @@ function renderPanel() {
   <section class="sec" data-sec="werte"><h3>Spielwerte <span id="pw-live" class="pwlive">${liveBadge(c)}</span></h3>
     <div class="ctype ctype4"><button class="${c.type !== 'king' ? 'on' : ''}" data-cardtype="hero">⚔ Held</button><button class="${c.type === 'king' ? 'on' : ''}" data-cardtype="king">👑 König</button><button data-cardtype="spell">✦ Zauber</button><button data-cardtype="curse">☠ Fluch</button></div>
     ${c.type === 'king' ? `<div class="row2"><label>ATK (2.000–3.500)<input type="number" id="in-atk" min="2000" max="3500" step="100" value="${v(c.atk)}"></label>
-    <label>HP (10.000–20.000)<input type="number" id="in-hp" min="10000" max="20000" step="500" value="${v(c.hp)}"></label></div>
+    <label>HP (8.000–12.000)<input type="number" id="in-hp" min="8000" max="12000" step="500" value="${v(c.hp)}"></label></div>
     <p class="muted" style="font-size:12px;margin:0">Könige haben keine Energiekosten (Krone auf der Karte) und keine DEF.</p>` : `<div class="row3"><label>Energie<input type="number" id="in-energy" min="0" max="10" value="${v(c.energy)}"></label>
     <label>ATK<input type="number" id="in-atk" min="0" max="3500" step="100" value="${v(c.atk)}"></label>
     <label>DEF<input type="number" id="in-def" min="0" max="3500" step="100" value="${v(c.def)}"></label></div>`}
@@ -810,7 +810,7 @@ function giftPicker() {
 /* ---------- Dialoge ---------- */
 // Neue Karte: zuerst die Kartenart wählen, dann erst die Einzelheiten
 function newTypeDialog() {
-  const T = [['hero', '⚔', 'Held', 'ATK, DEF, Energie, Laufen, Angreifen und bis zu drei Gaben'], ['king', '👑', 'König', 'HP bis 20.000, ATK bis 3.500, bis zu drei königliche Gaben'], ['spell', '✦', 'Zauber', 'Hilft dir: Stärken, Schützen, Heilen, Ziehen …'], ['curse', '☠', 'Fluch', 'Schadet dem Gegner: Schwächen, Vergiften, Schaden …']];
+  const T = [['hero', '⚔', 'Held', 'ATK, DEF, Energie, Laufen, Angreifen und bis zu drei Gaben'], ['king', '👑', 'König', 'HP 8.000–12.000, ATK bis 3.500, bis zu drei königliche Gaben'], ['spell', '✦', 'Zauber', 'Hilft dir: Stärken, Schützen, Heilen, Ziehen …'], ['curse', '☠', 'Fluch', 'Schadet dem Gegner: Schwächen, Vergiften, Schaden …']];
   showModal('Neue Karte – was möchtest du machen?', '<div class="tp-grid tp4">' + T.map(([k, ic, t, sub]) => '<button class="tp ' + k + '" data-act="newtype" data-t="' + k + '"><span class="tp-ic">' + ic + '</span><b>' + t + '</b><small>' + sub + '</small></button>').join('') + '</div>', '');
 }
 function showModal(title, body, foot) {
@@ -992,12 +992,17 @@ async function importJSON(file) {
 /* Bestehende Karten automatisch an das aktuelle Power-Scaling anpassen (Seltenheit/Energie mit Automatik) */
 async function recalcLibrary(quiet) {
   if (!ST.state.canWrite) return;
-  let n = 0, rar = 0;
+  let n = 0, rar = 0; const kings = [];
   for (const raw of ST.list()) {
     const c = normalize(clone(raw)); let changed = false;
     // 2.0: Sonder-Synergie wieder 0/3/6/9 (V1.7 hatte halbiert)
     if (raw.powerVersion === '1.7' && [1.5, 3, 4.5].includes(+c.synergy)) { c.synergy = +c.synergy * 2; changed = true; }
     const has = v => v !== '' && v !== null && v !== undefined;
+    // 30.10.2026: Könige haben 8.000–12.000 HP (vorher 10.000–20.000) – Umrechnung in data.js (kingHpFix), gilt auch im Spiel
+    if (c.type === 'king' && has(c.hp) && (+c.hp < PW.KING.hp[0] || +c.hp > PW.KING.hp[1])) {
+      const old = +c.hp; c.hp = D.kingHpFix(c.name, old);
+      changed = true; kings.push((c.name || 'König') + ' ' + old.toLocaleString('de-DE') + ' → ' + c.hp.toLocaleString('de-DE'));
+    }
     if (has(c.atk) && has(c.type === 'king' ? c.hp : c.def)) {
       const ev = PW.evaluate(Object.assign({}, c, { rarity: null }));
       if (c.autoRarity !== false && c.rarity !== ev.rarity) { c.rarity = ev.rarity; changed = true; rar++; }
@@ -1007,6 +1012,7 @@ async function recalcLibrary(quiet) {
       try { await ST.put(c, changed ? undefined : raw.updated); if (changed) n++; } catch (e) { }
     }
   }
+  if (kings.length) setTimeout(() => toast('Neue Königsregel (8.000–12.000 HP): ' + kings.join(', ') + '. Bitte neu exportieren, damit das Spiel die neuen Kartenbilder bekommt.', 12000), 600);
   if (n && !quiet) setTimeout(() => toast(PW.SOURCE + ': ' + n + (n === 1 ? ' Karte' : ' Karten') + ' neu berechnet' + (rar ? ', ' + rar + ' mit neuer Seltenheit' : '') + '.', 7000), 1200);
   if (n) G.thumbs.clear();
 }
@@ -1211,7 +1217,7 @@ document.addEventListener('click', async e => {
     case 'folder-create': { const nm = ($('#folder-name').value || '').trim().slice(0, 40); if (!nm) { toast('Bitte einen Namen eingeben.'); return; } const ids = G.folderIds; closeModal();
       if (ids && ids.length) { const n = await moveToFolder(ids, nm); toast(n + (n === 1 ? ' Karte' : ' Karten') + ' im neuen Ordner „' + nm + '“.'); } else { saveFolderList(folderNames().concat(nm)); G.filters.folder = nm; renderLib(); toast('Ordner „' + nm + '“ angelegt. Mit „☑ Auswählen“ legst du Karten hinein.', 5000); } return; }
     case 'folder-del': { const nm = d.name; closeModal(); const ids = ST.list().filter(c => c.folder === nm).map(c => c.id); await moveToFolder(ids, ''); saveFolderList(folderNames().filter(x => x !== nm)); if (G.filters.folder === nm) G.filters.folder = ''; renderLib(); toast('Ordner „' + nm + '“ aufgelöst, die Karten bleiben erhalten.'); return; }
-    case 'newtype': { const t = d.t; closeModal(); openCard(null); if (t !== 'hero') { G.snapLock = true; setCardType(t); G.snapLock = false; } toast({ hero: 'Neue Heldenkarte', king: 'Neue Königskarte: HP bis 20.000, ATK bis 3.500, bis zu drei königliche Gaben', spell: 'Neue Zauberkarte', curse: 'Neue Fluchkarte' }[t] + '.', 4000); return; }
+    case 'newtype': { const t = d.t; closeModal(); openCard(null); if (t !== 'hero') { G.snapLock = true; setCardType(t); G.snapLock = false; } toast({ hero: 'Neue Heldenkarte', king: 'Neue Königskarte: HP 8.000–12.000, ATK bis 3.500, bis zu drei königliche Gaben', spell: 'Neue Zauberkarte', curse: 'Neue Fluchkarte' }[t] + '.', 4000); return; }
     case 'save': save(); return;
     case 'discard': closeModal(); clearDirty(); if (G.pendingNext) G.pendingNext(); return;
     case 'save-continue': closeModal(); if (await save() && G.pendingNext) G.pendingNext(); return;

@@ -10,6 +10,8 @@
   // Gemeinsames Effektformat aus der Kartenwerkstatt (effects.js) und deren Stammdaten
   const EF = root.WOK_EFFECTS || (typeof require !== 'undefined' ? require('./effects.js') : null);
   const DATA = () => root.WOK_DATA || null;
+  // Königs-HP 8.000–12.000 (Festlegung vom 30.10.2026): ältere Karten werden wie in der Werkstatt umgerechnet (data.js → kingHpFix)
+  function kingHp(c) { const D = DATA(), hp = +c.hp || 0; if (!D || !D.kingHpFix) return hp; const v = D.kingHpFix(c.name, hp); if (v !== hp) (c._hpNote = 'HP ' + hp.toLocaleString('de-DE') + ' → ' + v.toLocaleString('de-DE') + ' (Regel 8.000–12.000)'); return v; }
 
   /* ---------------- Spielfeld (Abschnitt 15.6) ---------------- */
   const COLS = 'ABCDEFG';
@@ -62,6 +64,7 @@
   const RULES = { deckSize: 40, startHand: 5, handMax: 10, energyMax: 10, drawFailDamage: 1000, turnSeconds: 120, counterSeconds: 120, reconnectSeconds: 120 };
   // Stellen, die das Regelwerk offen lässt – hier sichtbar festgehalten statt still angenommen.
   const ASSUMPTIONS = [
+    'Könige haben 8.000–12.000 HP (Festlegung des Entwicklers vom 30.10.2026). Ältere Karten werden beim Laden umgerechnet: Grabeskönig Vorhaltar 10.000 (Festlegung), andere anteilig aus dem alten Bereich 10.000–20.000 (Werkstatt-Vorschlag).',
     'Heldengaben (Festlegung des Entwicklers vom 30.10.2026): Alle aktivierbaren Gaben gehen in der eigenen Battlephase und in der eigenen Konterphase, 0 Energie, Abklingzeiten unverändert, sofort und unwiderruflich. „Bis Zugende“ heißt in der Konterphase: bis zum Ende des laufenden (gegnerischen) Zuges. Die Konterphase bleibt einmalig. Werkstatt-Annahme: Durchbruch und Blitzschritt sind in der Konterphase erlaubt, Durchbruch bringt dort aber nichts (keine eigenen Angriffe).',
     'Kontrolle in der eigenen Battlephase (Festlegung des Entwicklers vom 30.10.2026): Ein Zauber oder Fluch mit „Kontrolle übernehmen“ wirkt sofort, noch vor den Angriffen und der Konterphase. Der übernommene Held kann so in derselben Battlephase Angriffe festlegen; der Gegner kann in seiner Konterphase darauf reagieren, danach folgt die Schadensberechnung. Werkstatt-Annahme: die ganze Karte wirkt dann sofort (auch weitere Effekte darauf) und kann nicht mehr neutralisiert werden. In der Konterphase auf einen Angreifer gewirkt, fällt dessen Angriff weg.',
     'Angriffe reichen nur auf unmittelbar angrenzende Felder (Festlegung des Entwicklers vom 30.10.2026). Nur Schütze erlaubt Ziele genau 2 Felder entfernt; ein Angriffspfeil der Länge 2 aus der Werkstatt allein verlängert die Reichweite nicht. Dazwischen stehende Karten blockieren Schütze nicht.',
@@ -79,7 +82,7 @@
     'Zuguhr: Läuft sie ab, werden die restlichen Phasen ohne neue Aktionen abgeschlossen; bereits festgelegte Angriffe werden ausgeführt.',
     'Deckwahl: Jeder spielt das Deck, das er gewählt hat. Die zufällige Verteilung von Deck A und B (15.7) lässt sich auf der Startseite einschalten.',
     'Abschnitt 15.8 (Werte-Snapshot) ist offen: Zauber und Flüche wirken nach ihrer Auswertung sofort auf die Werte, mit denen danach gekämpft wird.',
-    'Zauber/Flüche – Konterphase und Energie: Laut Abschnitt 5 verfällt unverbrauchte Energie am eigenen Zugende. Der Verteidiger hat in der gegnerischen Konterphase daher keine Energie und kann nur Karten mit 0 Kosten spielen. Die Testoption „Restenergie für die Konterphase“ (keine Regel) hebt das zum Ausprobieren auf. Bitte im Regelwerk klären.',
+    'Energie und Konterphase (Festlegung des Entwicklers vom 30.10.2026): Unverbrauchte Energie bleibt am eigenen Zugende erhalten und kann in der gegnerischen Konterphase für Konter (Zauber/Flüche/Gaben) genutzt werden. Nach der Schadensberechnung des gegnerischen Zuges bzw. spätestens am Ende des gegnerischen Zuges verfällt sie; zu Beginn des eigenen Zuges wird wie bisher aufgefüllt (kein Ansparen).',
     'Zauber/Flüche – Reihenfolge der Auswertung: zuerst alle Neutralisierungen, dann die übrigen Karten in Ausspielreihenfolge, die Effekte einer Karte in ihrer Reihenfolge. Weitere Effekte einer neutralisierenden Karte wirken trotzdem.',
     'Zauber/Flüche – Ziele: Vom Spieler gewählte Ziele werden beim Ausspielen festgelegt; sind sie bei der Auswertung nicht mehr gültig, verpufft die Wirkung auf sie. „Automatisch“ wählt das Spiel bei der Auswertung zufällig (fester Zufall der Partie) unter den gültigen Zielen.',
     'Zauber/Flüche – „Einheit“ meint Helden. Könige sind nur Ziel, wenn die Karte ausdrücklich „König“ als Ziel nennt (Abschnitt 8).',
@@ -128,7 +131,7 @@
     return {
       id: String(c.sourceId || c.id || ('karte_' + Math.random().toString(36).slice(2))), name: c.name || 'Ohne Namen', type, folder: String(c.folder || '').slice(0, 40),
       rarity: c.rarity || 'gewoehnlich', energy: type === 'king' ? 0 : Math.max(0, +c.energy || 0), atk: +c.atk || 0, def: type === 'king' ? 0 : +c.def || 0,
-      hp: type === 'king' ? +c.hp || 0 : 0, races: [...new Set(races)], classes: [...new Set(classes)], elements: [...new Set(elements)],
+      hp: type === 'king' ? kingHp(c) : 0, races: [...new Set(races)], classes: [...new Set(classes)], elements: [...new Set(elements)],
       move: { steps: type === 'king' ? 0 : Math.max(0, Math.min(3, steps)), dirs: type === 'king' ? [] : Object.keys(move) },
       attack: { dirs: type === 'king' ? Object.fromEntries(Object.keys(atk).filter(k => ['n', 'ne', 'nw'].includes(k)).map(k => [k, 1])) : atk },
       gifts, issues: ((c.validation && c.validation.errors) || []).slice(0, 3), unknownGifts: (c.gifts || []).filter(g => type === 'king' ? !ROYAL[g.id] : !GIFTS[g.id]).map(g => g.id)
@@ -183,7 +186,7 @@
   // opts: { cards: {id: card}, decks: [idsA, idsB], names: ['A','B'], ai: [false,'leicht'], seed, timer }
   function newGame(opts) {
     const cards = {}; for (const [id, c] of Object.entries(opts.cards)) cards[id] = c;
-    const s = { v: VERSION, rng: (opts.seed >>> 0) || 1, seed: (opts.seed >>> 0) || 1, cards, turn: 0, active: 0, phase: 'setup', players: [], units: {}, nextId: 1, decl: {}, retreat: [], pendingDiscard: null, result: null, log: [], timer: !!opts.timer, counter: null, stack: [], auras: [], locks: [], counterReserve: !!opts.counterReserve };
+    const s = { v: VERSION, rng: (opts.seed >>> 0) || 1, seed: (opts.seed >>> 0) || 1, cards, turn: 0, active: 0, phase: 'setup', players: [], units: {}, nextId: 1, decl: {}, retreat: [], pendingDiscard: null, result: null, log: [], timer: !!opts.timer, counter: null, stack: [], auras: [], locks: [], counterReserve: true };
     const ev = [];
     // A und B werden den Seiten zufällig zugewiesen (15.7)
     const deckOrder = opts.fixedSides ? [0, 1] : rand(s) < 0.5 ? [0, 1] : [1, 0];
@@ -399,7 +402,7 @@
     expireGlobal(s, ev, e => e.endTurn || (e.untilEnd && e.untilEnd.p === p && s.players[p].turns >= e.untilEnd.turn), p);
     s.decl = {}; s.retreat = [];
     syncControl(s, ev);
-    // unverbrauchte Energie verfällt (Testoption: bleibt bis nach der gegnerischen Konterphase)
+    // Festlegung des Entwicklers vom 30.10.2026: unverbrauchte Energie bleibt bis nach der gegnerischen Konterphase (für Konter), danach verfällt sie; am eigenen Zugbeginn wird normal aufgefüllt
     if (s.counterReserve) s.players[p].reserve = true; else s.players[p].energy = 0;
     s.players[1 - p].energy = 0; s.players[1 - p].reserve = false;
     s.active = 1 - p;

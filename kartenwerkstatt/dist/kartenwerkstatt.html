@@ -477,7 +477,15 @@ window.WOK_DATA = (function () {
     if (g.param) { const n = param || g.param.min; return n === 1 && g.textOne ? g.textOne : g.text.replace('{n}', n); }
     return g.text;
   }
-  return { RACES, CLASSES, ELEMENTS, RARITIES, GIFTS, ROYAL_GIFTS, royalScope, royalAmount, royalShort, giftTitle, giftText, giftShort, SOURCE: 'Gabenwappen-Übersicht vom 27.10.2026' };
+  // Königs-HP (Festlegung des Entwicklers vom 30.10.2026): 8.000–12.000. Gilt in Werkstatt und Spiel gleich.
+  // Ältere Könige (bisher 10.000–20.000) werden umgerechnet: „Grabeskönig Vorhaltar“ auf 10.000 (Festlegung), alle anderen anteilig (Werkstatt-Vorschlag).
+  const KING_HP = { min: 8000, max: 12000, step: 500 };
+  function kingHpFix(name, hp) {
+    hp = +hp; if (!(hp > 0) || (hp >= KING_HP.min && hp <= KING_HP.max)) return hp;
+    if (String(name || '').trim() === 'Grabeskönig Vorhaltar') return 10000;
+    return Math.max(KING_HP.min, Math.min(KING_HP.max, Math.round((8000 + (Math.max(10000, Math.min(20000, hp)) - 10000) * 0.4) / 500) * 500));
+  }
+  return { RACES, CLASSES, ELEMENTS, RARITIES, GIFTS, ROYAL_GIFTS, KING_HP, kingHpFix, royalScope, royalAmount, royalShort, giftTitle, giftText, giftShort, SOURCE: 'Gabenwappen-Übersicht vom 27.10.2026' };
 })();
 </script>
 <script>/* War of Kings – gemeinsames Effektformat für Zauber- und Fluchkarten (Kartenwerkstatt und Probe-Spiel).
@@ -1908,8 +1916,8 @@ window.WOK_RENDER = (function () {
 window.WOK_POWER = (function () {
   'use strict';
   const D = window.WOK_DATA;
-  const SOURCE = 'Power-Scaling-System 3.5 (Teststand)';
-  const VERSION = '3.5';
+  const SOURCE = 'Power-Scaling-System 3.6 (Teststand)';
+  const VERSION = '3.6';
   const STAT_MAX = 3500;
   // Abschnitt 13 (vorläufig), angepasst am 28.10.2026: Gewöhnlich bis unter 70, Legendär ab 140; ab 200 Balancewarnung
   const BANDS = [
@@ -2016,16 +2024,16 @@ window.WOK_POWER = (function () {
 
   /* Gesamt-Power einer Karte mit offengelegter Aufschlüsselung, Prüfungen A–E und Statusmeldungen */
   /* ================= Könige (Vorgabe des Entwicklers vom 30.10.2026) =================
-   * Höchstwerte: 20.000 HP, 3.500 ATK, höchstens 3 königliche Gaben (permanent oder mit CT).
+   * Werte (Festlegung des Entwicklers vom 30.10.2026): 8.000–12.000 HP, 2.000–3.500 ATK, höchstens 3 königliche Gaben (permanent oder mit CT).
    * Bewertung auf einer Skala bis 200 Punkte (gleiche Seltenheitsgrenzen wie bei Helden):
-   *   HP + ATK zusammen 25 % (50 Punkte), HP über 15.000 bekommt einen deutlichen Schub,
+   *   HP + ATK zusammen 25 % (50 Punkte), HP über 10.000 bekommt einen deutlichen Schub,
    *   drei Gaben +20 % (40 Punkte), die Stärke der Gaben den Rest (55 %, 110 Punkte = bis zu 36,7 je Gabe).
    * Die genaue Aufteilung innerhalb dieser Anteile ist ein Werkstatt-Vorschlag. Die Seltenheit kann von Hand umgestellt werden.
    */
-  const KING = { atk: [2000, 3500], hp: [10000, 20000], dirs: ['nw', 'n', 'ne'], gifts: 3 };
+  const KING = { atk: [2000, 3500], hp: [8000, 12000], dirs: ['nw', 'n', 'ne'], gifts: 3 };
   const KING_SCALE = 200, KING_SHARE = { stats: 0.25, three: 0.20, gifts: 0.55 };
-  // HP: 10.000 → 0, 15.000 → 8, 20.000 → 30 (über 15.000 steiler = „guter Schub“); ATK: 2.000 → 0, 3.500 → 20. Zusammen höchstens 50.
-  const KING_HP_TABLE = [[0, 0], [10000, 0], [15000, 8], [20000, 30]];
+  // HP: 8.000 → 0, 10.000 → 8, 12.000 → 30 (über 10.000 steiler = „guter Schub“; gleiche Kurve wie vorher auf den neuen Bereich übertragen); ATK: 2.000 → 0, 3.500 → 20. Zusammen höchstens 50.
+  const KING_HP_TABLE = [[0, 0], [8000, 0], [10000, 8], [12000, 30]];
   const KING_ATK_TABLE = [[0, 0], [2000, 0], [3500, 20]];
   const KING_GIFT_MAX = KING_SCALE * KING_SHARE.gifts / 3;          // 36,67 je Gabe
   const KING_GIFT_BASE = 0.35;                                       // schon die schwächste Stufe einer Gabe zählt 35 %
@@ -2044,7 +2052,7 @@ window.WOK_POWER = (function () {
     const has = v => v !== '' && v !== null && v !== undefined && !isNaN(+v);
     const bad = text => { notes.push({ level: 'error', text: STATUS.invalid + ': ' + text }); status.add('invalid'); };
     if (has(card.atk)) { if (+card.atk < KING.atk[0] || +card.atk > KING.atk[1]) bad('Königs-ATK ' + card.atk + ' liegt nicht zwischen 2.000 und 3.500.'); else if (+card.atk % 100) bad('ATK ' + card.atk + ' ist kein 100er-Schritt.'); }
-    if (has(card.hp)) { if (+card.hp < KING.hp[0] || +card.hp > KING.hp[1]) bad('HP ' + Number(card.hp).toLocaleString('de-DE') + ' liegt nicht zwischen 10.000 und 20.000 (Höchstwert 20.000).'); }
+    if (has(card.hp)) { if (+card.hp < KING.hp[0] || +card.hp > KING.hp[1]) bad('HP ' + Number(card.hp).toLocaleString('de-DE') + ' liegt nicht zwischen 8.000 und 12.000 (Festlegung vom 30.10.2026).'); }
     const atk = katkPts(card.atk), hp = hpPts(card.hp);
     rows.push(['ATK ' + (has(card.atk) ? card.atk : 0) + ' (Werte zusammen höchstens 50)', r2(atk)], ['HP ' + (has(card.hp) ? Number(card.hp).toLocaleString('de-DE') : 0) + (+card.hp > 15000 ? ' – Schub über 15.000' : ''), r2(hp)]);
     const dirs = Object.keys((card.attack || {}).dirs || {}).filter(k => card.attack.dirs[k]);
@@ -2077,7 +2085,7 @@ window.WOK_POWER = (function () {
     const want = rollRarity(rng, rarityChoice), band = BANDS.find(b => b.id === want);
     for (let attempt = 0; attempt < 400; attempt++) {
       const n = 1 + Math.floor(rng() * 3), dirs = F.attack ? JSON.parse(JSON.stringify(F.attack)) : { dirs: Object.fromEntries(shuffle(rng, KING.dirs).slice(0, n).map(k => [k, 1])), showNumber: false, number: 1 };
-      const card = { type: 'king', atk: F.atk !== undefined ? +F.atk : 2000 + Math.floor(rng() * 16) * 100, hp: F.hp !== undefined ? +F.hp : 10000 + Math.floor(rng() * 21) * 500,
+      const card = { type: 'king', atk: F.atk !== undefined ? +F.atk : 2000 + Math.floor(rng() * 16) * 100, hp: F.hp !== undefined ? +F.hp : 8000 + Math.floor(rng() * 9) * 500,
         attack: dirs, move: { dirs: {}, showNumber: false, number: 1 }, gifts: F.giftObjs ? JSON.parse(JSON.stringify(F.giftObjs)) : (F.gifts || []).map(id => ({ id })), energy: '' };
       if (F.rollGifts) { const R = (D.ROYAL_GIFTS || []).filter(g => g.param), cnt = { gewoehnlich: [0, 1], ungewoehnlich: [1, 2], selten: [2, 3], legendaer: [3, 3] }[want] || [0, 1], k = Math.min(R.length, cnt[0] + Math.floor(rng() * (cnt[1] - cnt[0] + 1)));
         card.gifts = shuffle(rng, R).slice(0, k).map(g => { const p = g.param, steps = Math.round((p.max - p.min) / p.step); return { id: g.id, scope: 'all', amount: p.min + Math.floor(rng() * (steps + 1)) * p.step }; }); }
@@ -2875,7 +2883,7 @@ function hitSection(p) {
   return null;
 }
 // Werte direkt auf der Karte ändern: Energie, ATK oder DEF antippen und nach oben/unten ziehen (oder Mausrad)
-const VALUE_DRAG = { energy: { step: 1, min: 0, max: 10, label: 'Energie' }, atk: { step: 100, min: 0, max: 3500, label: 'ATK' }, def: { step: 100, min: 0, max: 3500, label: 'DEF' }, hp: { step: 500, min: 10000, max: 20000, label: 'HP' } };
+const VALUE_DRAG = { energy: { step: 1, min: 0, max: 10, label: 'Energie' }, atk: { step: 100, min: 0, max: 3500, label: 'ATK' }, def: { step: 100, min: 0, max: 3500, label: 'DEF' }, hp: { step: 500, min: 8000, max: 12000, label: 'HP' } };
 function hitValue(p) {
   const L = G.layout, near = (P, r) => P && Math.hypot(p.x - P.x, p.y - P.y) <= r, king = G.card && G.card.type === 'king';
   if (near(L.energy, 82)) return king ? null : 'energy';
@@ -3036,7 +3044,7 @@ function renderPanel() {
   <section class="sec" data-sec="werte"><h3>Spielwerte <span id="pw-live" class="pwlive">${liveBadge(c)}</span></h3>
     <div class="ctype ctype4"><button class="${c.type !== 'king' ? 'on' : ''}" data-cardtype="hero">⚔ Held</button><button class="${c.type === 'king' ? 'on' : ''}" data-cardtype="king">👑 König</button><button data-cardtype="spell">✦ Zauber</button><button data-cardtype="curse">☠ Fluch</button></div>
     ${c.type === 'king' ? `<div class="row2"><label>ATK (2.000–3.500)<input type="number" id="in-atk" min="2000" max="3500" step="100" value="${v(c.atk)}"></label>
-    <label>HP (10.000–20.000)<input type="number" id="in-hp" min="10000" max="20000" step="500" value="${v(c.hp)}"></label></div>
+    <label>HP (8.000–12.000)<input type="number" id="in-hp" min="8000" max="12000" step="500" value="${v(c.hp)}"></label></div>
     <p class="muted" style="font-size:12px;margin:0">Könige haben keine Energiekosten (Krone auf der Karte) und keine DEF.</p>` : `<div class="row3"><label>Energie<input type="number" id="in-energy" min="0" max="10" value="${v(c.energy)}"></label>
     <label>ATK<input type="number" id="in-atk" min="0" max="3500" step="100" value="${v(c.atk)}"></label>
     <label>DEF<input type="number" id="in-def" min="0" max="3500" step="100" value="${v(c.def)}"></label></div>`}
@@ -3278,7 +3286,7 @@ function giftPicker() {
 /* ---------- Dialoge ---------- */
 // Neue Karte: zuerst die Kartenart wählen, dann erst die Einzelheiten
 function newTypeDialog() {
-  const T = [['hero', '⚔', 'Held', 'ATK, DEF, Energie, Laufen, Angreifen und bis zu drei Gaben'], ['king', '👑', 'König', 'HP bis 20.000, ATK bis 3.500, bis zu drei königliche Gaben'], ['spell', '✦', 'Zauber', 'Hilft dir: Stärken, Schützen, Heilen, Ziehen …'], ['curse', '☠', 'Fluch', 'Schadet dem Gegner: Schwächen, Vergiften, Schaden …']];
+  const T = [['hero', '⚔', 'Held', 'ATK, DEF, Energie, Laufen, Angreifen und bis zu drei Gaben'], ['king', '👑', 'König', 'HP 8.000–12.000, ATK bis 3.500, bis zu drei königliche Gaben'], ['spell', '✦', 'Zauber', 'Hilft dir: Stärken, Schützen, Heilen, Ziehen …'], ['curse', '☠', 'Fluch', 'Schadet dem Gegner: Schwächen, Vergiften, Schaden …']];
   showModal('Neue Karte – was möchtest du machen?', '<div class="tp-grid tp4">' + T.map(([k, ic, t, sub]) => '<button class="tp ' + k + '" data-act="newtype" data-t="' + k + '"><span class="tp-ic">' + ic + '</span><b>' + t + '</b><small>' + sub + '</small></button>').join('') + '</div>', '');
 }
 function showModal(title, body, foot) {
@@ -3460,12 +3468,17 @@ async function importJSON(file) {
 /* Bestehende Karten automatisch an das aktuelle Power-Scaling anpassen (Seltenheit/Energie mit Automatik) */
 async function recalcLibrary(quiet) {
   if (!ST.state.canWrite) return;
-  let n = 0, rar = 0;
+  let n = 0, rar = 0; const kings = [];
   for (const raw of ST.list()) {
     const c = normalize(clone(raw)); let changed = false;
     // 2.0: Sonder-Synergie wieder 0/3/6/9 (V1.7 hatte halbiert)
     if (raw.powerVersion === '1.7' && [1.5, 3, 4.5].includes(+c.synergy)) { c.synergy = +c.synergy * 2; changed = true; }
     const has = v => v !== '' && v !== null && v !== undefined;
+    // 30.10.2026: Könige haben 8.000–12.000 HP (vorher 10.000–20.000) – Umrechnung in data.js (kingHpFix), gilt auch im Spiel
+    if (c.type === 'king' && has(c.hp) && (+c.hp < PW.KING.hp[0] || +c.hp > PW.KING.hp[1])) {
+      const old = +c.hp; c.hp = D.kingHpFix(c.name, old);
+      changed = true; kings.push((c.name || 'König') + ' ' + old.toLocaleString('de-DE') + ' → ' + c.hp.toLocaleString('de-DE'));
+    }
     if (has(c.atk) && has(c.type === 'king' ? c.hp : c.def)) {
       const ev = PW.evaluate(Object.assign({}, c, { rarity: null }));
       if (c.autoRarity !== false && c.rarity !== ev.rarity) { c.rarity = ev.rarity; changed = true; rar++; }
@@ -3475,6 +3488,7 @@ async function recalcLibrary(quiet) {
       try { await ST.put(c, changed ? undefined : raw.updated); if (changed) n++; } catch (e) { }
     }
   }
+  if (kings.length) setTimeout(() => toast('Neue Königsregel (8.000–12.000 HP): ' + kings.join(', ') + '. Bitte neu exportieren, damit das Spiel die neuen Kartenbilder bekommt.', 12000), 600);
   if (n && !quiet) setTimeout(() => toast(PW.SOURCE + ': ' + n + (n === 1 ? ' Karte' : ' Karten') + ' neu berechnet' + (rar ? ', ' + rar + ' mit neuer Seltenheit' : '') + '.', 7000), 1200);
   if (n) G.thumbs.clear();
 }
@@ -3679,7 +3693,7 @@ document.addEventListener('click', async e => {
     case 'folder-create': { const nm = ($('#folder-name').value || '').trim().slice(0, 40); if (!nm) { toast('Bitte einen Namen eingeben.'); return; } const ids = G.folderIds; closeModal();
       if (ids && ids.length) { const n = await moveToFolder(ids, nm); toast(n + (n === 1 ? ' Karte' : ' Karten') + ' im neuen Ordner „' + nm + '“.'); } else { saveFolderList(folderNames().concat(nm)); G.filters.folder = nm; renderLib(); toast('Ordner „' + nm + '“ angelegt. Mit „☑ Auswählen“ legst du Karten hinein.', 5000); } return; }
     case 'folder-del': { const nm = d.name; closeModal(); const ids = ST.list().filter(c => c.folder === nm).map(c => c.id); await moveToFolder(ids, ''); saveFolderList(folderNames().filter(x => x !== nm)); if (G.filters.folder === nm) G.filters.folder = ''; renderLib(); toast('Ordner „' + nm + '“ aufgelöst, die Karten bleiben erhalten.'); return; }
-    case 'newtype': { const t = d.t; closeModal(); openCard(null); if (t !== 'hero') { G.snapLock = true; setCardType(t); G.snapLock = false; } toast({ hero: 'Neue Heldenkarte', king: 'Neue Königskarte: HP bis 20.000, ATK bis 3.500, bis zu drei königliche Gaben', spell: 'Neue Zauberkarte', curse: 'Neue Fluchkarte' }[t] + '.', 4000); return; }
+    case 'newtype': { const t = d.t; closeModal(); openCard(null); if (t !== 'hero') { G.snapLock = true; setCardType(t); G.snapLock = false; } toast({ hero: 'Neue Heldenkarte', king: 'Neue Königskarte: HP 8.000–12.000, ATK bis 3.500, bis zu drei königliche Gaben', spell: 'Neue Zauberkarte', curse: 'Neue Fluchkarte' }[t] + '.', 4000); return; }
     case 'save': save(); return;
     case 'discard': closeModal(); clearDirty(); if (G.pendingNext) G.pendingNext(); return;
     case 'save-continue': closeModal(); if (await save() && G.pendingNext) G.pendingNext(); return;
@@ -4893,7 +4907,7 @@ function renderAI() {
         ${n ? '<p class="muted" style="font-size:13px">' + n + (n === 1 ? ' Bild' : ' Bilder') + ' bereit. <button class="ghost" data-ai="clear" style="padding:2px 8px" ' + '' + '>Alle entfernen</button></p>' : ''}
         <div class="ai-step"><span class="num">2</span><h3>Kartenart und Seltenheit</h3></div>
         <div class="ai-ctype">${[['hero', '⚔ Helden'], ['king', '👑 Könige'], ['spell', '✦ Zauber'], ['curse', '☠ Flüche'], ['mixed', '✦☠ Zauber und Flüche'], ['all', '🎲 Gemischt (alle Arten)']].map(([k, t]) => '<button class="' + ((AIM.ctype || 'hero') === k ? 'on' : '') + '" data-ai-ctype="' + k + '">' + t + '</button>').join('')}</div>
-        ${(AIM.ctype || 'hero') === 'king' ? '<p class="muted" style="font-size:12.5px;margin:0">Könige: Die KI erkennt Name, Element und Rasse; die Indoor-KI würfelt HP (höchstens 20.000), ATK (höchstens 3.500), Angriffsrichtungen und bis zu drei königliche Gaben passend zur Seltenheit.</p>' : ''}
+        ${(AIM.ctype || 'hero') === 'king' ? '<p class="muted" style="font-size:12.5px;margin:0">Könige: Die KI erkennt Name, Element und Rasse; die Indoor-KI würfelt HP (8.000–12.000), ATK (höchstens 3.500), Angriffsrichtungen und bis zu drei königliche Gaben passend zur Seltenheit.</p>' : ''}
         ${(AIM.ctype || 'hero') === 'all' ? '<p class="muted" style="font-size:12.5px;margin:0">Gemischt: Jedes Bild wird zufällig zu einem Helden (etwa die Hälfte), Zauber, Fluch oder König. Du kannst jede Karte danach einzeln neu erzeugen.</p>' : ''}
         ${['spell', 'curse', 'mixed'].includes(AIM.ctype || 'hero') ? '<p class="muted" style="font-size:12.5px;margin:0">Zauber und Flüche: Die KI erkennt das Motiv und schlägt Name, Untertyp, Stimmungstext und Effekte vor; die Werkstatt prüft alles nach dem Effektformat. Offline (oder wenn die KI-Antwort nicht passt) würfelt sie gültige Effekte passend zur Farbe des Bildes. Energie ist ein Werkstatt-Vorschlag.</p>' : ''}
         <div class="ai-rar">${RARITY_OPTS.map(([k, t, sub]) => '<button class="' + (AIM.rarity === k ? 'on' : '') + '" data-ai-rar="' + k + '" ' + '' + '><b>' + t + '</b><small>' + sub + '</small></button>').join('')}</div>

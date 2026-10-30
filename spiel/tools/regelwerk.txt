@@ -28,7 +28,7 @@ WAR OF KINGS – MASTER-REGELWERK
  seinen Ablagestapel legen.
  • Identische Karten je Seltenheit: Gewöhnlich höchstens 3, Ungewöhnlich 3, Selten 2, Legendär 1 (Festlegung des Entwicklers vom 30.10.2026; vorher Gewöhnlich 4). Verschiedene legendäre Karten sind unbegrenzt erlaubt, jede nur einmal.
  • Angriffe treffen nur unmittelbar angrenzende Felder; weiter (2 Felder) nur mit der Gabe Schütze (Festlegung vom 30.10.2026).
- 4. Könige • Könige besitzen ATK und 10.000–20.000 HP, jedoch keine
+ 4. Könige • Könige besitzen ATK und 8.000–12.000 HP (Festlegung des Entwicklers vom 30.10.2026; vorher 10.000–20.000), jedoch keine
  DEF. Sie können sich nicht bewegen.
  • Ein König kann pro eigener Battlephase höchstens einmal angreifen: ein Feld gerade nach vorn oder diagonal
  nach vorn links/rechts.
@@ -48,8 +48,10 @@ WAR OF KINGS – MASTER-REGELWERK
  Gabe erfunden.
  5. Energie und Beschwörung • Im ersten eigenen Zug stehen 1 Energie,
  im zweiten 2 usw. bis maximal 10 zur Verfügung. Der Vorrat wird zu
- Beginn jedes eigenen Zuges aufgefüllt; unverbrauchte Energie verfällt
- am Zugende.
+ Beginn jedes eigenen Zuges aufgefüllt. Unverbrauchte Energie bleibt am
+ Zugende erhalten und kann in der gegnerischen Konterphase genutzt werden;
+ nach dessen Schadensberechnung (spätestens am Ende seines Zuges) verfällt sie
+ (Festlegung des Entwicklers vom 30.10.2026; kein Ansparen über mehrere Züge).
  • Beschwörungen sowie Zauber und Flüche kosten die auf der Karte ausgewiesene Energie. Gaben kosten keine
  Energie.
  • Mehrere anwendbare Kostenreduzierungen addieren sich. Kosten können 0, aber niemals negativ werden. Auch

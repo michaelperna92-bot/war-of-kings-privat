@@ -118,5 +118,13 @@ window.WOK_DATA = (function () {
     if (g.param) { const n = param || g.param.min; return n === 1 && g.textOne ? g.textOne : g.text.replace('{n}', n); }
     return g.text;
   }
-  return { RACES, CLASSES, ELEMENTS, RARITIES, GIFTS, ROYAL_GIFTS, royalScope, royalAmount, royalShort, giftTitle, giftText, giftShort, SOURCE: 'Gabenwappen-Übersicht vom 27.10.2026' };
+  // Königs-HP (Festlegung des Entwicklers vom 30.10.2026): 8.000–12.000. Gilt in Werkstatt und Spiel gleich.
+  // Ältere Könige (bisher 10.000–20.000) werden umgerechnet: „Grabeskönig Vorhaltar“ auf 10.000 (Festlegung), alle anderen anteilig (Werkstatt-Vorschlag).
+  const KING_HP = { min: 8000, max: 12000, step: 500 };
+  function kingHpFix(name, hp) {
+    hp = +hp; if (!(hp > 0) || (hp >= KING_HP.min && hp <= KING_HP.max)) return hp;
+    if (String(name || '').trim() === 'Grabeskönig Vorhaltar') return 10000;
+    return Math.max(KING_HP.min, Math.min(KING_HP.max, Math.round((8000 + (Math.max(10000, Math.min(20000, hp)) - 10000) * 0.4) / 500) * 500));
+  }
+  return { RACES, CLASSES, ELEMENTS, RARITIES, GIFTS, ROYAL_GIFTS, KING_HP, kingHpFix, royalScope, royalAmount, royalShort, giftTitle, giftText, giftShort, SOURCE: 'Gabenwappen-Übersicht vom 27.10.2026' };
 })();
