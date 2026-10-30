@@ -20,7 +20,7 @@ const { chromium } = require('playwright');
   await pg.click('#exportdeck'); await pg.waitForTimeout(1500);
   console.log('Toast:', await pg.textContent('#toast'));
   // Spiel mit eigenem Deck gegen Beispiel-Deck
-  await pg.click('[data-go="home"]'); await pg.selectOption('[data-deckpick="deckA"]', { label: 'Mein Testdeck' }); await pg.click('[data-hplay="ai"]').then(() => pg.click('#start')); await pg.waitForTimeout(800);
+  await pg.click('[data-go="home"]'); await pg.selectOption('[data-deckpick="deckA"]', { label: 'Mein Testdeck' }); await pg.click('[data-hplay="ai"]').then(() => pg.click('#start')); await require('./mull.js')(pg); await pg.waitForTimeout(800);
   console.log('Partie:', await pg.evaluate(() => WOK_APP.game.s.players.map(p => p.name + '/' + p.deckName + '/' + p.deck.length)));
   console.log(errs);
   await b.close();

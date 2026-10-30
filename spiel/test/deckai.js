@@ -13,7 +13,7 @@ function randomDeck(seed) { let s = seed; const r = () => (s = (s * 16807) % 214
 const built = DB.build(cards, { style: 'ausgewogen' }).ids; let w = 0, n = 0;
 for (let g = 0; g < 24; g++) {
   let { state } = W.newGame({ cards, decks: [built, randomDeck(77 + g)], seed: 500 + g, fixedSides: true }); const m = [{ seed: 1 }, { seed: 2 }];
-  while (!state.result) { const p = state.pendingDiscard !== null ? state.pendingDiscard : state.phase === 'counter' ? state.counter : state.active; state = W.apply(state, AI.decide(state, p, 'mittel', m[p])).state; }
+  while (!state.result) { const p = W.actor(state); state = W.apply(state, AI.decide(state, p, 'mittel', m[p])).state; }
   n++; if (state.result.winner === 0) w++;
 }
 console.log('KI-Deck gewinnt gegen Zufallsdecks:', w, 'von', n);

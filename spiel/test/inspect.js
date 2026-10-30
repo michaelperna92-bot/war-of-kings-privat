@@ -6,7 +6,7 @@ const OUT = '/tmp/claude-0/sf/shots/';
   for (const [w, h, n] of [[1366, 900, 'pc'], [390, 844, 'phone']]) {
     const pg = await b.newPage({ viewport: { width: w, height: h } }); pg.on('pageerror', e => errs.push(n + ': ' + e.message));
     await pg.goto('http://127.0.0.1:8765/index.html'); await pg.waitForTimeout(500);
-    await pg.click('[data-hplay="ai"]').then(() => pg.click('#start')); await pg.waitForTimeout(600);
+    await pg.click('[data-hplay="ai"]').then(() => pg.click('#start')); await require('./mull.js')(pg); await pg.waitForTimeout(600);
     for (let i = 0; i < 80; i++) { if (await pg.evaluate(() => WOK_APP.game.s.active === 0 && WOK_APP.game.s.phase === 'summon1')) break; await pg.waitForTimeout(300); }
     await pg.evaluate(() => { const s = WOK_APP.game.s; s.players[0].energy = 10; WOK_APP.renderNow(); });
     // Handkarte antippen

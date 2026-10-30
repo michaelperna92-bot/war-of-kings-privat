@@ -11,13 +11,17 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     await pg.evaluate(n => { const s = JSON.parse(localStorage.getItem('wok-spiel-setup') || '{}'); s.name1 = n; localStorage.setItem('wok-spiel-setup', JSON.stringify(s)); }, name); await pg.reload(); await pg.waitForTimeout(900); return pg; }
   const A = await page('Anna', 1280, 860), B = await page('Ben', 390, 844);
   await A.click('[data-hplay="online"]'); await A.waitForTimeout(1500); console.log('A Verbindung:', await A.textContent('#onl-net')); await A.screenshot({ path: SH + 'net-dialog.png' });
-  await A.click('#dlg [data-act="host:net"]'); await A.waitForTimeout(800); const code = (await A.textContent('.onl-code')).trim(); console.log('Code:', code);
+  const openNet = async P => { if (!(await P.isVisible('#dlg [data-act="host:net"]'))) { await P.evaluate(() => { for (const d of document.querySelectorAll('#dlg details')) d.open = true; }); await P.waitForTimeout(200); } };
+  await openNet(A); await A.click('#dlg [data-act="host:net"]'); await A.waitForTimeout(800); const code = (await A.textContent('.onl-code')).trim(); console.log('Code:', code);
   await B.click('[data-hplay="online"]'); await B.waitForTimeout(1200); await B.screenshot({ path: SH + 'net-dialog-phone.png' });
-  await B.fill('#onl-code', code.toLowerCase()); await B.click('#dlg [data-act="code:net"]'); await B.waitForTimeout(4000);
+  await openNet(B); await B.fill('#onl-code', code.toLowerCase()); await B.click('#dlg [data-act="code:net"]'); await B.waitForTimeout(4000);
   console.log('Spiel offen:', await A.isVisible('#v-game'), await B.isVisible('#v-game'));
   const st = pg => pg.textContent('#turnwho');
   console.log('A:', await st(A), '| B:', await st(B));
   const play = async (rounds) => { for (let k = 0; k < rounds; k++) { for (const P of [A, B]) { if (/\(du\)/.test(await st(P)) && await P.evaluate(() => !document.querySelector('#mainbtn').disabled)) { await P.click('#mainbtn'); await P.waitForTimeout(200); for (const s of ['go', 'yes']) if (await P.isVisible('#dlg [data-act="' + s + '"]')) await P.click('#dlg [data-act="' + s + '"]'); await P.waitForTimeout(300); } } await sleep(400); } };
+  // Starthand über die Oberfläche: A zieht neu, B behält (Notfall-Weg: nacheinander)
+  for (let i = 0; i < 30; i++) { for (const [P, act] of [[A, 'new'], [B, 'keep']]) { const k = await P.$('#ov:not([hidden]) #dlg .mhand ~ .row [data-act="' + act + '"]'); if (k) { await k.click(); await P.waitForTimeout(400); } } if (await A.evaluate(() => WOK_APP.game.s.phase !== 'mulligan') && await B.evaluate(() => WOK_APP.game.s.phase !== 'mulligan')) break; await A.waitForTimeout(300); }
+  console.log('Starthand – A:', await A.evaluate(() => JSON.stringify(WOK_APP.game.s.mull)), '| B:', await B.evaluate(() => JSON.stringify(WOK_APP.game.s.mull)), '| gleiche Hände:', await A.evaluate(() => JSON.stringify(WOK_APP.game.s.players.map(P => P.hand.map(h => h.iid)))) === await B.evaluate(() => JSON.stringify(WOK_APP.game.s.players.map(P => P.hand.map(h => h.iid)))));
   // Beschwören über die UI: eine Handkarte und ein goldenes Feld
   await play(6);
   console.log('nach 6 Runden – A:', await st(A), '| B:', await st(B));

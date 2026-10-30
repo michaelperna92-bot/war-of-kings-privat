@@ -14,7 +14,7 @@ require('fs').mkdirSync(OUT, { recursive: true });
     await pg.goto('http://127.0.0.1:8765/index.html');
     await pg.waitForTimeout(600);
     await pg.screenshot({ path: OUT + '/' + vp.n + '-1-home.png', fullPage: true });
-    await pg.click('[data-hplay="ai"]').then(() => pg.click('#start'));
+    await pg.click('[data-hplay="ai"]').then(() => pg.click('#start')); await require('./mull.js')(pg);
     await pg.waitForTimeout(800);
     // falls die KI beginnt: warten bis wir dran sind
     for (let i = 0; i < 80; i++) { const mine = await pg.evaluate(() => { const g = WOK_APP.game; return g.s.active === 0 && g.s.phase === 'summon1'; }); if (mine) break; await pg.waitForTimeout(400); }

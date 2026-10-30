@@ -43,6 +43,9 @@ async function page(b, uid, name) {
   console.log('Spiel offen:', await A.isVisible('#v-game'), await B.isVisible('#v-game'));
   const st = pg => pg.evaluate(() => { const s = document.querySelector('#turnwho').textContent; return s; });
   console.log('A:', await st(A), '| B:', await st(B));
+  // Starthand (ab 4.5) über die Oberfläche: A behält, B zieht neu (Cloud-Weg: nacheinander)
+  for (let i = 0; i < 40; i++) { for (const [P, act] of [[A, 'keep'], [B, 'new']]) { const k = await P.$('#ov:not([hidden]) #dlg .mhand ~ .row [data-act="' + act + '"]'); if (k) { await k.click(); await P.waitForTimeout(600); } } if (await A.evaluate(() => WOK_APP.game.s.phase !== 'mulligan') && await B.evaluate(() => WOK_APP.game.s.phase !== 'mulligan')) break; await A.waitForTimeout(400); }
+  console.log('Starthand – A:', await A.evaluate(() => JSON.stringify(WOK_APP.game.s.mull)), '| B:', await B.evaluate(() => JSON.stringify(WOK_APP.game.s.mull)), '| gleiche Hände:', await A.evaluate(() => JSON.stringify(WOK_APP.game.s.players.map(P => P.hand.map(h => h.iid)))) === await B.evaluate(() => JSON.stringify(WOK_APP.game.s.players.map(P => P.hand.map(h => h.iid)))));
   // Wer am Zug ist, beendet Phasen bis der Zug wechselt; beide Zustände vergleichen
   for (let k = 0; k < 14; k++) {
     for (const P of [A, B]) { const btn = await P.$('#mainbtn:not([disabled])'); const t = await st(P); if (/\(du\)|Anna|Ben/.test(t) && btn) { const vis = await btn.isVisible(); if (vis && await P.evaluate(() => !document.querySelector('#mainbtn').disabled)) { await btn.click(); await P.waitForTimeout(250); if (await P.isVisible('#dlg [data-act="go"]')) await P.click('#dlg [data-act="go"]'); if (await P.isVisible('#dlg [data-act="yes"]')) await P.click('#dlg [data-act="yes"]'); await P.waitForTimeout(300); } } }

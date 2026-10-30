@@ -11,7 +11,7 @@
   const ARROW = { n: '↑', ne: '↗', e: '→', se: '↘', s: '↓', sw: '↙', w: '←', nw: '↖' };
   const GRID9 = ['nw', 'n', 'ne', 'w', null, 'e', 'sw', 's', 'se'];
   const ELCOL = { feuer: '#8a3324', wasser: '#24527a', erde: '#5b4a2c', wind: '#3d6b5a', blitz: '#6b5a1c', licht: '#7a6f44', dunkelheit: '#3a2a4a' };
-  const VERSION = '4.4';
+  const VERSION = '4.5';
   const isSp = c => !!c && (c.type === 'spell' || c.type === 'curse');
   const TYPEN = c => c.type === 'king' ? 'König' : c.type === 'spell' ? 'Zauber' : c.type === 'curse' ? 'Fluch' : 'Held';
   const SPCOL = { spell: '#1f4a35', curse: '#3d2350' };
@@ -416,7 +416,7 @@
   }
 
   /* ---------------- Ansichten ---------------- */
-  function show(v) { for (const s of $$('main > section')) s.hidden = s.id !== 'v-' + v; window.scrollTo(0, 0); document.body.classList.toggle('full', v === 'home' || v === 'bazar'); if (v !== 'bazar') BAZAR.leave(); if (v !== 'home') closeSetup(); if (v === 'decks') renderDecks(); if (v === 'rules') renderRules(); if (v === 'home') renderHome(); if (v === 'bazar') BAZAR.enter(); if (v === 'tutorial') TUT.renderList(); if (v !== 'game') { const rb = $('#rpbar'); if (rb) rb.hidden = true; } }
+  function show(v) { try { PEEK.hide(); } catch (e) { } for (const s of $$('main > section')) s.hidden = s.id !== 'v-' + v; window.scrollTo(0, 0); document.body.classList.toggle('full', v === 'home' || v === 'bazar'); if (v !== 'bazar') BAZAR.leave(); if (v !== 'home') closeSetup(); if (v === 'decks') renderDecks(); if (v === 'rules') renderRules(); if (v === 'home') renderHome(); if (v === 'bazar') BAZAR.enter(); if (v === 'tutorial') TUT.renderList(); if (v !== 'game') { const rb = $('#rpbar'); if (rb) rb.hidden = true; } }
   let toastT = 0;
   function toast(t, ms) { const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, ms || 3200); }
   let DLGN = 0;
@@ -426,7 +426,7 @@
     ov.onclick = e => { if (e.target === ov && opts && opts.dismiss) closeDialog(); };
     const f = d.querySelector('[data-act]'); if (f) f.focus();
   }
-  function closeDialog() { $('#ov').hidden = true; $('#dlg').innerHTML = ''; }
+  function closeDialog() { $('#ov').hidden = true; $('#dlg').innerHTML = ''; if (typeof PEEK !== 'undefined') PEEK.hide(); }
 
   /* ---------------- Startseite ---------------- */
   function deckSummary(d) {
@@ -1098,7 +1098,7 @@
     show('game'); $('#rpbar').hidden = true; $('#tutbox').hidden = true; MUSIC.start(); MATE.setup(); afterEvents([]);
   }
   function saveGame() { if (!G || G.mode === 'online') return; if (G.s.result) { LS.del('wok-spiel-save'); return; } if (G.replay || G.tutorial) return; try { localStorage.setItem('wok-spiel-save', JSON.stringify({ s: G.s, mode: G.mode, level: G.level, aiSide: G.aiSide, view: G.view, timer: G.timer, rec: G.rec, looks: G.looks, avatars: G.avatars })); } catch (e) { LS.set('wok-spiel-save', { s: G.s, mode: G.mode, level: G.level, aiSide: G.aiSide, view: G.view, timer: G.timer, looks: G.looks }); } }
-  const actor = s => s.pendingDiscard !== null ? s.pendingDiscard : s.phase === 'counter' ? s.counter : s.active;
+  const actor = s => W.actor(s);
   const isAI = p => G && G.aiSide === p;
   function viewFor() { return G.mode === 'ai' ? 0 : G.mode === 'online' ? G.view : actor(G.s); }
 
@@ -1130,12 +1130,37 @@
     if (G.handover) handover();
     else if (s.result) gameOver();
     else if (s.pendingDiscard !== null && !isAI(s.pendingDiscard)) discardPrompt();
+    else if (s.phase === 'mulligan' || $('#dlg .mhand')) mulliganPrompt();
     scheduleAI();
+  }
+  /* ---------- Einmaliger Starthandwechsel (Festlegung 30.10.2026) ---------- */
+  const MULL_SECONDS = 60; // Werkstatt-Vorschlag: mit Zuguhr gilt danach „Hand behalten“
+  let mullT = 0;
+  // welche Seite auf diesem Gerät jetzt entscheiden darf (online über den Spielserver: beide unabhängig)
+  function mullSide() {
+    const s = G && G.s; if (!s || s.phase !== 'mulligan' || s.result || G.replay || G.handover) return null;
+    if (G.online && G.online.kind === 'srv') return W.mulliganOpen(s, G.online.me) ? G.online.me : null;
+    const p = actor(s); if (isAI(p) || p !== G.view) return null; return W.mulliganOpen(s, p) ? p : null;
+  }
+  function mulliganPrompt() {
+    const p = mullSide(); if (p === null) { if (!$('#ov').hidden && $('#dlg .mhand')) { clearInterval(mullT); closeDialog(); } return false; }
+    if (G.online && G.online.kind === 'srv' && G.mullWish !== undefined) { if (!G.online.pending) dispatch({ type: 'mulligan', p, redraw: G.mullWish }); return true; } // nach Abgleich erneut senden
+    if (!$('#ov').hidden && $('#dlg .mhand')) return true; // Auswahl ist schon offen
+    if (FX.busy) { FX.whenIdle(mulliganPrompt); return true; } // erst nach dem Einlauf (VS, Münzwurf)
+    const P = G.s.players[p], timed = !!G.timer;
+    dialog('<span class="eyebrow">Starthand · ' + esc(P.name) + '</span><h2>Möchtest du deine Starthand behalten oder einmalig neu ziehen?</h2><div class="hand mhand">' + P.hand.map(h => handCard(h, p, false, 'data-mh="' + h.iid + '"')).join('') + '</div><p>Du kannst deine gesamte Starthand einmalig austauschen. Die bisherigen Karten werden zurück ins Deck gemischt. Die neue Hand musst du behalten.</p><p class="hint">Karten ansehen: mit der Maus darüberfahren oder mit dem Finger über die Karten streichen.</p><div class="row"><button class="btn primary" data-act="keep">Hand behalten</button><button class="btn" data-act="new">Neue 5 Karten ziehen</button></div>' + (timed ? '<p class="muted" id="mull-clock"></p>' : ''), act => {
+      if (act !== 'keep' && act !== 'new') return false;
+      clearInterval(mullT); PEEK.hide(); const redraw = act === 'new'; G.mullWish = redraw; closeDialog();
+      if (dispatch({ type: 'mulligan', p, redraw }) !== false) toast(redraw ? 'Neue Starthand gezogen – diese musst du behalten.' : 'Starthand behalten.', 3500);
+    });
+    clearInterval(mullT);
+    if (timed) { const end = Date.now() + MULL_SECONDS * 1000; const tick = () => { const el = $('#mull-clock'); if (!el || mullSide() !== p) { clearInterval(mullT); return; } const left = Math.ceil((end - Date.now()) / 1000); if (left <= 0) { clearInterval(mullT); const b = $('#dlg [data-act="keep"]'); if (b) b.click(); return; } el.textContent = 'Noch ' + left + ' s – danach wird die Hand behalten.'; }; tick(); mullT = setInterval(tick, 500); }
+    return true;
   }
   function handover() {
     const P = G.s.players[G.view];
     $('#v-game').style.filter = 'blur(14px)';
-    dialog('<span class="eyebrow">Spielerwechsel</span><h2>' + esc(P.name) + ' ist am Zug</h2><p class="muted">Gib das Gerät weiter. Die Hand wird erst nach dem Tippen sichtbar.</p><button class="btn primary" data-act="go">Ich bin ' + esc(P.name) + ' – weiter</button>', () => { G.handover = false; $('#v-game').style.filter = ''; render([]); if (G.s.pendingDiscard !== null) discardPrompt(); if (G.timer) G.deadline = Date.now() + W.RULES.turnSeconds * 1000; });
+    dialog('<span class="eyebrow">Spielerwechsel</span><h2>' + esc(P.name) + ' ist am Zug</h2><p class="muted">Gib das Gerät weiter. Die Hand wird erst nach dem Tippen sichtbar.</p><button class="btn primary" data-act="go">Ich bin ' + esc(P.name) + ' – weiter</button>', () => { G.handover = false; $('#v-game').style.filter = ''; render([]); if (G.s.pendingDiscard !== null) discardPrompt(); else if (G.s.phase === 'mulligan') mulliganPrompt(); if (G.timer) G.deadline = Date.now() + W.RULES.turnSeconds * 1000; });
   }
   function discardPrompt() {
     const p = G.s.pendingDiscard, P = G.s.players[p];
@@ -1242,7 +1267,7 @@
     function start() {
       want = true; if (ws || !url()) return;
       try { ws = new WebSocket(url()); } catch (e) { ws = null; again(); return; }
-      ws.onopen = () => { ws.send(JSON.stringify({ t: 'hello', id: netId(), name: SET.name1 || 'Spieler' })); };
+      ws.onopen = () => { ws.send(JSON.stringify({ t: 'hello', id: netId(), name: SET.name1 || 'Spieler', v: VERSION })); };
       ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (x) { return; }  if (m.t === 'hello') { up = true; retry = 0; while (queue.length) ws.send(queue.shift()); for (const f of stFns) f(true); } for (const f of fns) f(m); };
       ws.onclose = ws.onerror = () => { if (!ws) return; ws.onclose = ws.onerror = ws.onmessage = null; ws = null; const was = up; up = false; if (was) for (const f of stFns) f(false); again(); };
     }
@@ -1477,7 +1502,7 @@
       for (const [id, im] of Object.entries(m.imgs || {})) { if (im.full && !fullURL(id)) urls.full[id] = im.full; if (im.art && !artURL(id)) urls.art[id] = im.art; }
       R = { code: m.code, me: m.me, kind: 'srv', n: m.acts.length };
       LS.set(KEY, { code: m.code, me: m.me, kind: 'srv' });
-      if (same) { G.s = s; G.online = R; G.rec.acts = m.acts.slice(); render([]); if (s.result) gameOver(); return; }
+      if (same) { G.s = s; G.online = R; G.rec.acts = m.acts.slice(); render([]); if (s.result) gameOver(); else if (s.phase === 'mulligan') mulliganPrompt(); return; }
       G = { s, mode: 'online', level: '', aiSide: -1, view: m.me, sel: null, gift: null, memo: { seed: 7 }, busy: false, timer: false, deadline: 0, handover: false, online: R };
       G.lastActive = -1; G.rec = { init: W.clone(res.state), acts: m.acts.slice() }; G.looks = { A: lookOf(m.me === 0 ? deckById(SET.deckA) : null), B: lookOf(m.me === 1 ? deckById(SET.deckA) : null) }; G.avatars = [PROF.src(m.me === 0 ? 'p1' : 'p2'), PROF.src(m.me === 0 ? 'p2' : 'p1')];
       show('game'); $('#log').innerHTML = ''; $('#rpbar').hidden = true; $('#tutbox').hidden = true; MUSIC.start(); MATE.setup();
@@ -1621,6 +1646,9 @@
     if (!myTurn()) { const h = G.s.players[G.view].hand.find(x => x.iid === iid); if (h) openInspector({ cid: h.cid, from }); return; }
     if (G.cast && G.cast.iid !== iid) G.cast = null;
     G.gift = null;
+    // Schnellwirken (4.5): spielbarer Zauber/Fluch → Wirkung sofort über dem Spielfeld, nur noch Ziel wählen und bestätigen
+    { const h = G.s.players[actor(G.s)].hand.find(x => x.iid === iid), c = h && G.s.cards[h.cid];
+      if (c && isSp(c)) { if (G.cast && G.cast.iid === iid) { G.cast = null; G.sel = null; render([]); return; } if (W.castOptions(G.s, actor(G.s), iid).ok) { startCast(iid); return; } } }
     if (bigOn()) { G.sel = { kind: 'hand', iid }; render([]); openInspector({ iid, from: $('.hcard[data-iid="' + iid + '"]') || from }); return; }
     G.sel = G.sel && G.sel.kind === 'hand' && G.sel.iid === iid ? null : { kind: 'hand', iid };
     render([]);
@@ -1669,6 +1697,7 @@
     $('#insp-info').innerHTML = insActions(c) + cardDetail(c, u, u ? s : (G ? s : null), { noImage: true }) + (INS.ctx !== 'game' ? relatedHTML(c) : '');
   }
   function openInspector(o) {
+    PEEK.hide();
     INS = Object.assign({ ctx: G && !$('#v-game').hidden ? 'game' : !$('#dv-edit').hidden && ED ? 'deck' : 'view' }, o);
     if (!INS.cid && !INS.uid && !INS.iid) return;
     const box = $('#insp'); fillInspector(); if (!INS) return;
@@ -1718,6 +1747,7 @@
     dialog('<span class="eyebrow">Spielhilfe</span><h2>Das könntest du jetzt tun</h2>' + adviceList(list) + '<p class="hint">Tippe einen Hinweis an, um die Karte auszuwählen. Die Spielhilfe lässt sich im Menü ausschalten.</p><button class="btn" data-act="close">Schließen</button>', act => adviceAct(act), { dismiss: true });
   }
   function mainAction() {
+    if (G && G.s.phase === 'mulligan') { mulliganPrompt(); return; }
     if (!myTurn()) return;
     const s = G.s;
     const go = () => { G.sel = null; G.gift = null; G.cast = null; dispatch(s.phase === 'counter' ? { type: 'pass', p: s.counter } : { type: 'endPhase' }); };
@@ -1813,7 +1843,7 @@
     const s = G.s, p = actor(s), o = W.castOptions(s, p, iid); if (!o.ok) { toast('Nicht ausspielbar: ' + o.why + '.'); return; }
     const h = s.players[p].hand.find(x => x.iid === iid), steps = [];
     for (const eo of o.effects) { if (eo.pick === 'player' && eo.candidates.length) steps.push({ i: eo.i, type: 'pick' }); if (eo.place && eo.candidates.length) steps.push({ i: eo.i, type: 'place' }); }
-    G.cast = { iid, cid: h.cid, o, steps, k: 0, choices: o.effects.map(() => []), place: o.effects.map(() => []) };
+    G.cast = { iid, cid: h.cid, o, steps, k: 0, choices: o.effects.map(() => []), place: o.effects.map(() => []) }; PEEK.hide();
     G.sel = { kind: 'hand', iid }; render([]);
   }
   function castStep() {
@@ -1845,6 +1875,20 @@
       body = '<ul>' + sum + '</ul><div class="row"><button class="btn primary" data-cok="1">Verbindlich ausspielen (' + c.energy + ' Energie)</button>' + (C.steps.length ? '<button class="btn small" data-cback="1">Zurück</button>' : '') + '<button class="btn small" data-cabort="1">Abbrechen</button></div><p class="hint">Danach nicht mehr rücknehmbar. Ausgewertet wird nach der Konterphase.</p>';
     }
     return '<div class="castbox ' + c.type + '"><span class="eyebrow">' + (c.type === 'curse' ? '☾ Fluch' : '✦ Zauber') + ' ausspielen: ' + esc(c.name) + '</span>' + body + '</div>';
+  }
+  // schwebendes Wirk-Fenster über dem Spielfeld: liegt auf der Seite, auf der keine Ziele stehen
+  function renderCastFloat() {
+    const wrap = document.querySelector('#v-game .boardwrap'); if (!wrap) return;
+    let el = $('#castfloat'); if (!el) { el = document.createElement('div'); el.id = 'castfloat'; el.className = 'castfloat'; wrap.appendChild(el); el.addEventListener('click', e => { const k = e.target.closest('[data-cpick],[data-cnext],[data-cback],[data-cabort],[data-cok]'); if (k && myTurn()) castAct(k.dataset); const z = e.target.closest('[data-cfzoom]'); if (z) openInspector({ cid: z.dataset.cfzoom, from: z }); }); }
+    if (!G || !G.cast || G.replay) { el.hidden = true; el.innerHTML = ''; return; }
+    const st = castStep(), rows = [];
+    if (st && st.type === 'pick' && (st.what === 'unit' || st.what === 'king')) for (const id of st.cands) { const u = G.s.units[id]; if (u) rows.push(+slotOf(u.pos).slice(1, 2)); }
+    if (st && (st.type === 'place' || st.what === 'field')) for (const f of st.cands) rows.push(+slotOf(f).slice(1, 2));
+    const avg = rows.length ? rows.reduce((a, b) => a + b, 0) / rows.length : 7;
+    const c = G.s.cards[G.cast.cid], f = fullURL(c.id);
+    el.className = 'castfloat ' + c.type + ' ' + (avg <= 4 ? 'at-bottom' : 'at-top');
+    el.innerHTML = (f ? '<button class="cf-thumb" data-cfzoom="' + esc(c.id) + '" title="Karte groß ansehen" style="background-image:url(' + f + ')"></button>' : '') + '<div class="cf-body">' + castPanel() + '</div><i class="cf-flame" aria-hidden="true"></i>';
+    el.hidden = false;
   }
   function castHint() { const st = castStep(); return st ? '<b>' + esc(G.s.cards[G.cast.cid].name) + '</b>: ' + (st.type === 'place' ? 'Tippe ein goldenes Feld.' : st.what === 'field' ? 'Tippe grüne Felder.' : st.what === 'unit' || st.what === 'king' ? 'Tippe ein violett markiertes Ziel.' : 'Wähle rechts eine Karte.') + ' Gewählt ' + st.chosen.length + ' / ' + st.need + '.' : 'Ziele gewählt – rechts verbindlich ausspielen.'; }
   function castAct(ds) {
@@ -1943,9 +1987,10 @@
     const mb = $('#mainbtn'), lab = { summon1: 'Weiter: Bewegung', move: 'Weiter: Battlephase', battle: 'Battlephase abschließen', counter: 'Passen – Konterphase beenden', summon2: 'Zug beenden' }[s.phase];
     mb.textContent = s.result ? 'Partie beendet' : mine && G.cast ? 'Erst Ziele wählen oder abbrechen' : mine && lab ? lab + (s.phase === 'battle' ? ' (' + Object.keys(s.decl).length + ' Angriff' + (Object.keys(s.decl).length === 1 ? '' : 'e') + ')' : '') : 'Gegner ist am Zug';
     mb.disabled = !mine || !lab || s.pendingDiscard !== null || !!G.cast;
+    if (s.phase === 'mulligan' && !s.result) { const ms = mullSide(); mb.textContent = ms !== null ? 'Starthand wählen' : 'Warte auf die Starthand-Entscheidung …'; mb.disabled = ms === null; $('#turnwho').textContent = 'Starthand-Entscheidung'; }
     const tips = advice(), tb = $('#tips'); tb.hidden = !tips.length;
     if (tips.length) tb.textContent = '💡 Spielhilfe: ' + tips.length + (tips.length === 1 ? ' Möglichkeit' : ' Möglichkeiten') + ' – anzeigen';
-    renderDetail();
+    renderDetail(); renderCastFloat();
     if (INS && !$('#insp').hidden && INS.ctx === 'game') { const keep = $('#insp-info').scrollTop; fillInspector(); $('#insp-info').scrollTop = keep; }
     renderLog();
     quickGifts();
@@ -1965,8 +2010,75 @@
       + (p !== G.view || G.replay ? '<div class="hbacks" aria-label="' + P.hand.length + ' Handkarten">' + Array.from({ length: Math.min(10, P.hand.length) }, () => '<i></i>').join('') + '</div>' : '')
       + '<div class="pstats">' + en + '<span title="Energie">⚡' + (live ? P.energy : 0) + '</span><span title="Handkarten">✋' + P.hand.length + '</span><span title="Nachziehstapel">▤' + P.deck.length + '</span><span title="Ablagestapel">⌫' + P.discard.length + '</span></div>';
   }
+  /* ---------- Handkarten-Schnellvorschau ----------
+     PC: Maus über eine Handkarte → große Vorschau sofort, wechselt beim Weiterfahren, verschwindet beim Verlassen der Hand.
+     Touch: Karte berühren und ohne Absetzen über die Hand streichen; nach dem Loslassen bleibt die Karte stehen,
+     Tippen außerhalb schließt. Streichen löst nie eine Spielaktion aus. Doppelklick/Gedrückthalten = große Ansicht wie bisher. */
+  const PEEK = (() => {
+    let el = null, img = null, cur = '', box = null, sticky = false, slide = null;
+    function make() { if (el) return; el = document.createElement('div'); el.id = 'peek'; el.className = 'peek'; el.setAttribute('aria-hidden', 'true'); el.hidden = true; document.body.appendChild(el); el.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); hide(); }); }
+    const cardOf = cid => (G && G.s && G.s.cards[cid]) || POOL.cards[cid];
+    function place(container) {
+      const r = container.getBoundingClientRect(), vw = innerWidth, vh = innerHeight, gap = 10;
+      const up = r.top - gap - 8, down = vh - r.bottom - gap - 8, room = Math.max(up, down);
+      let h = Math.min(room, vh * .66, 560), w = h * 5 / 7; if (w > vw - 24) { w = vw - 24; h = w * 7 / 5; }
+      h = Math.max(h, Math.min(220, room)); w = h * 5 / 7;
+      el.style.width = w + 'px'; el.style.height = h + 'px';
+      el.style.left = Math.max(12, Math.min(vw - w - 12, r.left + r.width / 2 - w / 2)) + 'px';
+      el.style.top = (up >= down ? r.top - gap - h : r.bottom + gap) + 'px';
+    }
+    function show(t, container) {
+      const cid = t.dataset.pcid, c = cardOf(cid); if (!c) return; if (G && G.cast && container.id === 'hand') { hide(); return; } make(); // beim Wirken liegt das Wirk-Fenster vorn
+      if (box !== container || el.hidden) { box = container; place(container); }
+      if (cur !== cid) {
+        cur = cid; const f = fullURL(c.id);
+        el.innerHTML = f ? '<img alt="" draggable="false" src="' + f + '">' : insFront(c);
+        el.dataset.rar = c.rarity || '';
+      }
+      if (el.hidden) { el.hidden = false; el.classList.remove('on'); void el.offsetWidth; }
+      el.classList.add('on'); el.classList.toggle('sticky', false);
+    }
+    function hide() { if (slide && slide.raf) cancelAnimationFrame(slide.raf); if (!el || el.hidden) return; el.classList.remove('on', 'sticky'); el.hidden = true; cur = ''; box = null; sticky = false; slide = null; }
+    const hit = (x, y) => { const t = document.elementFromPoint(x, y); return t && t.closest('[data-pcid]'); };
+    function bind(container) {
+      // Maus
+      container.addEventListener('pointerover', e => { if (e.pointerType !== 'mouse') return; const t = e.target.closest('[data-pcid]'); if (t && container.contains(t)) show(t, container); });
+      container.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') hide(); });
+      container.addEventListener('focusin', e => { const t = e.target.closest('[data-pcid]'); if (t && t.matches(':focus-visible')) show(t, container); });
+      container.addEventListener('focusout', e => { if (!sticky && (!e.relatedTarget || !container.contains(e.relatedTarget))) { if (!slide) hide(); } });
+      container.addEventListener('dblclick', e => { const t = e.target.closest('[data-pcid]'); if (t && container.id !== 'hand') { hide(); openInspector({ cid: t.dataset.pcid, from: t, noFocus: true }); } });
+      // Finger / Stift
+      container.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') return; const t = e.target.closest('[data-pcid]'); if (!t) return; slide = { x: e.clientX, y: e.clientY, moved: false, id: e.pointerId }; sticky = false; container.style.scrollSnapType = 'none'; show(t, container); });
+      container.addEventListener('pointermove', e => {
+        if (!slide || e.pointerId !== slide.id) return;
+        if (!slide.moved && Math.hypot(e.clientX - slide.x, e.clientY - slide.y) > 10) slide.moved = true;
+        const t = hit(e.clientX, e.clientY); if (t && container.contains(t)) show(t, container);
+        // bei vielen Karten: am Rand der Hand weiterrollen (auch wenn der Finger dort still steht), damit alle zehn mit einer Bewegung erreichbar sind
+        slide.cx = e.clientX; slide.cy = e.clientY; if (slide.moved && !slide.raf) edge(container);
+      });
+      function edge(container) {
+        const sl = slide; if (!sl || slide !== sl) return;
+        const r = container.getBoundingClientRect(), over = container.scrollWidth > container.clientWidth + 2;
+        const dir = !over ? 0 : sl.cx < r.left + 34 ? -1 : sl.cx > r.right - 34 ? 1 : 0;
+        if (!dir) { sl.raf = 0; return; }
+        const before = container.scrollLeft; container.scrollLeft += dir * 9;
+        if (container.scrollLeft !== before) { const t = hit(sl.cx, sl.cy); if (t && container.contains(t)) show(t, container); }
+        sl.raf = requestAnimationFrame(() => edge(container));
+      }
+      const up = e => { if (!slide || e.pointerId !== slide.id) return; if (slide.raf) cancelAnimationFrame(slide.raf); container.style.scrollSnapType = ''; if (slide.moved) { container._swiped = Date.now(); } slide = null; if (el && !el.hidden) { sticky = true; el.classList.add('sticky'); } };
+      container.addEventListener('pointerup', up); container.addEventListener('pointercancel', up);
+      // nach einem Streichen keinen Klick (= keine Spielaktion) auslösen
+      container.addEventListener('click', e => { if (container._swiped && Date.now() - container._swiped < 600) { container._swiped = 0; e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+    }
+    // Tippen außerhalb schließt die stehende Vorschau
+    document.addEventListener('pointerdown', e => { if (!el || el.hidden || e.pointerType === 'mouse') return; if (e.target.closest && e.target.closest('[data-pcid]')) return; hide(); }, true);
+    addEventListener('resize', hide); addEventListener('scroll', () => { if (el && !el.hidden && box && box.isConnected) place(box); }, true);
+    return { bind, hide, get open() { return !!el && !el.hidden; }, get cid() { return cur; } };
+  })();
   function handCard(h, p, sel, extra) {
     const s = G.s, c = s.cards[h.cid], cost = W.cost(s, p, h.cid), full = fullURL(c.id), img = artURL(c.id);
+    const ready = !extra && isSp(c) && G.view === p && myTurn() && actor(s) === p && !G.cast && W.castOptions(s, p, h.iid).ok;
+    extra = (extra || 'data-iid="' + h.iid + '"') + ' data-pcid="' + esc(h.cid) + '"' + (ready ? ' data-ready="' + c.type + '"' : '');
     const can = isSp(c) ? W.castOptions(s, p, h.iid).ok : s.active === p && ['summon1', 'summon2'].includes(s.phase) && W.summonOptions(s, h.iid).length > 0;
     const bg = full ? 'background-image:url(' + full + ');background-size:cover;background-position:center' : img ? 'background-image:url(' + img + ')' : 'background-color:' + (SPCOL[c.type] || ELCOL[c.elements[0]] || '#2a3242');
     const label = esc(c.name) + (isSp(c) ? ', ' + TYPEN(c) + ', Kosten ' + cost + (c.playable ? '' : ', nicht spielbar') : ', Kosten ' + cost + ', ATK ' + c.atk + ', DEF ' + c.def);
@@ -1980,6 +2092,7 @@
   function hint() {
     const s = G.s; if (s.result) return esc(s.result.reason);
     if (G.handover) return 'Spielerwechsel …';
+    if (s.phase === 'mulligan') return mullSide() !== null ? '<b>Starthand:</b> behalten oder einmalig alle 5 Karten neu ziehen.' : '<b>Starthand:</b> ' + (G.mode === 'ai' ? 'Die KI entscheidet über ihre Starthand …' : 'Warte, bis dein Gegner seine Starthand gewählt hat.') + ' Danach beginnt der erste Zug.';
     const p = actor(s); if (isAI(p)) return 'Die KI plant ihren Zug.';
     if (s.pendingDiscard !== null) return 'Du hast ' + s.players[s.pendingDiscard].hand.length + ' Handkarten (höchstens 10). Lege eine ab.';
     if (G.cast) return castHint();
@@ -2009,10 +2122,10 @@
       if (myTurn() && s.phase === 'move' && u.owner === s.active && !u.king) html += '<p class="hint">' + (u.moved ? 'Ist in diesem Zug schon gelaufen.' : W.locked(s, u) ? 'Frisch beschworen: läuft erst im nächsten Zug.' : W.immobile(s, u) ? 'Bewegung gesperrt: kann nicht laufen.' : Object.keys(W.reachable(s, u.uid)).length ? 'Grüne Felder sind erreichbar.' : 'Kein Feld erreichbar.') + '</p>';
     } else if (G.sel && G.sel.kind === 'hand') {
       const P = s.players[actor(s)], h = P.hand.find(x => x.iid === G.sel.iid);
-      if (h && isSp(s.cards[h.cid])) { const c = s.cards[h.cid], o = W.castOptions(s, actor(s), h.iid); html = (G.cast ? castPanel() : '') + cardDetail(c, null, s) + (G.cast ? '' : o.ok ? '<div class="row"><button class="btn primary" data-cast="' + esc(h.iid) + '">' + (c.type === 'curse' ? '☾ Fluch' : '✦ Zauber') + ' ausspielen (' + c.energy + ' Energie' + (o.hpCost ? ', ' + fmt(o.hpCost) + ' König-HP' : '') + (o.discardCost ? ', ' + o.discardCost + ' Handkarte' + (o.discardCost > 1 ? 'n' : '') : '') + ')</button></div><p class="hint">' + (o.hpCost || o.discardCost ? 'Die Zusatzkosten werden sofort bezahlt. ' : '') + 'Danach wählst du die Ziele. Ausspielen ist verbindlich; ausgewertet wird nach der Konterphase.</p>' : '<p class="hint">Jetzt nicht ausspielbar: ' + esc(o.why) + '.</p>'); }
+      if (h && isSp(s.cards[h.cid])) { const c = s.cards[h.cid], o = W.castOptions(s, actor(s), h.iid); html = cardDetail(c, null, s) + (G.cast ? '' : o.ok ? '<div class="row"><button class="btn primary" data-cast="' + esc(h.iid) + '">' + (c.type === 'curse' ? '☾ Fluch' : '✦ Zauber') + ' ausspielen (' + c.energy + ' Energie' + (o.hpCost ? ', ' + fmt(o.hpCost) + ' König-HP' : '') + (o.discardCost ? ', ' + o.discardCost + ' Handkarte' + (o.discardCost > 1 ? 'n' : '') : '') + ')</button></div><p class="hint">' + (o.hpCost || o.discardCost ? 'Die Zusatzkosten werden sofort bezahlt. ' : '') + 'Danach wählst du die Ziele. Ausspielen ist verbindlich; ausgewertet wird nach der Konterphase.</p>' : '<p class="hint">Jetzt nicht ausspielbar: ' + esc(o.why) + '.</p>'); }
       else if (h) { const c = s.cards[h.cid], k = W.cost(s, actor(s), h.cid); html = cardDetail(c, null, s) + '<p class="hint">Kosten jetzt: <b>' + k + ' Energie</b>' + (k < c.energy ? ' (Gebot der Krone)' : '') + '. ' + (W.summonOptions(s, h.iid).length ? 'Goldene Felder sind frei.' : ['summon1', 'summon2'].includes(s.phase) ? (k > P.energy ? 'Zu wenig Energie.' : 'Kein freies Beschwörungsfeld.') : 'Beschwören nur in den Beschwörungsphasen.') + '</p>'; }
     }
-    if (G.cast && !(G.sel && G.sel.kind === 'hand')) html = castPanel() + html;
+    // Zauber/Fluch wird gerade gewirkt: Fenster liegt über dem Spielfeld (renderCastFloat)
     html = stackPanel() + html;
     box.innerHTML = html || '<p class="hint">Tippe eine Karte auf dem Brett oder in der Hand an, um sie hier genau zu sehen. Doppelklick oder gedrückt halten zeigt die Karte groß.</p>';
   }
@@ -2151,9 +2264,10 @@
   const FX = (() => {
     const layer = () => $('#fxlayer');
     let q = [], busy = false;
+    const idle = [];
     function push(fn, ms) { q.push([fn, ms]); if (!busy) next(); }
     function next() {
-      const it = q.shift(); if (!it) { busy = false; const l = layer(); l.hidden = true; l.innerHTML = ''; l.onclick = null; return; }
+      const it = q.shift(); if (!it) { busy = false; const l = layer(); l.hidden = true; l.innerHTML = ''; l.onclick = null; const w = idle.splice(0); for (const f of w) try { f(); } catch (e) { } return; }
       busy = true; const l = layer(); l.hidden = false; l.innerHTML = ''; let done = false;
       const end = () => { if (done) return; done = true; clearTimeout(t); l.classList.add('out'); setTimeout(() => { l.classList.remove('out'); next(); }, 260); };
       l.onclick = end; it[0](l); const t = setTimeout(end, it[1]);
@@ -2210,7 +2324,7 @@
         if (e.t === 'death') SFX.thump(.45);
       }
     }
-    return { cutIn, versus, chain, banner, onEvents, get busy() { return busy; } };
+    return { cutIn, versus, chain, banner, onEvents, get busy() { return busy; }, whenIdle: f => { if (!busy) f(); else if (!idle.includes(f)) idle.push(f); } };
   })();
 
   // Begleiter („Mate“) und Aussehen je Deck
@@ -2387,7 +2501,7 @@
       { id: 'zauber', title: 'Zauber, Flüche und Konterphase', desc: 'Karten ausspielen und auf gegnerische Angriffe antworten.', min: 4,
         make() { const s = base({ phase: 'battle', energy: 3 }); const r = put(s, 't_rek', 0, 'D4'), w = put(s, 't_ste', 1, 'D3'), f = hand(s, 0, 't_flu'); return { s, r, w, f }; },
         steps: [
-          { text: 'Dein <b>Rekrut</b> (ATK 1.200) kommt nicht gegen den <b>Steinwächter</b> (DEF 1.500) an. Tippe den <b>Schwächefluch</b> in deiner Hand an und dann „Fluch ausspielen“.', hl: (S, T) => ['.hcard[data-iid="' + T.f + '"]', '[data-cast]'], scroll: '[data-cast]', done: (S, T, G) => !!G.cast },
+          { text: 'Dein <b>Rekrut</b> (ATK 1.200) kommt nicht gegen den <b>Steinwächter</b> (DEF 1.500) an. Tippe den violett glühenden <b>Schwächefluch</b> in deiner Hand an – seine Wirkung erscheint direkt über dem Spielfeld.', hl: (S, T) => ['.hcard[data-iid="' + T.f + '"]'], scroll: '#hand', done: (S, T, G) => !!G.cast },
           { text: 'Wähle den <b>Steinwächter</b> als Ziel und bestätige.', hl: (S, T) => ['.tok[data-uid="' + T.w + '"]', '[data-cok]'], scroll: '[data-cok]', done: (S, T, G, e) => ev(e, 'cast') },
           { text: 'Ausspielen ist verbindlich. Ausgewertet wird erst <b>nach der Konterphase</b> des Gegners. Lege jetzt den Angriff fest: Rekrut → Steinwächter.', hl: (S, T, G) => sel(G, T.r) ? ['.tok[data-uid="' + T.w + '"]'] : ['.tok[data-uid="' + T.r + '"]'], done: (S, T, G, e) => ev(e, 'declare', x => (x.targets || []).length) },
           { text: 'Tippe <b>Battlephase abschließen</b>. Zuerst wirkt der Fluch (DEF −500), dann kämpfen die Helden.', hl: () => ['#mainbtn'], done: (S, T, G, e) => ev(e, 'combat') },
@@ -2701,6 +2815,7 @@
       el.addEventListener('pointerdown', longStart); el.addEventListener('pointerup', longEnd); el.addEventListener('pointercancel', longEnd); el.addEventListener('pointermove', longMove); el.addEventListener('pointerleave', longEnd);
       el.addEventListener('contextmenu', e => { const t = e.target.closest('.tok,.hcard'); if (t) e.preventDefault(); });
     }
+    PEEK.bind($('#hand')); PEEK.bind($('#dlg'));
     $('#hand').addEventListener('click', e => { const h = e.target.closest('.hcard'); if (!h || !G) return; if (h._long) { h._long = false; return; } if (e.detail >= 2) { openBig(h); return; } clickHand(h.dataset.iid); });
     $('#hand').addEventListener('keydown', e => { const h = e.target.closest('.hcard'); if (h && (e.key === 'i' || e.key === 'I')) { e.preventDefault(); openBig(h); } });
     $('#mainbtn').onclick = mainAction; $('#tips').onclick = showTips;

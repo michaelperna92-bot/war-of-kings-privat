@@ -64,6 +64,8 @@
   const RULES = { deckSize: 40, startHand: 5, handMax: 10, energyMax: 10, drawFailDamage: 1000, turnSeconds: 120, counterSeconds: 120, reconnectSeconds: 120 };
   // Stellen, die das Regelwerk offen lässt – hier sichtbar festgehalten statt still angenommen.
   const ASSUMPTIONS = [
+    'Auslöser „bei einem gegnerischen Angriff“ mit gegnerischem Ziel (z. B. Todesapperatur): Ziel sind die angreifenden gegnerischen Helden dieser Battlephase; bei eigenem Ziel wie bisher die angegriffenen eigenen Helden (Werkstatt-Vorschlag nach dem Kartentext „legt seine Macht auf die Angreifer“, 30.10.2026).',
+    'Starthandwechsel (Festlegung des Entwicklers vom 30.10.2026, Abschnitt 3): Werkstatt-Vorschläge zur Umsetzung – mit Zuguhr gilt nach Ablauf der Bedenkzeit „Hand behalten“; zu zweit an einem Gerät entscheidet zuerst der Startspieler, dann wird das Gerät übergeben; im Tutorial gibt es keinen Starthandwechsel; die KI tauscht, wenn sie keinen Helden oder keine Karte mit höchstens 2 Energie auf der Hand hat.',
     'Könige haben 8.000–12.000 HP (Festlegung des Entwicklers vom 30.10.2026). Ältere Karten werden beim Laden umgerechnet: Grabeskönig Vorhaltar 10.000 (Festlegung), andere anteilig aus dem alten Bereich 10.000–20.000 (Werkstatt-Vorschlag).',
     'Heldengaben (Festlegung des Entwicklers vom 30.10.2026): Alle aktivierbaren Gaben gehen in der eigenen Battlephase und in der eigenen Konterphase, 0 Energie, Abklingzeiten unverändert, sofort und unwiderruflich. „Bis Zugende“ heißt in der Konterphase: bis zum Ende des laufenden (gegnerischen) Zuges. Die Konterphase bleibt einmalig. Werkstatt-Annahme: Durchbruch und Blitzschritt sind in der Konterphase erlaubt, Durchbruch bringt dort aber nichts (keine eigenen Angriffe).',
     'Kontrolle in der eigenen Battlephase (Festlegung des Entwicklers vom 30.10.2026): Ein Zauber oder Fluch mit „Kontrolle übernehmen“ wirkt sofort, noch vor den Angriffen und der Konterphase. Der übernommene Held kann so in derselben Battlephase Angriffe festlegen; der Gegner kann in seiner Konterphase darauf reagieren, danach folgt die Schadensberechnung. Werkstatt-Annahme: die ganze Karte wirkt dann sofort (auch weitere Effekte darauf) und kann nicht mehr neutralisiert werden. In der Konterphase auf einen Angreifer gewirkt, fällt dessen Angriff weg.',
@@ -204,6 +206,8 @@
     s.first = s.active;
     ev.push({ t: 'start', sides: [s.players[0].deckName, s.players[1].deckName], first: s.active });
     log(s, 'Partie beginnt. Unten: ' + s.players[0].name + ', oben: ' + s.players[1].name + '. Münzwurf: ' + s.players[s.active].name + ' beginnt.');
+    // Festlegung des Entwicklers vom 30.10.2026: einmaliger Starthandwechsel vor dem ersten Zug (opts.mulligan === false nur für Tests/Tutorial)
+    if (opts.mulligan !== false) { s.phase = 'mulligan'; s.mull = [null, null]; ev.push({ t: 'phase', phase: 'mulligan' }); return { state: s, events: ev }; }
     startTurn(s, ev);
     return { state: s, events: ev };
   }
@@ -332,7 +336,7 @@
 
   /* ---------------- Zugablauf ---------------- */
   const PHASES = ['prep', 'summon1', 'move', 'battle', 'counter', 'resolve', 'summon2', 'end'];
-  const PHASE_NAME = { prep: 'Vorbereitung', summon1: '1. Beschwörung', move: 'Bewegung', battle: 'Battlephase', counter: 'Konterphase', resolve: 'Auswertung', summon2: 'Nachbeschwörung', end: 'Zugende', over: 'Partie beendet', setup: 'Aufbau' };
+  const PHASE_NAME = { prep: 'Vorbereitung', summon1: '1. Beschwörung', move: 'Bewegung', battle: 'Battlephase', counter: 'Konterphase', resolve: 'Auswertung', summon2: 'Nachbeschwörung', end: 'Zugende', over: 'Partie beendet', setup: 'Aufbau', mulligan: 'Starthand' };
 
   function startTurn(s, ev) {
     const p = s.active, P = s.players[p];
@@ -490,6 +494,21 @@
       ev.push({ t: 'discard', p, iid: h.iid, cid: h.cid }); log(s, P.name + ' legt „' + s.cards[h.cid].name + '“ ab.', p);
       checkEnd(s, ev); return { state: s, events: ev };
     }
+    if (s.phase === 'mulligan') {
+      // beide Spieler entscheiden unabhängig, jeder genau einmal; erst danach beginnt der erste Zug
+      if (a.type !== 'mulligan' && a.type !== 'timeout') return fail('Zuerst entscheiden: Starthand behalten oder einmalig neu ziehen.');
+      if (!s.mull || s.mull[p] !== null) return fail('Die Starthand-Entscheidung ist bereits getroffen.');
+      const redraw = a.type === 'mulligan' && !!a.redraw;
+      if (redraw) {
+        const back = P.hand.splice(0, P.hand.length); P.deck.push(...back); shuffle(s, P.deck);
+        for (let i = 0; i < RULES.startHand && P.deck.length; i++) P.hand.push(P.deck.shift());
+        log(s, P.name + ' mischt die Starthand zurück und zieht ' + RULES.startHand + ' neue Karten.', p);
+      } else log(s, P.name + ' behält die Starthand.', p);
+      s.mull[p] = redraw ? 'neu' : 'behalten'; ev.push({ t: 'mulligan', p, redraw });
+      if (s.mull[0] !== null && s.mull[1] !== null) startTurn(s, ev);
+      return { state: s, events: ev };
+    }
+    if (a.type === 'mulligan') return fail('Der Starthandwechsel ist nur vor dem ersten Zug möglich.');
     if (s.phase === 'counter') {
       if (p !== s.counter) return fail('Jetzt ist die Konterphase des Verteidigers.');
       if (a.type === 'cast') { const r = castSpell(s, ev, p, a); if (r) return fail(r); checkWhile(s, ev); return { state: s, events: ev }; }
@@ -552,6 +571,9 @@
     return { state: s, events: ev };
   }
   // Ältere Spielstände (vor Zaubern/Flüchen) ergänzen
+  // wer gerade handeln muss (Starthand: zuerst der Startspieler, dann der andere – online entscheiden beide gleichzeitig, siehe mulliganOpen)
+  function actor(s) { if (s.pendingDiscard !== null) return s.pendingDiscard; if (s.phase === 'counter') return s.counter; if (s.phase === 'mulligan' && s.mull) return s.mull[s.active] === null ? s.active : 1 - s.active; return s.active; }
+  function mulliganOpen(s, p) { return s.phase === 'mulligan' && !!s.mull && s.mull[p] === null; }
   function upgrade(s) { s.stack = s.stack || []; s.auras = s.auras || []; s.locks = s.locks || []; for (const u of Object.values(s.units)) { u.attached = u.attached || []; u.fx = u.fx || []; } return s; }
   function counterPlayable(s, p) { return s.players[p].hand.some(h => isSpell(s.cards[h.cid]) && castOptions(s, p, h.iid).ok) || Object.values(s.units).some(u => u.owner === p && !u.king && giftOptions(s, u.uid).some(o => o.ok)); }
 
@@ -601,7 +623,7 @@
     if (!f || !f.items || !f.items.length) return true;
     const one = it => it.items ? matchFilter(s, c, it, uid)
       : it.k === 'race' ? c.races.includes(it.v) : it.k === 'class' ? c.classes.includes(it.v) : it.k === 'element' ? c.elements.includes(it.v)
-      : it.k === 'unitType' ? c.type === (it.v || 'hero') : it.k === 'attacked' ? !!uid && attackedSet(s).has(uid) : false;
+      : it.k === 'unitType' ? c.type === (it.v || 'hero') : it.k === 'attacked' ? !!uid && attackedSet(s).has(uid) : it.k === 'attacking' ? !!uid && !!(s.decl || {})[uid] : false;
     return f.op === 'or' ? f.items.some(one) : f.items.every(one);
   }
   function evalCond(s, p, c) {
@@ -704,7 +726,7 @@
   function effectCandidates(s, p, e, c) {
     const t = e.target || {}, units = Object.values(s.units), at = attackedSet(s);
     switch (t.what) {
-      case 'unit': return units.filter(u => !u.king && sideOk(t.side, u.owner, p) && matchFilter(s, card(s, u), t.filter, u.uid) && (e.trigger !== 'enemyAttack' || (u.owner === p && at.has(u.uid)))
+      case 'unit': return units.filter(u => !u.king && sideOk(t.side, u.owner, p) && matchFilter(s, card(s, u), t.filter, u.uid) && (e.trigger !== 'enemyAttack' || (u.owner === p ? at.has(u.uid) : !!(s.decl || {})[u.uid]))
         && !(e.kind === 'status' && e.params.status === 'poison' && u.poison)).map(u => ({ id: u.uid, label: card(s, u).name + ' (' + u.pos + ')' }));
       case 'king': return [0, 1].filter(q => sideOk(t.side, q, p)).map(q => kingOf(s, q)).map(k => ({ id: k.uid, label: card(s, k).name + ' (König)' }));
       case 'field': return halfFields(p, t.side || 'both').map(f => ({ id: f, label: f }));
@@ -820,7 +842,7 @@
     // Flächeneffekt: „alle“ mit Dauer → wirkt dynamisch auf alle passenden Einheiten
     if (lasting && t.count === 'all' && (t.what === 'unit' || t.what === 'king')) {
       const a = Object.assign({ id: 'a' + (s.nextId++), ord: s.nextId, cid: en.cid, src: c.type, by: en.p, kind: e.kind, what: t.what, side: t.side, filter: t.filter, negative: neg, stat: P.stat, mode: P.mode, amount: P.amount, gifts: P.gifts, uses: +P.uses || 0, from: e.kind === 'protect' ? (P.from || 'attacks') : undefined, exempt: [] }, dur);
-      if (e.trigger === 'enemyAttack') { a.filter = { op: 'and', items: [t.filter || { op: 'and', items: [] }, { k: 'attacked' }] }; a.side = 'own'; }
+      if (e.trigger === 'enemyAttack') { const own = { k: 'attacked' }, foe = { k: 'attacking' }; a.filter = { op: 'and', items: [t.filter || { op: 'and', items: [] }, t.side === 'enemy' ? foe : t.side === 'both' ? { op: 'or', items: [own, foe] } : own] }; a.side = t.side === 'enemy' || t.side === 'both' ? t.side : 'own'; }
       s.auras.push(a); ev.push({ t: 'aura', id: a.id, cid: en.cid });
       log(s, K + ': ' + (EF ? EF.describeEffect(e, DATA()) : e.kind));
       return;
@@ -980,7 +1002,7 @@
   }
 
   const api = { VERSION, FIELDS, COLS, ROW_COLS, KING_FIELD, GUARD, SUMMON_ROW, DIRS, GIFTS, ROYAL, COPY_LIMIT, RULES, ASSUMPTIONS, PHASES, PHASE_NAME,
-    exists, step, colOf, rowOf, summonFields, isGuard, normalizeCard, validateDeck, newGame, apply, viewFor, clone,
+    exists, step, colOf, rowOf, summonFields, isGuard, normalizeCard, validateDeck, newGame, apply, actor, mulliganOpen, viewFor, clone,
     unitAt, kingOf, cost, atkOf, defOf, stepsOf, locked, bound, immobile, has, hasRaw, reachable, targetsOf, attackTargets, canAttack, preview, summonOptions, giftOptions, royalBonus, matches,
     EF, SPELL_OPEN, upgrade, isSpell, castOptions, effectCandidates, evalCond, fieldLocked, isProtected, effectsOn, fxText, auraOn, giftBlocked, counterPlayable, halfFields };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.WOK = api;

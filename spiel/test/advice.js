@@ -6,7 +6,7 @@ const seen = {}; let n = 0, errs = 0;
 for (let g = 0; g < 6; g++) {
   let { state } = W.newGame({ cards, decks: [DEMO.decks.A, DEMO.decks.B], seed: 300 + g }); const m = [{ seed: 1 }, { seed: 2 }];
   while (!state.result) {
-    const p = state.pendingDiscard !== null ? state.pendingDiscard : state.phase === 'counter' ? state.counter : state.active;
+    const p = W.actor(state);
     try { for (const x of ADV.missed(state, p)) { n++; const k = state.phase + ':' + x.text.replace(/„[^“]*“/g, '„…“').replace(/\d[\d.]*/g, '#').replace(/[A-G]\d/g, 'F'); seen[k] = (seen[k] || 0) + 1; } } catch (e) { errs++; if (errs < 3) console.log(e); }
     state = W.apply(state, AI.decide(state, p, 'leicht', m[p])).state;
   }

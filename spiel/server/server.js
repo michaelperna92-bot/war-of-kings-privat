@@ -52,7 +52,7 @@ function startRoom(r) {
 }
 // light = Abgleich einer laufenden Partie: ohne Kartenbilder (die hat der Client schon) – hält die Nachricht klein
 function startMsg(r, slot, light) { return { t: 'start', code: r.code, me: slot, seed: r.seed, names: r.names, decks: r.decks.map(d => ({ name: d.name, ids: d.ids, cards: d.cards })), acts: r.acts, imgs: light ? {} : r.imgs, light: !!light, result: r.state && r.state.result || null }; }
-function actorOf(s) { return s.pendingDiscard !== null ? s.pendingDiscard : s.phase === 'counter' ? s.counter : s.active; }
+function actorOf(s) { return W.actor(s); } // Starthand: beide Spieler dürfen unabhängig entscheiden (W.mulliganOpen)
 
 /* ---------- Verbindungen ---------- */
 const sockets = new Set();
@@ -60,8 +60,10 @@ function send(c, o) { if (!c || c.dead) return; try { wsSend(c.sock, JSON.string
 function peerOf(r, slot) { return r.conn[1 - slot]; }
 function handle(c, m) {
   if (!m || typeof m.t !== 'string') return;
-  if (m.t === 'hello') { c.id = String(m.id || '').slice(0, 40) || 'g' + crypto.randomUUID(); c.name = String(m.name || 'Spieler').slice(0, 30); send(c, { t: 'hello', ok: true, version: VERSION }); return; }
+  if (m.t === 'hello') { c.id = String(m.id || '').slice(0, 40) || 'g' + crypto.randomUUID(); c.name = String(m.name || 'Spieler').slice(0, 30); c.v = typeof m.v === 'string' ? m.v.slice(0, 12) : ''; send(c, { t: 'hello', ok: true, version: VERSION }); return; }
   if (!c.id) { send(c, { t: 'error', msg: 'Erst anmelden (hello).' }); return; }
+  // gleiche Regeln auf allen Geräten: Partien nur zwischen Spielern mit der Version des Servers (ab 4.5)
+  if (['create', 'join', 'resume', 'act'].includes(m.t) && c.v !== VERSION && VERSION !== '?') { send(c, { t: 'error', code: 'version', msg: 'Deine Spielversion (' + (c.v || 'älter als 4.5') + ') passt nicht zum Spielserver (' + VERSION + '). Bitte die neue Version holen: im Browser die Seite neu laden, am PC die neue PC-Version installieren.' }); return; }
   const r = m.code ? rooms.get(String(m.code).toUpperCase()) : null;
   switch (m.t) {
     case 'create': {
@@ -98,7 +100,7 @@ function handle(c, m) {
       const a = m.a; if (!a || typeof a.type !== 'string') return;
       if (m.n !== r.acts.length) { if (process.env.WOK_DEBUG) log('veraltet', r.code, 'p' + slot, 'n', m.n, 'server', r.acts.length, a.type); return send(c, { t: 'reject', n: m.n, error: 'veraltet', sync: r.acts.length }); } // doppelt oder zu früh → Client gleicht ab
       if (a.type === 'concede') a.p = slot; // Aufgeben nur für sich selbst
-      else if (actorOf(r.state) !== slot) return send(c, { t: 'reject', n: m.n, error: 'Du bist nicht am Zug.' });
+      else if (!W.mulliganOpen(r.state, slot) && actorOf(r.state) !== slot) return send(c, { t: 'reject', n: m.n, error: 'Du bist nicht am Zug.' });
       if (a.p !== undefined && a.p !== slot) return send(c, { t: 'reject', n: m.n, error: 'Fremde Aktion.' });
       const res = W.apply(r.state, a);
       if (res.error) return send(c, { t: 'reject', n: m.n, error: res.error });

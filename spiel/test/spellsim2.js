@@ -41,7 +41,7 @@ for (let g = 0; g < N; g++) {
   let { state } = W.newGame({ cards, decks: [DA, DB], seed: 500 + g, counterReserve: g % 3 === 0 });
   const memo = [{ seed: g * 7 + 1 }, { seed: g * 13 + 5 }]; let steps = 0;
   while (!state.result && steps < 20000) {
-    const p = state.pendingDiscard !== null ? state.pendingDiscard : state.phase === 'counter' ? state.counter : state.active;
+    const p = W.actor(state);
     const a = AI.decide(state, p, lv[p], memo[p]);
     const r = W.apply(state, a);
     if (r.error) { st.errors++; if (st.errors < 6) console.log('Fehler:', r.error, JSON.stringify(a).slice(0, 200), state.phase); const r2 = W.apply(state, state.phase === 'counter' ? { type: 'pass', p } : { type: 'endPhase', p }); if (r2.error) { console.log('hängt', r2.error); break; } state = r2.state; }

@@ -9,7 +9,7 @@ const { chromium } = require('playwright');
   await pg.waitForFunction(() => WOK_APP.POOL.fullv.test_akuma === WOK_CARDART.VERSION, null, { timeout: 60000 });
   console.log('Import gezeichnet, Bildausschnitt:', await pg.evaluate(() => !!WOK_APP.POOL.art.test_akuma));
   await pg.click('[data-zoom="test_akuma"]'); await pg.waitForTimeout(400); await pg.screenshot({ path: '/tmp/claude-0/wokui/zoom.png' }); await pg.click('#dlg [data-act="close"]');
-  await pg.click('[data-go="home"]'); await pg.click('[data-hplay="ai"]').then(() => pg.click('#start')); await pg.waitForTimeout(500);
+  await pg.click('[data-go="home"]'); await pg.click('[data-hplay="ai"]').then(() => pg.click('#start')); await require('./mull.js')(pg); await pg.waitForTimeout(500);
   for (let i = 0; i < 200; i++) { const ok = await pg.evaluate(() => { const s = WOK_APP.game.s; return s.active === 0 && s.phase === 'summon1' && s.turn >= 8; }); if (ok) break; await pg.evaluate(() => { const g = WOK_APP.game, s = g.s; if (s.active === 0 && !s.result) { const a = WOK_AI.decide(s, 0, 'mittel', g._m || (g._m = { seed: 4 })); if (a) WOK_APP.dispatch(a); } }); await pg.waitForTimeout(150); }
   // eigene Karte und gegnerische Karte antippen
   const ids = await pg.evaluate(() => { const s = WOK_APP.game.s; const u = Object.values(s.units); return [u.find(x => x.owner === 0 && !x.king), u.find(x => x.owner === 1 && !x.king)].map(x => x && x.uid); });

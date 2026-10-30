@@ -525,7 +525,7 @@ window.WOK_DATA = (function () {
   };
   const STATS = { atk: 'ATK', def: 'DEF', move: 'Bewegung (Schritte)' };
   const DURATIONS = { instant: 'Sofort, einmalig', turn: 'Bis zum Ende des Zuges', rounds: 'Für eine Anzahl Runden', permanent: 'Permanent', while: 'Solange eine Bedingung erfüllt ist' };
-  const TRIGGERS = { play: 'Beim Ausspielen (Auswertung nach der Konterphase)', enemyAttack: 'Bei einem gegnerischen Angriff (nur in der eigenen Konterphase, Ziele: angegriffene eigene Helden)', destruction: 'Bei drohender Zerstörung (greift, wenn das Ziel zerstört würde)' };
+  const TRIGGERS = { play: 'Beim Ausspielen (Auswertung nach der Konterphase)', enemyAttack: 'Bei einem gegnerischen Angriff (nur in der eigenen Konterphase, Ziele: angegriffene eigene bzw. angreifende gegnerische Helden)', destruction: 'Bei drohender Zerstörung (greift, wenn das Ziel zerstört würde)' };
   const TIMINGS = { both: 'Eigene Battlephase oder eigene Konterphase', battle: 'Nur in der eigenen Battlephase', counter: 'Nur in der eigenen Konterphase' };
   const SIDES = { own: 'eigene', enemy: 'gegnerische', both: 'eigene oder gegnerische' };
   const COND_KINDS = {
@@ -583,7 +583,7 @@ window.WOK_DATA = (function () {
   // Fall: 'nom' (Subjekt), 'acc' (Objekt), 'dat' (nach „von“)
   function targetText(t, D, cas) {
     const nom = cas === true || cas === 'nom', dat = cas === 'dat';
-    const fil = filterText(t.filter, D), words = [t.attackedTag ? 'angegriffene' : '', SIDES[t.side] || ''].filter(Boolean);
+    const fil = filterText(t.filter, D), words = [t.attackedTag ? (t.side === 'enemy' ? 'angreifende' : 'angegriffene') : '', SIDES[t.side] || ''].filter(Boolean);
     const side = words.join(' '), sideN = words.map(w => w + 'n').join(' ');
     const pick = t.pick === 'auto' || t.count === 'all' ? '' : ' nach Wahl';
     const many = t.count !== 'one', cnt = t.count === 'all' ? (dat ? 'allen ' : 'alle ') : t.count === 'n' ? (t.n || 1) + ' ' : '';
@@ -594,7 +594,8 @@ window.WOK_DATA = (function () {
     if (t.what === 'card') return nom ? 'ein gegnerischer Zauber oder Fluch dieser Battlephase' : 'einen gegnerischen Zauber oder Fluch dieser Battlephase';
     // Ziel „unit“ = Held (Könige nur, wenn ausdrücklich „König“ gewählt ist). Starke Beugung von „Held“.
     const stems = t.side === 'both' ? ['eigen', 'gegnerisch'] : [t.side === 'enemy' ? 'gegnerisch' : 'eigen'];
-    const adj = end => (t.attackedTag ? 'angegriffen' + end + ' ' : '') + stems.map(x => x + end).join(' oder ');
+    // bei gegnerischem Angriff: eigene Ziele = angegriffene Helden, gegnerische Ziele = angreifende Helden (30.10.2026)
+    const adj = end => t.attackedTag ? stems.map(x => (x === 'gegnerisch' ? 'angreifend' : 'angegriffen') + end + ' ' + x + end).join(' oder ') : stems.map(x => x + end).join(' oder ');
     let core;
     if (!many) core = nom ? 'ein ' + adj('er') + ' Held' : dat ? 'einem ' + adj('en') + ' Helden' : 'einen ' + adj('en') + ' Helden';
     else if (t.count === 'all') core = t.side === 'both' && !t.attackedTag ? (dat ? 'allen' : 'alle') + ' Helden auf dem Spielfeld (eigene und gegnerische)' : (dat ? 'allen ' : 'alle ') + adj('en') + ' Helden';

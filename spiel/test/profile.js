@@ -12,7 +12,7 @@ const OUT = '/tmp/claude-0/sf/shots/';
     await pg.click('#dlg [data-act="close"]'); await pg.waitForTimeout(200);
     await pg.click('[data-av="ai"]'); await pg.click('#dlg [data-act="b:alter-koenig"]'); await pg.click('#dlg [data-act="close"]'); await pg.waitForTimeout(200);
     await pg.screenshot({ path: OUT + n + '-prof-setup.png' });
-    await pg.click('#start'); await pg.waitForTimeout(900); await pg.screenshot({ path: OUT + n + '-prof-vs.png' });
+    await pg.click('#start'); await require('./mull.js')(pg); await pg.waitForTimeout(900); await pg.screenshot({ path: OUT + n + '-prof-vs.png' });
     console.log(n, 'Profile im VS:', await pg.evaluate(() => [...document.querySelectorAll('#fxlayer .vs-av')].map(e => !!e.style.backgroundImage).join()));
     await pg.waitForFunction(() => document.querySelector('#fxlayer').hidden, null, { timeout: 8000 });
     console.log(n, 'Profil in Leiste:', await pg.evaluate(() => document.querySelectorAll('.pbar .pb-av').length));

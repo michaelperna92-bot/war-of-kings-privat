@@ -23,6 +23,13 @@ WAR OF KINGS – MASTER-REGELWERK
  Karten, darunter genau einen König. Die übrigen 39 Karten werden
  gemischt. Jeder Spieler zieht fünf Starthandkarten; ein Münzwurf
  bestimmt den Startspieler.
+ • Einmaliger Starthandwechsel (Festlegung des Entwicklers vom 30.10.2026): Nach dem Ziehen der fünf
+ Starthandkarten entscheidet jeder Spieler unabhängig vom anderen, ob er seine Starthand behält oder einmalig
+ vollständig neu zieht. Beim Neuziehen kommen alle fünf Karten zurück in den eigenen Nachziehstapel, der
+ komplett neu gemischt wird; danach werden fünf neue Karten gezogen. Diese zweite Starthand ist endgültig.
+ Einzelne Karten können nicht getauscht werden; es wird nichts zerstört oder abgelegt, es kostet keine
+ Energie. Der Wechsel ist nur vor dem ersten regulären Zug möglich; der erste Zug beginnt, wenn beide
+ entschieden haben. Münzwurf und regulärer Nachzug zu Beginn des ersten eigenen Zuges bleiben unverändert.
  • Zu Beginn jedes eigenen Zuges wird genau eine Karte gezogen, auch im allerersten Zug des Startspielers.
  • Maximal zehn Handkarten: Kommt eine elfte hinzu, muss der Besitzer sofort eine selbst gewählte Handkarte auf
  seinen Ablagestapel legen.

@@ -59,12 +59,19 @@
     if (best) memo.cg[best.uid + best.gift + s.turn] = 1;
     return best;
   }
+  // Starthandwechsel (Werkstatt-Vorschlag): nur die eigene Hand zählt – neu ziehen ohne Held oder ohne frühe Karte (höchstens 2 Energie)
+  function mulliganWanted(s, p) {
+    const hand = s.players[p].hand.filter(h => s.cards[h.cid]);
+    const heroes = hand.filter(h => s.cards[h.cid].type === 'hero');
+    return !heroes.length || !hand.some(h => W.cost(s, p, h.cid) <= 2);
+  }
   function decide(s, p, level, memo) {
     level = level || 'mittel'; memo = memo || {};
     if (memo.turn !== s.turn) { memo.turn = s.turn; memo.done = {}; memo.seed = memo.seed || (s.seed ^ 0x9e37) >>> 0; }
     const P = s.players[p], easy = level === 'leicht';
     if (s.result) return null;
     if (s.pendingDiscard === p) { const h = P.hand.slice().sort((a, b) => cardValue(s.cards[a.cid]) - cardValue(s.cards[b.cid]))[0]; return { type: 'discard', p, iid: h.iid }; }
+    if (s.phase === 'mulligan') return W.mulliganOpen(s, p) ? { type: 'mulligan', p, redraw: mulliganWanted(s, p) } : null;
     if (s.phase === 'counter') { if (s.counter !== p) return null; const c = spellChoice(s, p, level, memo); return c || counterGift(s, p, memo) || { type: 'pass', p }; }
     if (s.active !== p) return null;
     const mine = () => Object.values(s.units).filter(u => u.owner === p);
@@ -226,6 +233,6 @@
   }
   function dist(a, b) { return Math.max(Math.abs(W.colOf(a) - W.colOf(b)), Math.abs(W.rowOf(a) - W.rowOf(b))); }
 
-  const api = { decide, threatMap, danger, giftChoice, value, spellChoice, evalState, LEVELS: [{ id: 'leicht', name: 'Leicht' }, { id: 'mittel', name: 'Mittel' }] };
+  const api = { decide, mulliganWanted, threatMap, danger, giftChoice, value, spellChoice, evalState, LEVELS: [{ id: 'leicht', name: 'Leicht' }, { id: 'mittel', name: 'Mittel' }] };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.WOK_AI = api;
 })(typeof window !== 'undefined' ? window : globalThis);

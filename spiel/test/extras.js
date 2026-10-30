@@ -19,7 +19,7 @@ const OUT = '/tmp/claude-0/sf/shots/';
   await pg.keyboard.press('Escape'); await pg.waitForTimeout(500);
   await pg.click('#ed-save'); await pg.waitForTimeout(400);
   console.log('zurück in Vorbereitung:', await pg.isVisible('#hsetup'));
-  await pg.click('#start'); await pg.waitForTimeout(700);
+  await pg.click('#start'); await require('./mull.js')(pg); await pg.waitForTimeout(700);
   console.log('Duell-Start-Einblendung:', await pg.evaluate(() => !!document.querySelector('#fxlayer .versus')));
   await pg.screenshot({ path: OUT + n + '-versus.png' });
   await pg.waitForFunction(() => document.querySelector('#fxlayer').hidden, null, { timeout: 8000 });

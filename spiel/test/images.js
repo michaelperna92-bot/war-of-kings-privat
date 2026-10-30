@@ -29,7 +29,7 @@ const URL0 = process.argv[2] || 'http://127.0.0.1:47851/';
   await pg.context().close();
   pg = await fresh(); await pg.goto(URL0); await pg.waitForTimeout(4000); await check(pg, 'frischer Browser:');
   // Spiel starten und Spielfeld prüfen
-  await pg.click('[data-hplay="ai"]').then(() => pg.click('#start')); await pg.waitForTimeout(1500);
+  await pg.click('[data-hplay="ai"]').then(() => pg.click('#start')); await require('./mull.js')(pg); await pg.waitForTimeout(1500);
   for (let i = 0; i < 60; i++) { const ok = await pg.evaluate(() => { const g = WOK_APP.game, s = g.s; if (s.active === 0 && !s.result && s.turn > 10) return true; if (s.active === 0) { const a = WOK_AI.decide(s, 0, 'mittel', g._m || (g._m = { seed: 4 })); if (a) WOK_APP.dispatch(a); } return false; }); if (ok) break; await pg.waitForTimeout(300); }
   const tok = await pg.evaluate(async () => { const fs = [...document.querySelectorAll('.tok .face')]; const withImg = fs.filter(f => /url\(/.test(f.style.backgroundImage)); const load = u => new Promise(res => { const i = new Image(); i.onload = () => res(i.naturalWidth); i.onerror = () => res(-1); i.src = u; }); let ok = 0; for (const f of withImg) { const u = f.style.backgroundImage.match(/url\("?([^")]+)/)[1]; if (await load(u) > 0) ok++; } const hc = [...document.querySelectorAll('.hcard')]; return { tokens: fs.length, mitBild: withImg.length, laden: ok, hand: hc.length, handMitBild: hc.filter(h => /url\(/.test(h.style.backgroundImage)).length }; });
   console.log('Spielfeld:', JSON.stringify(tok));

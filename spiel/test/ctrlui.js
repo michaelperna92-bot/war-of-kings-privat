@@ -9,7 +9,7 @@ const OUT = '/tmp/claude-0/sf/shots/';
   raw.ruleText = EF.describe(raw, global.WOK_DATA); raw.spell.sync = EF.hash(raw);
   const b = await chromium.launch(); const pg = await b.newPage({ viewport: { width: 1366, height: 900 } }); const errs = []; pg.on('pageerror', e => errs.push(e.message));
   await pg.goto('http://127.0.0.1:8765/index.html'); await pg.waitForTimeout(500);
-  await pg.click('[data-hplay="ai"]').then(() => pg.click('#start')); await pg.waitForTimeout(600);
+  await pg.click('[data-hplay="ai"]').then(() => pg.click('#start')); await require('./mull.js')(pg); await pg.waitForTimeout(600);
   for (let i = 0; i < 80; i++) { if (await pg.evaluate(() => WOK_APP.game.s.active === 0 && WOK_APP.game.s.phase === 'summon1')) break; await pg.waitForTimeout(300); }
   const info = await pg.evaluate(raw => {
     const G = WOK_APP.game, s = G.s; G.aiSide = -1; G.view = 0;
@@ -23,8 +23,8 @@ const OUT = '/tmp/claude-0/sf/shots/';
   }, raw);
   console.log('spielbar:', JSON.stringify(info));
   await pg.click('.hcard[data-iid="hc1"]'); await pg.waitForTimeout(400);
-  console.log('Knopf:', (await pg.textContent('[data-cast]')).trim());
-  await pg.click('[data-cast]'); await pg.waitForTimeout(300);
+  // ab 4.5: Antippen startet das Wirken direkt (Fenster über dem Spielfeld)
+  console.log('Wirk-Fenster:', await pg.isVisible('#castfloat'), (await pg.textContent('#castfloat')).trim().slice(0, 90));
   await pg.click('.tok[data-uid="' + await pg.evaluate(() => window.__foe) + '"]'); await pg.waitForTimeout(250);
   if (await pg.isVisible('[data-cok]')) await pg.click('[data-cok]'); await pg.waitForTimeout(300);
   console.log('König nach Kosten:', await pg.evaluate(() => WOK.kingOf(WOK_APP.game.s, 0).hp));

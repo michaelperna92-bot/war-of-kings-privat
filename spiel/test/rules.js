@@ -12,7 +12,8 @@ function game(extra, kingOpts) {
   for (const c of extra || []) cards[c.id] = c;
   const deck = k => [k].concat(Array(39).fill('F'));
   const r = W.newGame({ cards, decks: [deck('KA'), deck('KB')], seed: 7 });
-  const s = r.state;
+  let s = r.state; // Starthandwechsel: beide behalten (Festlegung 30.10.2026)
+  for (const q of [s.active, 1 - s.active]) s = W.apply(s, { type: 'mulligan', p: q, redraw: false }).state;
   // Seiten fest: Spieler 0 unten = KA
   if (s.cards[s.units[s.players[0].king].cid].id !== 'KA') { const k0 = s.players[0].king, k1 = s.players[1].king; s.units[k0].cid = 'KA'; s.units[k1].cid = 'KB'; }
   s.units[s.players[0].king].hp = s.cards.KA.hp; s.units[s.players[1].king].hp = s.cards.KB.hp;

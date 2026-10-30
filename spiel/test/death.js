@@ -4,7 +4,7 @@ const OUT = '/tmp/claude-0/sf/shots/';
 (async () => {
   const b = await chromium.launch(); const pg = await b.newPage({ viewport: { width: 1100, height: 900 } }); const errs = []; pg.on('pageerror', e => errs.push(e.message));
   await pg.goto('http://127.0.0.1:8765/index.html'); await pg.waitForTimeout(400);
-  await pg.click('[data-hplay="ai"]'); await pg.click('[data-mode="hot"]'); await pg.click('#start'); await pg.waitForTimeout(400); if (await pg.isVisible('#ov')) await pg.click('#dlg [data-act="go"]');
+  await pg.click('[data-hplay="ai"]'); await pg.click('[data-mode="hot"]'); await pg.click('#start'); await require('./mull.js')(pg); await pg.waitForTimeout(400); if (await pg.isVisible('#ov')) await pg.click('#dlg [data-act="go"]');
   await pg.waitForTimeout(2500);
   await pg.evaluate(() => {
     const G = WOK_APP.game, s = G.s; G.view = 0; G.handover = false; for (const u of Object.values(s.units)) if (!u.king) delete s.units[u.uid];

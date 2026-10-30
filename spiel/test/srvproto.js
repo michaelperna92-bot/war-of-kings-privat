@@ -14,7 +14,7 @@ const deckDoc = (ids, name) => { const cards = {}; for (const id of new Set(ids)
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 (async () => {
   const PORT = 8792, srv = spawn('node', [__dirname + '/../server/server.js'], { env: Object.assign({}, process.env, { PORT }) }); await sleep(700);
-  function client(id, name) { const ws = new WebSocket('ws://127.0.0.1:' + PORT + '/ws'); const C = { ws, msgs: [], fns: [] }; ws.onmessage = e => { const m = JSON.parse(e.data); C.msgs.push(m); for (const f of C.fns) f(m); }; C.send = o => ws.send(JSON.stringify(o)); C.wait = t => new Promise(res => { const f = m => { if (m.t === t) { C.fns.splice(C.fns.indexOf(f), 1); res(m); } }; C.fns.push(f); }); ws.onopen = () => C.send({ t: 'hello', id, name }); return C; }
+  function client(id, name) { const ws = new WebSocket('ws://127.0.0.1:' + PORT + '/ws'); const C = { ws, msgs: [], fns: [] }; ws.onmessage = e => { const m = JSON.parse(e.data); C.msgs.push(m); for (const f of C.fns) f(m); }; C.send = o => ws.send(JSON.stringify(o)); C.wait = t => new Promise(res => { const f = m => { if (m.t === t) { C.fns.splice(C.fns.indexOf(f), 1); res(m); } }; C.fns.push(f); }); ws.onopen = () => C.send({ t: 'hello', id, name, v: (require('fs').readFileSync(__dirname + '/../src/app.js', 'utf8').match(/const VERSION = '([^']+)'/) || [])[1] }); return C; }
   const A = client('pa', 'Anna'), B = client('pb', 'Ben'); await A.wait('hello'); await B.wait('hello');
   A.send({ t: 'create', deck: deckDoc(decks[0], 'A') }); const cr = await A.wait('created');
   const sa = A.wait('start'), sb = B.wait('start'); B.send({ t: 'join', code: cr.code, deck: deckDoc(decks[1], 'B') }); const [ma, mb] = await Promise.all([sa, sb]);
@@ -24,11 +24,11 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   for (const P of L) P.C.fns.push(m => { if (m.t === 'act') { if (m.n !== P.n) return; const r = W.apply(P.s, m.a); if (r.error) throw new Error('Client weicht ab: ' + r.error); P.s = r.state; P.n++; } if (m.t === 'reject') rejects++; });
   L[0].n = L[1].n = 0;
   // Zug außer der Reihe
-  const off = L.find(P => (P.s.pendingDiscard !== null ? P.s.pendingDiscard : P.s.phase === 'counter' ? P.s.counter : P.s.active) !== P.me);
+  const off = L.find(P => W.actor(P.s) !== P.me);
   off.C.send({ t: 'act', code: cr.code, n: 0, a: { type: 'endPhase', p: off.me } }); await sleep(150); console.log('außer der Reihe abgelehnt:', rejects === 1);
   for (let step = 0; step < 6000; step++) {
     const s = L[0].s; if (s.result) break;
-    const actor = s.pendingDiscard !== null ? s.pendingDiscard : s.phase === 'counter' ? s.counter : s.active, P = L[actor];
+    const actor = W.actor(s), P = L[actor];
     const a = AI.decide(P.s, actor, 'mittel', P.memo) || { type: 'endPhase', p: actor };
     const loc = W.apply(P.s, a); const act = loc.error ? { type: 'endPhase', p: actor } : a;
     const before = L[0].n; P.C.send({ t: 'act', code: cr.code, n: before, a: act });

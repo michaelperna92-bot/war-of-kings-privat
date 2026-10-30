@@ -6,7 +6,7 @@ const OUT = '/tmp/claude-0/sf/shots/';
   for (const [w, h, n] of [[1366, 900, 'pc'], [1920, 1080, 'fullhd'], [390, 844, 'phone']]) {
     const pg = await b.newPage({ viewport: { width: w, height: h } }); pg.on('pageerror', e => errs.push(n + ': ' + e.message));
     await pg.goto('http://127.0.0.1:8765/index.html'); await pg.waitForTimeout(500);
-    await pg.click('[data-hplay="ai"]'); await pg.click('[data-mode="hot"]'); await pg.click('#start'); await pg.waitForTimeout(500);
+    await pg.click('[data-hplay="ai"]'); await pg.click('[data-mode="hot"]'); await pg.click('#start'); await require('./mull.js')(pg); await pg.waitForTimeout(500);
     if (await pg.isVisible('#ov')) await pg.click('#dlg [data-act="go"]');
     for (const view of [0, 1]) {
       const r = await pg.evaluate(v => {

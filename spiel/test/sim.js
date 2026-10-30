@@ -12,7 +12,7 @@ for (let g = 0; g < N; g++) {
   const memo = [{ seed: g * 7 + 1 }, { seed: g * 13 + 5 }];
   let steps = 0;
   while (!state.result && steps < 20000) {
-    const p = state.pendingDiscard !== null ? state.pendingDiscard : state.phase === 'counter' ? state.counter : state.active;
+    const p = W.actor(state);
     const deck = state.players[p].deckName === 'A' ? 0 : 1;
     const a = AI.decide(state, p, lv[deck], memo[p]);
     const r = W.apply(state, a);
