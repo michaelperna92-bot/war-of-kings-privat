@@ -4163,7 +4163,7 @@ window.WOK_CARDART = (function () {
   const ARROW = { n: '↑', ne: '↗', e: '→', se: '↘', s: '↓', sw: '↙', w: '←', nw: '↖' };
   const GRID9 = ['nw', 'n', 'ne', 'w', null, 'e', 'sw', 's', 'se'];
   const ELCOL = { feuer: '#8a3324', wasser: '#24527a', erde: '#5b4a2c', wind: '#3d6b5a', blitz: '#6b5a1c', licht: '#7a6f44', dunkelheit: '#3a2a4a' };
-  const VERSION = '4.1';
+  const VERSION = '4.2';
   const isSp = c => !!c && (c.type === 'spell' || c.type === 'curse');
   const TYPEN = c => c.type === 'king' ? 'König' : c.type === 'spell' ? 'Zauber' : c.type === 'curse' ? 'Fluch' : 'Held';
   const SPCOL = { spell: '#1f4a35', curse: '#3d2350' };
@@ -5409,6 +5409,12 @@ window.WOK_CARDART = (function () {
     let meta; try { meta = await (await fetch(base + 'api/karten?info', { cache: 'no-store' })).json(); } catch (e) { if (manual) toast('Spielserver nicht erreichbar.'); return; }
     if (!meta || meta.none) { if (manual) toast('Auf dem Server sind noch keine offiziellen Karten.'); return; }
     if (!manual && LS.get('wok-spiel-offiziell') === meta.version) return;
+    // Erster Besuch ohne eigene Karten: offizielle Karten samt Probe-Deck sofort laden (keine Demo-Decks)
+    if (!manual && !ownIds().length) {
+      try { const b = await (await fetch(base + 'api/karten', { cache: 'no-store' })).blob(); await importFiles([new File([b], 'offiziell.wokspiel', { type: 'application/zip' })], true); LS.set('wok-spiel-offiziell', meta.version);
+        const pd = POOL.decks.find(d => d.origin === 'paket' && deckOk(d)); if (pd) { SET.deckA = pd.id; SET.deckB = pd.id; LS.set('wok-spiel-setup', SET); renderHome(); renderDecks(); } toast('Offizielle Karten geladen: ' + meta.name + '.', 5000); } catch (e) { toast('Offizielle Karten konnten nicht geladen werden: ' + e.message, 7000); }
+      return;
+    }
     dialog('<span class="eyebrow">Vom Spielserver</span><h2>Offizielle Karten</h2><p><b>' + esc(meta.name) + '</b> (' + (meta.size / 1048576).toFixed(1).replace('.', ',') + ' MB) · veröffentlicht ' + new Date(meta.version).toLocaleString('de-DE') + '</p><p class="muted">Lädt die aktuellen Karten des Entwicklers in deine Sammlung (deine Decks bleiben).</p><div class="row"><button class="btn primary" data-act="load">Jetzt laden</button><button class="btn" data-act="no">Später</button></div>', async act => {
       if (act !== 'load') { if (act === 'no') LS.set('wok-spiel-offiziell', meta.version); return; }
       toast('Lade offizielle Karten …', 4000);

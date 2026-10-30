@@ -8,5 +8,5 @@ rm -rf "$M/spiel" "$M/kartenwerkstatt"; mkdir -p "$M/spiel" "$M/kartenwerkstatt"
 (cd "$G" && cp -r --parents dist/web server/vendor "$M/spiel/")
 (cd "$C" && git ls-files -z | xargs -0 -I{} cp --parents {} "$M/kartenwerkstatt/")
 cp "$G/tools/mono/README.md" "$G/tools/mono/render.yaml" "$M/"; cp "$G/CLAUDE.md" "$M/CLAUDE.md"
-printf 'release/\nnode_modules/\nspiel/server/data/\n' > "$M/.gitignore"
+printf 'release/\nnode_modules/\n' > "$M/.gitignore"
 echo "fertig: $M"
