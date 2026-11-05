@@ -1,6 +1,7 @@
 // Fehlerfall vom 30.10.2026: „Todesapperatur“ (Fluch, Auslöser gegnerischer Angriff, Ziel gegnerischer Held) war nicht wirkbar.
 global.window = global; require(require('path').join(require('../ccpath.js'), 'data.js')); delete global.window;
 const W = require('../src/engine.js'), EF = W.EF, D = global.WOK_DATA, fs = require('fs'), zip = require('path').join(__dirname, '..', 'server', 'data', 'offiziell.wokspiel');
+W.setLayout(7); // Regeltests mit festen Feldern des früheren 7-Reihen-Feldes (Mechanik unverändert); das 5-Reihen-Feld prüft test/feld5.js
 let pass = 0, failN = 0; const ok = (c, m) => { if (c) pass++; else { failN++; console.log('FEHLER:', m); } };
 // Originaldaten der Karten aus dem offiziellen Paket (ohne Bilder)
 const buf = fs.readFileSync(zip); const { inflateRawSync } = require('zlib');

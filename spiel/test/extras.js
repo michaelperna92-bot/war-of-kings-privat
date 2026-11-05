@@ -27,7 +27,7 @@ const OUT = '/tmp/claude-0/sf/shots/';
   // Auftritt einer legendären Karte erzwingen + Kette
   await pg.evaluate(() => {
     const s = WOK_APP.game.s, leg = Object.values(s.cards).find(c => c.type === 'hero' && c.rarity === 'legendaer') || Object.values(s.cards).find(c => c.type === 'hero');
-    leg.rarity = 'legendaer'; WOK_APP.render([{ t: 'summon', p: 0, cid: leg.id, uid: 'x', field: 'D6' }]);
+    leg.rarity = 'legendaer'; WOK_APP.render([{ t: 'summon', p: 0, cid: leg.id, uid: 'x', field: 'D5' }]);
   });
   await pg.waitForTimeout(700); console.log('Auftritt:', await pg.evaluate(() => !!document.querySelector('#fxlayer .cutin'))); await pg.screenshot({ path: OUT + n + '-cutin.png' });
   await pg.click('#fxlayer'); await pg.waitForTimeout(400);

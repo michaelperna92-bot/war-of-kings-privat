@@ -1,0 +1,46 @@
+War of Kings – verwendete fremde Bibliotheken und ihre Lizenzen
+================================================================
+Stand: Version 4.11 (4.11.2026)
+
+Alle Bibliotheken sind kostenlos, auch für ein verkauftes Spiel. Sie sind fest in die
+Spieldatei eingebaut (keine Verbindung ins Internet nötig).
+
+1) three.js r169 – 3D-Darstellung des Spielfelds (inkl. Nachleuchten/Bloom aus den three.js-Beispielen)
+   Quelle: https://github.com/mrdoob/three.js
+   Lizenz: MIT (Copyright © 2010-2024 three.js authors)
+   Pflicht: Der Lizenztext muss mitgeliefert werden → steht unten vollständig.
+
+2) GSAP 3.13.0 – Animationen (Karte fällt aufs Feld, Angriff, Bewegung)
+   Quelle: https://github.com/greensock/GSAP
+   Lizenz: GSAP Standard "No Charge" License (https://gsap.com/standard-license).
+   Seit Version 3.13 (2025, Übernahme durch Webflow) für alle kostenlos, auch kommerziell.
+   Einzige Einschränkung: Man darf damit kein Konkurrenzprodukt zu Webflow bauen
+   (z. B. einen visuellen Website-Baukasten). Ein Spiel ist davon nicht betroffen.
+
+3) Geplant: Howler.js – Tonwiedergabe (sobald die Studio-Sounds da sind)
+   Quelle: https://github.com/goldfire/howler.js · Lizenz: MIT
+
+--------------------------------------------------------------------------------
+Lizenztext three.js (MIT)
+--------------------------------------------------------------------------------
+The MIT License
+
+Copyright © 2010-2024 three.js authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.

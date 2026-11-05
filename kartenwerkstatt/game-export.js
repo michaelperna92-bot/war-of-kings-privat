@@ -64,7 +64,8 @@ async function gameExportRun() {
         if (isSpellCard(card)) {
           const out = clone(card); delete out.art; delete out.giftDetails; delete out.attack; delete out.move; delete out.gifts; delete out.style;
           const sst = window.WOK_EFFECTS.status(card, D);
-          cards.push(Object.assign(out, gxPool(raw), { id: raw.id || id, image: fullPath, token: tokPath, spellFormat: window.WOK_EFFECTS.FORMAT, spellVersion: window.WOK_EFFECTS.VERSION, ruleTextShown: card.ruleText && card.ruleText.trim() ? card.ruleText : window.WOK_EFFECTS.describe(card, D),
+          if (out.spell) out.spell.v = window.WOK_EFFECTS.needVersion(out.spell); // ältere Spiele erkennen neue Wirkungen und sagen „neuere Version nötig“
+          cards.push(Object.assign(out, gxPool(raw), { id: raw.id || id, image: fullPath, token: tokPath, spellFormat: window.WOK_EFFECTS.FORMAT, spellVersion: window.WOK_EFFECTS.needVersion(card.spell), ruleTextShown: card.ruleText && card.ruleText.trim() ? card.ruleText : window.WOK_EFFECTS.describe(card, D),
             playable: sst.playable, notPlayableReasons: sst.reasons,
             validation: { errors: v.filter(x => x.level === 'error').map(x => x.text), warnings: v.filter(x => x.level === 'warn').map(x => x.text) } }));
           await new Promise(r => setTimeout(r, 0)); continue;

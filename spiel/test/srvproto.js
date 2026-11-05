@@ -8,20 +8,23 @@ const raw = {}; for (const c of DEMO.cards) raw[c.id] = c;
 function SP(id, type, effects, o) { const r = Object.assign({ id, type, name: id, rarity: 'gewoehnlich', energy: 2, ruleText: '' }, o || {}); r.spell = Object.assign(EF.blankSpell(type), (o && o.spell) || {}); r.spell.effects = effects.map(([k, ch]) => { const e = EF.blankEffect(k, type); for (const [p, v] of Object.entries(ch || {})) { const ks = p.split('.'); let x = e; while (ks.length > 1) x = x[ks.shift()]; x[ks[0]] = v; } return e; }); EF.autoFix(r.spell); raw[id] = r; return id; }
 const sp = [SP('x_schw', 'curse', [['stat', { 'params.amount': -500, 'duration.kind': 'turn' }]], { energy: 1 }), SP('x_zerst', 'curse', [['destroy', {}]], { energy: 4 }), SP('x_schild', 'spell', [['protect', { trigger: 'enemyAttack', 'duration.kind': 'turn' }]], { energy: 0, spell: { timing: 'counter' } }),
   SP('x_ctrl', 'curse', [['control', { 'duration.kind': 'turn' }]], { energy: 3 }), SP('x_neut', 'spell', [['neutralize', {}]], { energy: 0, spell: { timing: 'counter' } }), SP('x_mut', 'spell', [['stat', { 'params.amount': 700, 'duration.kind': 'turn' }]], { energy: 1 })];
-const mix = (d, k) => d.map((id, i) => i && i % 4 === 0 ? sp[(k + i) % sp.length] : id);
+// WOK_PROBE=1: statt der festen Testkarten zufällige Zauber/Flüche aus dem Werkstatt-Generator (Probelauf über den Server)
+if (process.env.WOK_PROBE) { global.window = global; const GEN = require(require('path').join(require('../ccpath.js'), 'spell-gen.js')); delete global.window; let sd = +process.env.WOK_PROBE || 1; const rng = () => (sd = (sd * 16807) % 2147483647) / 2147483647; sp.length = 0; for (let i = 0; sp.length < 12 && i < 200; i++) { const c = GEN.random({ type: i % 2 ? 'curse' : 'spell', rng, D: global.WOK_DATA }); if (!c) continue; c.id = 'pr' + i; c.ruleText = EF.describe(c, global.WOK_DATA); c.spell.sync = EF.hash(c); c.spell.v = EF.needVersion(c.spell); raw[c.id] = c; sp.push(c.id); } console.log('Probelauf-Karten:', sp.map(id => raw[id].name).join(', ')); }
+const mix = (d, k) => d.map((id, i) => i && i % 4 === 0 ? (process.env.WOK_PROBE ? sp[(k * 5 + i / 4) % sp.length] : sp[(k + i) % sp.length]) : id);
 const decks = [mix(DEMO.decks.A, 0), mix(DEMO.decks.B, 3)];
 const deckDoc = (ids, name) => { const cards = {}; for (const id of new Set(ids)) cards[id] = raw[id]; return { name, ids, cards }; };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 (async () => {
-  const PORT = 8792, srv = spawn('node', [__dirname + '/../server/server.js'], { env: Object.assign({}, process.env, { PORT }) }); await sleep(700);
+  const PORT = 8792, srv = spawn('node', [__dirname + '/../server/server.js'], { env: Object.assign({}, process.env, { PORT }), stdio: ['ignore', 'ignore', 'inherit'] }); await sleep(700);
   function client(id, name) { const ws = new WebSocket('ws://127.0.0.1:' + PORT + '/ws'); const C = { ws, msgs: [], fns: [] }; ws.onmessage = e => { const m = JSON.parse(e.data); C.msgs.push(m); for (const f of C.fns) f(m); }; C.send = o => ws.send(JSON.stringify(o)); C.wait = t => new Promise(res => { const f = m => { if (m.t === t) { C.fns.splice(C.fns.indexOf(f), 1); res(m); } }; C.fns.push(f); }); ws.onopen = () => C.send({ t: 'hello', id, name, v: (require('fs').readFileSync(__dirname + '/../src/app.js', 'utf8').match(/const VERSION = '([^']+)'/) || [])[1] }); return C; }
   const A = client('pa', 'Anna'), B = client('pb', 'Ben'); await A.wait('hello'); await B.wait('hello');
+  if (process.env.WOK_PROBE) A.fns.push(m => { if (m.t === 'error') console.log('Serverfehler:', m.msg); });
   A.send({ t: 'create', deck: deckDoc(decks[0], 'A') }); const cr = await A.wait('created');
   const sa = A.wait('start'), sb = B.wait('start'); B.send({ t: 'join', code: cr.code, deck: deckDoc(decks[1], 'B') }); const [ma, mb] = await Promise.all([sa, sb]);
   const mk = m => W.newGame({ cards: Object.assign({}, m.decks[1].cards, m.decks[0].cards), decks: [m.decks[0].ids, m.decks[1].ids], fixedSides: true, seed: m.seed, sideNames: m.names, timer: false, counterReserve: false }).state;
   const L = [{ C: A, s: mk(ma), me: 0, memo: { seed: 3 } }, { C: B, s: mk(mb), me: 1, memo: { seed: 9 } }];
   let n = 0; const cnt = {}; let rejects = 0, dupIgnored = 0;
-  for (const P of L) P.C.fns.push(m => { if (m.t === 'act') { if (m.n !== P.n) return; const r = W.apply(P.s, m.a); if (r.error) throw new Error('Client weicht ab: ' + r.error); P.s = r.state; P.n++; } if (m.t === 'reject') rejects++; });
+  for (const P of L) P.C.fns.push(m => { if (m.t === 'act') { if (m.n !== P.n) return; const r = W.apply(P.s, m.a); if (r.error) throw new Error('Client weicht ab: ' + r.error); P.s = r.state; P.n++; } if (m.t === 'reject') { rejects++; if (process.env.WOK_PROBE && rejects < 15) console.log('abgelehnt:', m.error, JSON.stringify(P.s.phase)); } });
   L[0].n = L[1].n = 0;
   // Zug außer der Reihe
   const off = L.find(P => W.actor(P.s) !== P.me);

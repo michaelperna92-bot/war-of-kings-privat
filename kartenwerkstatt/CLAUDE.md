@@ -5,7 +5,8 @@ Die verbindlichen Regeln für **War of Kings und die Kartenwerkstatt** stehen in
 
 1. Werkstatt und Spiel sind eigenständig, aber verbunden. Die Werkstatt ist die **Quelle** für `data.js`, `effects.js`,
    `render.js`, `assets.js` – das Spiel bettet sie beim Bauen ein. Nicht doppelt programmieren.
-2. Jede relevante Veröffentlichung: Windows (PC-Installer), Web/Cloud (Artefakt) – und das Spiel neu bauen, wenn geteilte Dateien sich ändern.
+2. Jede relevante Veröffentlichung: Windows (PC-Installer), Web/Cloud (Artefakt) – und **immer eine neue Spielversion nachziehen**
+   (31.10.2026), mit Probelauf der Werkstatt-Karten im Spiel (`spiel/test/probelauf.js`). GitHub erst nach OK des Entwicklers.
 3. Bestehende Funktionen nicht verändern, nur ergänzen. Keine Bilder/Vorlagen/Karten verlieren.
 4. Nichts als fertig melden, was nicht getestet ist. Builds reproduzierbar (`node build.js`, Go-Build mit festen Flags).
 5. Änderungen dokumentieren (Commit + LIESMICH im Release).

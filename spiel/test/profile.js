@@ -19,12 +19,12 @@ const OUT = '/tmp/claude-0/sf/shots/';
     // Gaben-Schnellwahl
     const uid = await pg.evaluate(() => { const G = WOK_APP.game, s = G.s; G.aiSide = -1; const hero = Object.values(s.cards).find(c => c.type === 'hero' && c.gifts.some(g => ['mordlust', 'eisenpanzer'].includes(g.id))) || Object.values(s.cards).find(c => c.type === 'hero');
       if (!hero.gifts.some(g => g.id === 'mordlust')) hero.gifts.push({ id: 'mordlust' });
-      const uid = 'uq'; s.units[uid] = { uid, cid: hero.id, owner: 0, pos: 'D5', king: false, summonTurn: -5, moved: false, cd: {}, fx: [], poison: null, flags: {}, attached: [] }; s.active = 0; s.phase = 'battle'; s.pendingDiscard = null; WOK_APP.renderNow(); return uid; });
+      const uid = 'uq'; s.units[uid] = { uid, cid: hero.id, owner: 0, pos: 'D4', king: false, summonTurn: -5, moved: false, cd: {}, fx: [], poison: null, flags: {}, attached: [] }; s.active = 0; s.phase = 'battle'; s.pendingDiscard = null; WOK_APP.renderNow(); return uid; });
     await pg.waitForTimeout(300); await pg.click('.tok[data-uid="' + uid + '"]'); await pg.waitForTimeout(300);
-    console.log(n, 'Schnellwahl:', await pg.evaluate(() => { const q = document.querySelector('#qgifts'); return q ? [...q.querySelectorAll('button')].map(b => b.textContent + (b.disabled ? '(aus)' : '')).join(' | ') : 'keine'; }));
+    console.log(n, 'Schnellwahl:', await pg.evaluate(() => { const q = document.querySelector('.qgifts.inbar'); return q ? [...q.querySelectorAll('button')].map(b => b.textContent + (b.disabled ? '(aus)' : '')).join(' | ') : 'keine'; }));
     await pg.screenshot({ path: OUT + n + '-qgifts.png' });
-    await pg.click('#qgifts [data-qg="mordlust"]'); await pg.waitForTimeout(500);
-    console.log(n, 'Mordlust benutzt:', await pg.evaluate(u => WOK_APP.game.s.units[u].fx.some(e => e.id === 'mordlust'), uid), '| Großansicht offen:', await pg.isVisible('#insp'));
+    await pg.click('.qgifts.inbar [data-qg="mordlust"]'); await pg.waitForTimeout(500);
+    if (await pg.isVisible('#dlg [data-act="go"]')) await pg.click('#dlg [data-act="go"]'); await pg.waitForTimeout(400); console.log(n, 'Mordlust benutzt:', await pg.evaluate(u => WOK_APP.game.s.units[u].fx.some(e => e.id === 'mordlust'), uid), '| Großansicht offen:', await pg.isVisible('#insp'));
     await pg.close();
   }
   console.log('Fehler:', errs); await b.close();

@@ -9,9 +9,9 @@ Sprache mit dem Entwickler: **Deutsch**.
    (`data.js`), Zauber/Fluch-Format (`effects.js`) und Kartenrenderer (`render.js`, `assets.js`); das Spiel bettet diese
    Dateien beim Bauen unverändert ein (`spiel/build.js`). Nichts davon wird im Spiel ein zweites Mal programmiert.
 3. Bei jeder relevanten Veröffentlichung werden **alle Ausgaben** berücksichtigt:
-   - Windows (PC-Installer `release/*.zip`),
+   - Windows (PC-Installer `release/WoK-Probe-Spiel-Setup.exe`, seit 5.11.2026 ohne ZIP),
    - Web (Spielserver + `dist/web`, über HTTPS),
-   - Browser-Datei (`dist/WoK-Probe-Spiel-Browser.html`),
+   - Browser-Datei (`dist/WoK-Probe-Spiel-Browser.html`) – wird weiter gebaut, aber **nicht mehr ausgeliefert** (Entwickler, 31.10.2026: „brauche ich nicht mehr“),
    - Claude-Artefakt (Cloud-Vorschau).
 4. Bestehende Bilder, Animationen, Sounds, Spielregeln und Karten dürfen nicht unbeabsichtigt verloren gehen.
    Bestehende Werkstatt-Funktionen werden nicht verändert, nur ergänzt.
@@ -22,9 +22,25 @@ Sprache mit dem Entwickler: **Deutsch**.
 8. Sämtliche Änderungen werden dokumentiert: Commit-Nachricht + `LIESMICH.txt` im Release + `CHANGELOG.md`.
 
 ## Weitere Festlegungen des Entwicklers
+- **Veröffentlichung in zwei Schritten (31.10.2026):** Zuerst Artefakt (plus PC-Zip zum Testen) an den Entwickler.
+  **GitHub/Spielserver erst nach seinem OK** – vorher kein Push.
+- **Werkstatt und Spiel bleiben abgestimmt:** Jede Werkstatt-Version (z. B. geänderte oder neue Effekte) zieht automatisch
+  eine neue Spielversion nach. Vor jeder Version läuft der Probelauf (`test/probelauf.js` und `WOK_PROBE=… node test/srvproto.js`):
+  Werkstatt-Zufallskarten werden im Spiel geladen, gewirkt und in KI-Partien gespielt – veröffentlicht wird nur fehlerfrei.
+  Karten mit neueren Wirkungen tragen eine höhere Formatversion (`EF.needVersion`); ältere Spiele zeigen „braucht neuere Spielversion“.
+- Werkstatt-Texte einfach und verständlich halten.
 - Keine Regeln erfinden. Das Master-Regelwerk hat Vorrang; der Entwickler darf neue Regeln setzen.
   Vorschläge/Annahmen der Werkstatt als solche kennzeichnen (`ASSUMPTIONS` in `src/engine.js`).
-- Keine kostenpflichtigen Dienste. Higgsfield nur für Medien.
+- Kostenpflichtiges ist seit 5.11.2026 erlaubt (Entwickler, Budget ca. 400–500 €): Unity-Asset-Store-Pakete, UI-Designer,
+  später Apple Developer Program und Server-Tarif. Vor jedem Kauf Empfehlung + Prüfung, ob es passt. Higgsfield nur für Medien,
+  und nur, wenn die Datei zu Claude kommen kann (Entwickler lädt herunter und schickt sie).
+- **Weg zum Profispiel (5.11.2026):** Neue Oberfläche in **Unity 6 (LTS)** auf dem PC des Entwicklers; Regel-Engine `engine.js`
+  läuft dort über Jint weiter (eine Quelle), Werkstatt/Server/Kartendaten bleiben. Schritt für Schritt in Meilensteinen,
+  sparsam mit Tokens: je Meilenstein ein Durchgang, Rückmeldungen gesammelt. App-Store-Version erst, wenn es wie ein Profispiel aussieht.
+  Die Web-/PC-Version bleibt Testversion (Regeln, Balance, Online).
+- **Kickstarter-Plan (5.11.2026):** Vorläufig mit den bisherigen Designs (KI-generierte Kartenbilder/-layouts, Spielfeld, Thronhalle).
+  Ziel: Spiel läuft gut, starke Effekte → Kickstarter → davon echte Art-Designer, die jede Karte einzeln zeichnen.
+  Darum zuerst ein vorzeigbarer Duell-Ausschnitt in Unity (für Trailer/Demo); Designer-Budget erst nach Kickstarter.
 - Deckbau findet im Spiel statt. Sind eigene Karten geladen, erscheinen nur diese.
 - Pack-Garantie (Pity) bleibt für Spieler unsichtbar.
 
@@ -51,9 +67,9 @@ Sprache mit dem Entwickler: **Deutsch**.
 2. `node build.js`
 3. Windows: `cd tools/mkrsrc && WOK_VERSION=X go run . ../../desktop/app/icon.ico ../../desktop/app.manifest ../../desktop/rsrc_windows_amd64.syso`
    dann `cd desktop && GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w -H windowsgui" -o ../release/WoK-Probe-Spiel-Setup.exe .`
-4. ZIP mit `LIESMICH.txt` (CRLF) + EXE + Browser-Datei.
+4. **Keine ZIP mehr** (Entwickler, 5.11.2026): dem Entwickler nur die EXE geben; `LIESMICH.txt` (CRLF) und `LIZENZEN.txt` bleiben im Repo/Release-Ordner.
 5. Tests (unten) laufen lassen.
-6. Commit (Autor Michael Perna), Artefakt veröffentlichen, Server neu bereitstellen (Push auf GitHub → Render baut automatisch).
+6. Commit (Autor Michael Perna), Artefakt veröffentlichen und dem Entwickler geben. **Erst nach seinem OK:** Push auf GitHub → Render baut automatisch.
 
 ## Tests
 ```
@@ -62,5 +78,8 @@ node test/srvproto.js        # Server-Protokoll: KI gegen KI über den Server, Z
 node test/onlinesrv.js       # 2 Browser-Sitzungen über Einladungslink gegen echten Server (Playwright)
 node test/srvkarten.js       # offizielle Karten veröffentlichen/laden
 node test/onlinenet.js       # Notfall-Weg MQTT (lokaler Test-Broker test/mqbroker.js)
+node test/probelauf.js       # Probelauf: Werkstatt-Zufallskarten im Spiel (laden, wirken, KI-Partien)
+WOK_PROBE=3 node test/srvproto.js   # Probelauf über den Spielserver
+node test/perf.js nachher    # Flüssigkeit messen (Handy-Simulation)
 ```
 UI-Tests brauchen den lokalen Testserver (Port 8765 → `dist/`).

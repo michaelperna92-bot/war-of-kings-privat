@@ -1,6 +1,7 @@
 // Tests für Zauber und Flüche. Aufruf: node test/spells.js
 global.window = global; require(require('path').join(require('../ccpath.js'), 'data.js')); delete global.window;
 const W = require('../src/engine.js'), EF = W.EF, D = global.WOK_DATA;
+W.setLayout(7); // Regeltests mit festen Feldern des früheren 7-Reihen-Feldes (Mechanik unverändert); das 5-Reihen-Feld prüft test/feld5.js
 let pass = 0, failN = 0;
 const ok = (c, msg) => { if (c) pass++; else { failN++; console.log('FEHLER:', msg); } };
 const eq = (a, b, msg) => ok(JSON.stringify(a) === JSON.stringify(b), msg + ' – erwartet ' + JSON.stringify(b) + ', erhalten ' + JSON.stringify(a));
@@ -151,7 +152,7 @@ const pName = s => s.players[s.active].name;
   s = act(s, { type: 'cast', iid: s.players[0].hand[0].iid, choices: [['0:d1']], place: [['B6']] });
   s = act(s, { type: 'cast', iid: hand(s, 0, 'RE'), choices: [['1:d2']] }); s = finishBattle(s);
   const X = Object.values(s.units).find(u => u.cid === 'X'), Y = Object.values(s.units).find(u => u.cid === 'Y');
-  ok(X && X.pos === 'B6' && X.owner === 0 && X.summonTurn === s.turn, 'eigener Held auf gewähltem Feld, mit Beschwörungssperre');
+  ok(X && X.pos === 'B6' && X.owner === 0 && X.summonTurn === -1, 'eigener Held auf gewähltem Feld – in der eigenen Battlephase sofort, ohne Sperre (Festlegung 30.10.2026: greift noch an)');
   ok(Y && Y.owner === 0 && Y.origOwner === 1 && Y.summonTurn === -1, 'gegnerischer Held unter eigener Kontrolle, ohne Sperre');
   ok(!s.players[1].discard.some(d => d.cid === 'Y'), 'aus dem gegnerischen Ablagestapel entfernt');
   const C = SP('KX', 'curse', [['destroy', { 'target.side': 'own' }]]);

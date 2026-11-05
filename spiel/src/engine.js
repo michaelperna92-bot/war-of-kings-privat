@@ -15,17 +15,24 @@
 
   /* ---------------- Spielfeld (Abschnitt 15.6) ---------------- */
   const COLS = 'ABCDEFG';
-  const ROW_COLS = { 1: 'CDE', 2: 'ABCDEFG', 3: 'ABCDEFG', 4: 'BCDEF', 5: 'ABCDEFG', 6: 'ABCDEFG', 7: 'CDE' };
-  const FIELDS = [];
-  for (let r = 1; r <= 7; r++) for (const ch of ROW_COLS[r]) FIELDS.push(ch + r);
-  const FIELD_SET = new Set(FIELDS);
-  const fid = (c, r) => (c >= 0 && c < 7 && r >= 1 && r <= 7 ? COLS[c] + r : null);
+  // Spielfeld (Festlegung des Entwicklers vom 31.10.2026): 5 Reihen – König+Wachen, Beschwörungsreihe, Mitte (5 Felder),
+  // Beschwörungsreihe, König+Wachen. Das frühere Feld mit 7 Reihen bleibt nur für ältere Regeltests abrufbar (setLayout(7)).
+  const LAYOUTS = { 6: { 1: 'CDE', 2: 'ABCDEFG', 3: 'BCDEF', 4: 'BCDEF', 5: 'ABCDEFG', 6: 'CDE' }, 5: { 1: 'CDE', 2: 'ABCDEFG', 3: 'BCDEF', 4: 'ABCDEFG', 5: 'CDE' }, 7: { 1: 'CDE', 2: 'ABCDEFG', 3: 'ABCDEFG', 4: 'BCDEF', 5: 'ABCDEFG', 6: 'ABCDEFG', 7: 'CDE' } };
+  let ROWS, ROW_COLS, FIELDS, FIELD_SET, KING_FIELD, GUARD, SUMMON_ROW, api = null;
+  function setLayout(n) {
+    n = LAYOUTS[n] ? n : 5; ROWS = n; ROW_COLS = LAYOUTS[n]; FIELDS = [];
+    for (let r = 1; r <= n; r++) for (const ch of ROW_COLS[r]) FIELDS.push(ch + r);
+    FIELD_SET = new Set(FIELDS);
+    // Spieler 0 sitzt unten (König in der letzten Reihe), Spieler 1 oben (König D1)
+    KING_FIELD = ['D' + n, 'D1']; GUARD = [['C' + n, 'E' + n], ['C1', 'E1']]; SUMMON_ROW = [n - 1, 2];
+    if (api) Object.assign(api, { ROWS, ROW_COLS, FIELDS, KING_FIELD, GUARD, SUMMON_ROW });
+    return n;
+  }
+  setLayout(6); // Festlegung des Entwicklers 1.11.2026: Spielfeld mit 6 Reihen (zwei Mittelreihen B–F)
+  const fid = (c, r) => (c >= 0 && c < 7 && r >= 1 && r <= ROWS ? COLS[c] + r : null);
   const exists = f => !!f && FIELD_SET.has(f);
   const colOf = f => COLS.indexOf(f[0]), rowOf = f => +f.slice(1);
-  // Spieler 0 sitzt unten (König D7), Spieler 1 oben (König D1). Richtungen gelten aus Sicht der eigenen Seite.
-  const KING_FIELD = ['D7', 'D1'];
-  const GUARD = [['C7', 'E7'], ['C1', 'E1']];
-  const SUMMON_ROW = [6, 2];
+  // Richtungen gelten aus Sicht der eigenen Seite.
   const DIRS = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'];
   const DV = { n: [0, -1], ne: [1, -1], e: [1, 0], se: [1, 1], s: [0, 1], sw: [-1, 1], w: [-1, 0], nw: [-1, -1] };
   function step(f, dir, owner, n) {
@@ -64,6 +71,9 @@
   const RULES = { deckSize: 40, startHand: 5, handMax: 10, energyMax: 10, drawFailDamage: 1000, turnSeconds: 120, counterSeconds: 120, reconnectSeconds: 120 };
   // Stellen, die das Regelwerk offen lässt – hier sichtbar festgehalten statt still angenommen.
   const ASSUMPTIONS = [
+    'Wiederbeleben (Werkstatt-Vorschlag zur Umsetzung, 31.10.2026): Das Feld wählt der Spieler unter den freien Beschwörungsfeldern und den beiden Wachfeldern; ist keins frei, kann die Karte nicht gewirkt werden. Der Held kommt mit seinen normalen Kartenwerten und ohne frühere Effekte zurück. In der Konterphase gewirkt, gilt wie bisher die eingestellte Beschwörungssperre.',
+    'Extra-Lauf nach Kontrolle/Wiederbeleben (Werkstatt-Vorschlag, 31.10.2026): genau einmal, nur in derselben Battlephase und nur solange der Held noch keinen Angriff festgelegt hat; gesperrte Felder gelten weiter.',
+    'Phasen-Ratgeber der Werkstatt (Vorschlag, 31.10.2026): Fallen und Schutz werden als Konterkarten vorgeschlagen, Angriffshilfen für die eigene Battlephase. Das ist nur ein Vorschlag mit Hinweis – verboten wird nichts.',
     'Auslöser „bei einem gegnerischen Angriff“ mit gegnerischem Ziel (z. B. Todesapperatur): Ziel sind die angreifenden gegnerischen Helden dieser Battlephase; bei eigenem Ziel wie bisher die angegriffenen eigenen Helden (Werkstatt-Vorschlag nach dem Kartentext „legt seine Macht auf die Angreifer“, 30.10.2026).',
     'Starthandwechsel (Festlegung des Entwicklers vom 30.10.2026, Abschnitt 3): Werkstatt-Vorschläge zur Umsetzung – mit Zuguhr gilt nach Ablauf der Bedenkzeit „Hand behalten“; zu zweit an einem Gerät entscheidet zuerst der Startspieler, dann wird das Gerät übergeben; im Tutorial gibt es keinen Starthandwechsel; die KI tauscht, wenn sie keinen Helden oder keine Karte mit höchstens 2 Energie auf der Hand hat.',
     'Könige haben 8.000–12.000 HP (Festlegung des Entwicklers vom 30.10.2026). Ältere Karten werden beim Laden umgerechnet: Grabeskönig Vorhaltar 10.000 (Festlegung), andere anteilig aus dem alten Bereich 10.000–20.000 (Werkstatt-Vorschlag).',
@@ -152,7 +162,7 @@
       const full = Object.assign({}, c, { spell: sp });
       const st = EF.status(full, DATA());
       for (const r of st.reasons) if (!reasons.includes(r)) reasons.push(r);
-      for (const e of sp.effects) if (!SPELL_KINDS.has(e.kind) && !reasons.some(r => r.includes(e.kind))) reasons.push('Effektart „' + e.kind + '“ wird vom Probe-Spiel nicht unterstützt.');
+      for (const e of sp.effects) if (!SPELL_KINDS.has(e.kind)) { for (let k = reasons.length - 1; k >= 0; k--) if (reasons[k].includes('„' + e.kind + '“')) reasons.splice(k, 1); reasons.push('Braucht eine neuere Spielversion: die Wirkung „' + e.kind + '“ kennt dieses Spiel noch nicht.'); }
       if (!text.trim()) text = EF.describe(full, DATA());
     }
     return {
@@ -188,7 +198,7 @@
   // opts: { cards: {id: card}, decks: [idsA, idsB], names: ['A','B'], ai: [false,'leicht'], seed, timer }
   function newGame(opts) {
     const cards = {}; for (const [id, c] of Object.entries(opts.cards)) cards[id] = c;
-    const s = { v: VERSION, rng: (opts.seed >>> 0) || 1, seed: (opts.seed >>> 0) || 1, cards, turn: 0, active: 0, phase: 'setup', players: [], units: {}, nextId: 1, decl: {}, retreat: [], pendingDiscard: null, result: null, log: [], timer: !!opts.timer, counter: null, stack: [], auras: [], locks: [], counterReserve: true };
+    const s = { v: VERSION, rows: ROWS, rng: (opts.seed >>> 0) || 1, seed: (opts.seed >>> 0) || 1, cards, turn: 0, active: 0, phase: 'setup', players: [], units: {}, nextId: 1, decl: {}, retreat: [], pendingDiscard: null, result: null, log: [], timer: !!opts.timer, counter: null, stack: [], auras: [], locks: [], counterReserve: true };
     const ev = [];
     // A und B werden den Seiten zufällig zugewiesen (15.7)
     const deckOrder = opts.fixedSides ? [0, 1] : rand(s) < 0.5 ? [0, 1] : [1, 0];
@@ -250,7 +260,8 @@
   // Laufziele: 1..steps Schritte, Richtungswechsel erlaubt, nur existierende freie Felder, nie über Besetztes, nie auf gegnerische Wachfelder
   function reachable(s, uid) {
     const u = s.units[uid]; const out = {};
-    if (!u || u.king || s.phase !== 'move' || u.owner !== s.active || u.moved || locked(s, u) || immobile(s, u)) return out;
+    const extra = !!u && s.phase === 'battle' && !!(u.flags && u.flags.extraMove) && !(s.decl || {})[uid];
+    if (!u || u.king || (s.phase !== 'move' && !extra) || u.owner !== s.active || (u.moved && !extra) || locked(s, u) || immobile(s, u)) return out;
     const c = card(s, u), max = stepsOf(s, u); if (!max) return out;
     let frontier = [[u.pos, [u.pos]]]; const seen = new Set([u.pos]);
     for (let k = 0; k < max; k++) {
@@ -465,6 +476,8 @@
     }
     for (let p = 0; p < 2; p++) if (dmg[p]) { const k = kingOf(s, p); k.hp -= dmg[p]; ev.push({ t: 'kingDamage', uid: k.uid, dmg: dmg[p], hp: k.hp }); }
     kill(s, [...deaths], ev, 'combat');
+    // Zerstörungsflüche mit „Angriff geht durch“: jetzt, nach dem Kampf (die Angreifer sind noch als Angreifer bekannt)
+    if (s.after && s.after.length) { const list = s.after; s.after = []; const keep = s.decl; for (const { en, i, decl } of list) { const c = s.cards[en.cid]; s.decl = decl; ev.push({ t: 'afterBattle', sid: en.sid, cid: en.cid }); log(s, 'Nach dem Kampf: „' + c.name + '“ von ' + s.players[en.p].name + ' wirkt.', en.p); resolveEffect(s, ev, en, c, c.spell.effects[i], i, []); } s.decl = keep; }
     s.decl = {};
     if (checkEnd(s, ev)) return;
     // Rückzug nach der Schadensberechnung
@@ -483,6 +496,7 @@
     const s = clone(state), ev = [];
     upgrade(s);
     const fail = msg => ({ state, events: [], error: msg });
+    if ((s.rows || 7) !== ROWS) return fail('Diese Partie stammt von einem anderen Spielfeld (' + (s.rows || 7) + ' Reihen) und kann nicht fortgesetzt werden.');
     if (s.result) return fail('Die Partie ist beendet.');
     const p = action.p === undefined ? s.active : action.p, P = s.players[p];
     const a = action;
@@ -530,9 +544,10 @@
         checkEnd(s, ev); break;
       }
       case 'move': {
-        if (s.phase !== 'move') return fail('Laufen geht nur in der Bewegungsphase.');
+        const xu = s.units[a.uid], extra = s.phase === 'battle' && xu && xu.flags && xu.flags.extraMove;
+        if (s.phase !== 'move' && !extra) return fail('Laufen geht nur in der Bewegungsphase.');
         const r = reachable(s, a.uid); if (!r[a.to]) return fail('Dieses Feld ist nicht erreichbar.');
-        const u = s.units[a.uid], from = u.pos; u.pos = a.to; u.moved = true;
+        const u = s.units[a.uid], from = u.pos; u.pos = a.to; u.moved = true; if (extra) delete u.flags.extraMove;
         ev.push({ t: 'move', uid: u.uid, path: r[a.to] }); log(s, card(s, u).name + ' läuft ' + from + ' → ' + a.to + '.', p); break;
       }
       case 'declare': {
@@ -719,8 +734,9 @@
     return {};
   }
   function halfFields(p, side) {
-    const own = p === 0 ? [5, 6, 7] : [1, 2, 3], enemy = p === 0 ? [1, 2, 3] : [5, 6, 7];
-    return FIELDS.filter(f => side === 'both' || (side === 'own' ? own : enemy).includes(rowOf(f)));
+    // eigene Hälfte = Reihen unterhalb der Mitte (Spieler 0) bzw. oberhalb (Spieler 1); die Mittelreihe gehört keinem
+    const mid = (ROWS + 1) / 2, lo = r => r < mid, hi = r => r > mid, own = p === 0 ? hi : lo, enemy = p === 0 ? lo : hi;
+    return FIELDS.filter(f => side === 'both' || (side === 'own' ? own : enemy)(rowOf(f)));
   }
   // Mögliche Ziele eines Effekts für Spieler p
   function effectCandidates(s, p, e, c) {
@@ -761,7 +777,7 @@
     sp.effects.forEach((e, i) => {
       const cand = effectCandidates(s, p, e, h.cid), t = e.target || {};
       const o = { i, kind: e.kind, what: t.what, pick: playerPicks(t) ? 'player' : 'auto', max: maxOf(t), candidates: cand, text: EF ? EF.describeEffect(e, DATA()) : e.kind };
-      if (e.kind === 'revive' && e.params.place === 'player') o.place = summonFields(p).filter(f => !unitAt(s, f) && !fieldLocked(s, f, true));
+      if (e.kind === 'revive') o.place = summonFields(p).filter(f => !unitAt(s, f) && !fieldLocked(s, f, true));
       if (cand.length && !(e.kind === 'revive' && o.place && !o.place.length)) any = true;
       out.effects.push(o);
     });
@@ -788,12 +804,12 @@
     for (let k = 0; k < (o.discardCost || 0) && P.hand.length; k++) { const [d] = P.hand.splice(Math.floor(rand(s) * P.hand.length), 1); P.discard.push(d); ev.push({ t: 'discard', p, iid: d.iid, cid: d.cid, cost: true }); log(s, P.name + ' wirft „' + s.cards[d.cid].name + '“ als Kosten für „' + c.name + '“ ab.', p); }
     const entry = { sid: 'z' + (s.nextId++), p, cid: h.cid, iid: h.iid, phase: s.phase, choices, place };
     // Kontrolle in der eigenen Battlephase wird vorgezogen: sofort auswerten, damit der Held noch angreifen kann
-    const now = p === s.active && s.phase === 'battle' && c.spell.effects.some(e => e.kind === 'control');
+    const now = p === s.active && s.phase === 'battle' && c.spell.effects.some(e => e.kind === 'control' || e.kind === 'revive');
     if (!now) s.stack.push(entry);
     ev.push({ t: 'cast', p, sid: entry.sid, cid: h.cid, iid: h.iid, cost: c.energy, now });
     const lbl = eo => (eo.candidates || []).filter(x => choices[eo.i].includes(x.id)).map(x => x.label).join(', ');
     const tg = o.effects.filter(eo => eo.pick === 'player' && choices[eo.i].length).map(lbl).filter(Boolean).join('; ');
-    log(s, P.name + ' spielt ' + (c.type === 'curse' ? 'den Fluch' : 'den Zauber') + ' „' + c.name + '“ (' + c.energy + ' Energie)' + (tg ? ' auf ' + tg : '') + (now ? '. Kontrolle wirkt sofort – der Held kann noch in dieser Battlephase angreifen.' : '. Auswertung nach der Konterphase.'), p);
+    log(s, P.name + ' spielt ' + (c.type === 'curse' ? 'den Fluch' : 'den Zauber') + ' „' + c.name + '“ (' + c.energy + ' Energie)' + (tg ? ' auf ' + tg : '') + (now ? '. Wirkt sofort – der Held kann noch in dieser Battlephase ' + (c.spell.effects.some(e => (e.kind === 'control' || e.kind === 'revive') && e.params && e.params.extraMove) ? 'laufen und ' : '') + 'angreifen.' : '. Auswertung nach der Konterphase.'), p);
     if (now) { const keep = s.stack; s.stack = [entry]; resolveSpells(s, ev); s.stack = keep; }
     return null;
   }
@@ -818,7 +834,12 @@
       const c = s.cards[en.cid], attachTo = [];
       if (!canceled.has(en.sid)) {
         log(s, 'Auswertung: „' + c.name + '“ von ' + s.players[en.p].name + '.', en.p);
-        c.spell.effects.forEach((e, i) => { if (e.kind !== 'neutralize') resolveEffect(s, ev, en, c, e, i, attachTo); });
+        c.spell.effects.forEach((e, i) => {
+          if (e.kind === 'neutralize') return;
+          // Festlegung 30.10.2026: Zerstörung in der Konterphase mit „Angriff geht durch“ wirkt erst nach der Schadensberechnung
+          if (e.kind === 'destroy' && e.params && e.params.block === false && en.phase === 'counter') { (s.after = s.after || []).push({ en, i, decl: JSON.parse(JSON.stringify(s.decl || {})) }); log(s, '„' + c.name + '“: Der Angriff wird ausgeführt – die Zerstörung folgt nach der Schadensberechnung.', en.p); return; }
+          resolveEffect(s, ev, en, c, e, i, attachTo);
+        });
       }
       if (attachTo.length) { for (const uid of attachTo) { const u = s.units[uid]; if (u) u.attached.push({ cid: en.cid, owner: en.p }); } }
       else s.players[en.p].discard.push({ iid: en.iid, cid: en.cid });
@@ -864,9 +885,11 @@
         if (!f) { log(s, K + ': kein freies Beschwörungsfeld – „' + s.cards[pile[k].cid].name + '“ bleibt im Ablagestapel.', en.p); continue; }
         const [d] = pile.splice(k, 1), u = makeUnit(s, d.cid, en.p, f);
         if (q !== en.p) u.origOwner = q;
-        if (P.lock === false) u.summonTurn = -1;
+        const inBattle = en.p === s.active && s.phase === 'battle';
+        if (P.lock === false || inBattle) u.summonTurn = -1; // in der eigenen Battlephase wiederbelebt: greift noch in derselben Battlephase an
+        if (inBattle && P.extraMove) u.flags.extraMove = true;
         ev.push({ t: 'summon', p: en.p, uid: u.uid, cid: d.cid, field: f, cost: 0, revive: true });
-        log(s, K + ': „' + s.cards[d.cid].name + '“ kehrt ' + (q !== en.p ? 'unter der Kontrolle von ' + s.players[en.p].name + ' ' : '') + 'auf ' + f + ' zurück' + (P.lock === false ? ' (ohne Beschwörungssperre)' : '') + '.', en.p);
+        log(s, K + ': „' + s.cards[d.cid].name + '“ kehrt ' + (q !== en.p ? 'unter der Kontrolle von ' + s.players[en.p].name + ' ' : '') + 'auf ' + f + ' zurück' + (inBattle ? ' und kann noch in dieser Battlephase ' + (P.extraMove ? 'laufen und ' : '') + 'angreifen' : P.lock === false ? ' (ohne Beschwörungssperre)' : '') + '.', en.p);
       }
       return;
     }
@@ -944,7 +967,7 @@
         if (u.baseOwner === undefined) u.baseOwner = u.owner;
       }
       u.fx.push(fx);
-      if (e.kind === 'control') { setOwner(s, ev, u, en.p); } ev.push({ t: 'spellFx', uid, cid: en.cid, kind: e.kind });
+      if (e.kind === 'control') { setOwner(s, ev, u, en.p); if (e.params && e.params.extraMove && en.p === s.active && s.phase === 'battle') u.flags.extraMove = true; } ev.push({ t: 'spellFx', uid, cid: en.cid, kind: e.kind });
       if (fx.permanent && !attachTo.includes(uid)) attachTo.push(uid);
       log(s, K + ' → ' + nm + ': ' + fxText(s, fx) + '.', en.p);
     }
@@ -1001,7 +1024,7 @@
     return v;
   }
 
-  const api = { VERSION, FIELDS, COLS, ROW_COLS, KING_FIELD, GUARD, SUMMON_ROW, DIRS, GIFTS, ROYAL, COPY_LIMIT, RULES, ASSUMPTIONS, PHASES, PHASE_NAME,
+  api = { VERSION, ROWS, setLayout, FIELDS, COLS, ROW_COLS, KING_FIELD, GUARD, SUMMON_ROW, DIRS, GIFTS, ROYAL, COPY_LIMIT, RULES, ASSUMPTIONS, PHASES, PHASE_NAME,
     exists, step, colOf, rowOf, summonFields, isGuard, normalizeCard, validateDeck, newGame, apply, actor, mulliganOpen, viewFor, clone,
     unitAt, kingOf, cost, atkOf, defOf, stepsOf, locked, bound, immobile, has, hasRaw, reachable, targetsOf, attackTargets, canAttack, preview, summonOptions, giftOptions, royalBonus, matches,
     EF, SPELL_OPEN, upgrade, isSpell, castOptions, effectCandidates, evalCond, fieldLocked, isProtected, effectsOn, fxText, auraOn, giftBlocked, counterPlayable, halfFields };

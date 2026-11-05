@@ -69,7 +69,7 @@ h1, h2, h3 { font-family: var(--f-display); font-weight: 400; letter-spacing: .0
 .energy i.on { background: linear-gradient(#8fd0ff, #3f8fd6); box-shadow: 0 0 6px #4aa3ff88; }
 
 .boardwrap { position: relative; width: 100%; max-width: min(640px, 100%); margin: 0 auto; }
-.board { position: relative; aspect-ratio: 1; width: 100%; background: radial-gradient(ellipse at center, #1a2534 0%, var(--felt) 70%); border-radius: 14px; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.board { position: relative; aspect-ratio: 1 / 1; width: 100%; /* 1.11.2026: Feld mit 6 Reihen (quadratisch) */ background: radial-gradient(ellipse at center, #1a2534 0%, var(--felt) 70%); border-radius: 14px; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
 .cell { position: absolute; box-sizing: border-box; padding: 2px; }
 .cell > div { width: 100%; height: 100%; border-radius: 6px; background: var(--cell); border: 1px solid var(--line); box-sizing: border-box; position: relative; transition: background .15s, box-shadow .15s; }
 .cell.mid > div { background: var(--cell2); }
@@ -233,7 +233,7 @@ h1, h2, h3 { font-family: var(--f-display); font-weight: 400; letter-spacing: .0
 @media (min-width: 921px) { .side { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto; } }
 .hcard.full { width: 92px; height: 138px; border-color: #3a4a62; }
 .hcard.full .cost { left: auto; right: 3px; top: auto; bottom: 3px; }
-@media (max-width: 520px) { .hcard.full { width: 76px; height: 114px; } }
+@media (max-width: 520px) { .hcard.full { width: 70px; height: 105px; } } /* 31.10.2026: etwas kleiner, damit mehr Karten sichtbar sind */
 .decklist { display: grid; gap: 6px; max-height: 260px; overflow-y: auto; }
 .deckrow { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; text-align: left; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--ink); color: var(--text); cursor: pointer; font: inherit; }
 .deckrow small { grid-column: 1 / -1; }
@@ -937,13 +937,15 @@ body.walled .home2::before { background-image: var(--wall); }
 .peek .insp-noimg { position: absolute; inset: 0; }
 .peek[data-rar="legendaer"] { box-shadow: 0 18px 50px #000d, 0 0 0 2px #ffd76acc, 0 0 24px #ffb84a55; }
 @media (prefers-reduced-motion: reduce) { .peek { transition: none; transform: none; } }
-@media (pointer: coarse) { .hand, .dialog .mhand { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; } }
+/* 31.10.2026: Hand scrollt wieder nativ (flüssig); nur Textauswahl/Kontextmenü beim Gedrückthalten aus */
+@media (pointer: coarse) { .hand, .dialog .mhand { touch-action: pan-x pan-y; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; } }
 .dialog .mhand { gap: 6px; margin: 10px 0 4px; }
 .dialog .mhand .hcard { cursor: default; }
 
-/* Schnellwirken (4.5): spielbare Zauber (grün) und Flüche (violett) glimmen auf der Hand wie magisches Feuer */
+/* Schnellwirken: spielbare Zauber (grün) und Flüche (violett) glimmen auf der Hand wie magisches Feuer.
+   31.10.2026: nur Transparenz und Bewegung werden animiert (Grafikkarte) – kein Neuzeichnen von Schatten pro Bild */
 .hcard[data-ready] { --fl: #3ee08f; --fl2: #b8ffd9; --fl3: #0d5c35; border-color: var(--fl); isolation: isolate;
-  animation: wok-ember 2.4s ease-in-out infinite; }
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--fl) 55%, transparent), 0 0 9px 1px color-mix(in srgb, var(--fl) 55%, transparent); }
 .hcard[data-ready="curse"] { --fl: #b06bff; --fl2: #ecd6ff; --fl3: #3d1470; }
 .hcard[data-ready]::after { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; border-radius: inherit;
   background:
@@ -951,19 +953,18 @@ body.walled .home2::before { background-image: var(--wall); }
     radial-gradient(40% 30% at 22% 100%, color-mix(in srgb, var(--fl2) 55%, transparent), transparent 70%),
     radial-gradient(36% 28% at 78% 100%, color-mix(in srgb, var(--fl2) 45%, transparent), transparent 70%),
     linear-gradient(to top, color-mix(in srgb, var(--fl3) 55%, transparent), transparent 40%);
-  mix-blend-mode: screen; opacity: .85; transform-origin: 50% 100%;
+  mix-blend-mode: screen; opacity: .85; transform-origin: 50% 100%; will-change: transform, opacity;
   animation: wok-flicker 1.7s ease-in-out infinite alternate; }
 .hcard[data-ready]::before { content: ""; position: absolute; inset: -1px; z-index: 3; pointer-events: none; border-radius: inherit;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fl2) 60%, transparent), inset 0 -10px 18px -6px color-mix(in srgb, var(--fl) 80%, transparent); }
-@keyframes wok-ember {
-  0%, 100% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--fl) 55%, transparent), 0 0 8px 1px color-mix(in srgb, var(--fl) 55%, transparent), 0 -3px 10px color-mix(in srgb, var(--fl) 35%, transparent); }
-  50% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--fl2) 70%, transparent), 0 0 13px 3px color-mix(in srgb, var(--fl) 70%, transparent), 0 -6px 16px color-mix(in srgb, var(--fl) 50%, transparent); } }
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fl2) 60%, transparent), inset 0 -10px 18px -6px color-mix(in srgb, var(--fl) 80%, transparent);
+  will-change: opacity; animation: wok-ember 2.4s ease-in-out infinite; }
+@keyframes wok-ember { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
 @keyframes wok-flicker {
-  0% { opacity: .65; transform: scaleY(.94); filter: hue-rotate(0deg); }
+  0% { opacity: .65; transform: scaleY(.94); }
   35% { opacity: .9; transform: scaleY(1.03) skewX(-1.5deg); }
   70% { opacity: .75; transform: scaleY(.98) skewX(1.2deg); }
-  100% { opacity: .95; transform: scaleY(1.05); filter: hue-rotate(-8deg); } }
-@media (prefers-reduced-motion: reduce) { .hcard[data-ready], .hcard[data-ready]::after { animation: none; } }
+  100% { opacity: .95; transform: scaleY(1.05); } }
+@media (prefers-reduced-motion: reduce) { .hcard[data-ready]::before, .hcard[data-ready]::after { animation: none; } }
 
 /* Wirk-Fenster über dem Spielfeld */
 .castfloat { position: absolute; left: 50%; z-index: 30; width: min(560px, calc(100% - 16px)); transform: translateX(-50%);
@@ -982,3 +983,449 @@ body.walled .home2::before { background-image: var(--wall); }
 .castfloat.curse .cf-flame { background: linear-gradient(90deg, transparent, #ecd6ff, #b06bff, #ecd6ff, transparent); }
 @keyframes cf-in { from { opacity: 0; transform: translateX(-50%) translateY(6px); } to { opacity: 1; transform: translateX(-50%); } }
 @media (max-width: 520px) { .castfloat { padding: 8px; gap: 8px; } .castfloat .cf-thumb { width: 54px; } .castfloat .castbox p, .castfloat .castbox li { font-size: 13px; } .castfloat .cf-body { max-height: 40vh; } }
+
+/* Werte-Pop-up (31.10.2026): ploppt an der Karte auf, verdeckt nur einen schmalen Bereich */
+.pop { position: fixed; z-index: 56; width: min(300px, calc(100vw - 16px)); padding: 9px 11px 10px; border-radius: 12px;
+  background: linear-gradient(180deg, #161d2bf5, #0d121bf5); border: 1px solid #c9a24d99; box-shadow: 0 10px 28px #000c, 0 0 0 1px #000;
+  font-size: 13px; line-height: 1.3; color: var(--ink, #e8e2d4); pointer-events: none;
+  opacity: 0; transform: translateY(6px) scale(.97); transform-origin: 50% 100%; transition: opacity 90ms ease-out, transform 100ms ease-out; }
+.pop.on { opacity: 1; transform: none; }
+.pop .pop-a, .pop .pop-a * { pointer-events: auto; }
+.pop-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+.pop-h b { font: 600 15px/1.15 var(--f-display, serif); color: var(--brass-hi, #ecd08f); }
+.pop-h.spell b { color: #9ff0c4; } .pop-h.curse b { color: #dcb6ff; }
+.pop-h .pe { flex: 0 0 auto; min-width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(#7cc3ff, #2c6fb0); font: 700 13px/1 var(--f-num, sans-serif); color: #fff; }
+.pop-s { display: flex; gap: 8px; margin-bottom: 7px; }
+.pop-s span { flex: 1; text-align: center; padding: 4px 6px; border-radius: 8px; font-size: 12px; letter-spacing: .02em; color: #f3e9d6; }
+.pop-s b { font: 700 16px/1 var(--f-num, sans-serif); margin-left: 3px; }
+.pop-s .a { background: #5a1a1a; border: 1px solid #c2453e; } .pop-s .d { background: #142a4d; border: 1px solid #3f7fd0; } .pop-s .h { background: #4a1414; border: 1px solid #d0563f; }
+.pop-g { display: flex; gap: 12px; justify-content: center; margin-bottom: 6px; }
+.pop-g .mini { transform: scale(.92); transform-origin: top center; }
+.pop-gifts, .pop-fx { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: 12px; color: #d9cfb8; }
+.pop-gifts b { color: #f0d79a; font-weight: 600; }
+.pop-fx { margin-top: 5px; } .pop-fx span { background: #ffffff12; border-radius: 6px; padding: 1px 6px; }
+.pop-t { margin: 0 0 6px; font-size: 13px; }
+.pop-ph { font-size: 11.5px; color: #b9b2a2; } .pop-ph i { font-style: normal; font-weight: 700; padding: 0 4px; border-radius: 4px; margin-right: 3px; }
+.pop-ph i.b { background: #7a2a22; color: #ffc9bd; } .pop-ph i.k { background: #1f3f78; color: #c6dcff; }
+.pop-x { margin: 6px 0 0; color: #ff9a8a; font-size: 12px; }
+.pop-hint { margin: 6px 0 0; color: #f0d79a; font-size: 12px; }
+.pop-a { display: flex; gap: 6px; margin-top: 8px; } .pop-a .btn { flex: 1; }
+@media (prefers-reduced-motion: reduce) { .pop { transition: none; transform: none; } }
+
+/* Wiederbeleben (31.10.2026): Auswahl als Kartenbilder, danach leuchten die freien Felder auf dem Brett */
+.cgal { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; margin: 10px 0 12px; max-height: 56vh; overflow: auto; }
+.cgal .cg { position: relative; aspect-ratio: 5 / 7; border-radius: 8px; border: 2px solid #3a4a62; background: #1a2232 center/cover no-repeat; padding: 0; cursor: pointer; color: #fff; overflow: hidden; }
+.cgal .cg b { position: absolute; inset: 30% 6px auto; font-size: 13px; }
+.cgal .cg span { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 4px 4px; font-size: 11px; background: linear-gradient(transparent, #000c 45%); text-align: center; }
+.cgal .cg.on { border-color: var(--brass-hi, #ecd08f); box-shadow: 0 0 0 2px #ecd08f88, 0 0 16px #ecd08f66; }
+.board.casting .cell.hl-summon > div, .board.casting .cell.hl-ctarget > div { animation: wok-field 1.1s ease-in-out infinite alternate; }
+@keyframes wok-field { from { opacity: .7; } to { opacity: 1; } }
+
+/* Werte-Leiste (Handy, 31.10.2026): die Spielerleiste zeigt beim Antippen die Werte der Karte */
+.pbar.info { display: block; padding: 7px 10px 8px; border-color: #c9a24dcc; background: linear-gradient(180deg, #1a2232, #10151f); }
+.pbar.flip { animation: wok-flip 160ms ease-out; }
+@keyframes wok-flip { from { transform: perspective(600px) rotateX(-70deg); opacity: .2; } to { transform: none; opacity: 1; } }
+.cbar { position: relative; display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: start; font-size: 13px; }
+.cbar .cb-x { position: absolute; right: -4px; top: -4px; width: 28px; height: 28px; border-radius: 50%; border: 1px solid #ffffff22; background: #0008; color: #ddd; font-size: 14px; z-index: 2; }
+.cbar .pop-h { grid-column: 1 / -1; margin: 0 26px 2px 0; }
+.cbar .pop-s { grid-column: 1; margin: 0; }
+.cbar .pop-g { grid-column: 2; grid-row: 2 / span 3; margin: 0; gap: 6px; }
+.cbar .pop-g .mini { transform: scale(.82); transform-origin: top right; }
+.cbar .pop-gifts, .cbar .pop-fx, .cbar .pop-t, .cbar .pop-ph, .cbar .pop-x, .cbar .pop-hint { grid-column: 1; margin: 0; }
+.cbar .pop-t { grid-column: 1 / -1; }
+.cbar .pop-a { grid-column: 1 / -1; margin-top: 4px; }
+@media (prefers-reduced-motion: reduce) { .pbar.flip { animation: none; } }
+
+/* Handy-Ansicht ohne Scrollen (31.10.2026): Spielfeld, Leisten, Hand und Bedienleiste passen auf einen Bildschirm.
+   Spielverlauf/Hinweise hinter 📜, Ton/Aufgeben/Menü hinter ☰. Die Leiste steht direkt unter der Hand (kein „fixed“ –
+   das funktioniert in eingebetteten Ansichten wie der Claude-App nicht zuverlässig). */
+.mbtns { display: none; }
+.dlglog { max-height: 52vh; overflow: auto; margin: 8px 0 10px; }
+@media (max-width: 920px) {
+  #v-game .game { gap: 6px; }
+  #v-game .table { gap: 6px; }
+  #detailbox, #v-game .side > .box:last-child { display: none; }
+  #v-game .side > .box:first-child { position: static; box-shadow: none; padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template-columns: 1fr; gap: 6px; }
+  #v-game #phases, #v-game #hint { display: none; }
+  .turninfo { display: flex; align-items: center; gap: 8px; }
+  .turninfo b { font-size: 15px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mbtns { display: inline-flex; gap: 6px; margin-left: auto; }
+  .iconbtn { min-width: 40px; min-height: 36px; padding: 0 8px; font-size: 17px; }
+  #v-game .mainbtn { min-height: 46px; font-size: 16px; }
+  #v-game .tipbtn { padding: 5px 8px; font-size: 13px; }
+  .boardwrap { max-width: min(100%, calc((100dvh - 330px) * 1)); }
+  .pbar { grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; padding: 5px 8px; }
+  .pbar .pname small { display: none; }
+  .pbar .pb-av { width: 30px; height: 30px; }
+  .pbar .hbacks { display: none; }
+  .pbar .pstats { grid-column: auto; gap: 8px; font-size: 13px; }
+  .pbar .pstats .energy { display: none; }
+  .pbar .hp span { font-size: 12px; }
+  #v-game .hand { min-height: 0; padding: 4px 2px 6px; }
+}
+@media (max-width: 920px) and (max-height: 700px) {
+  #v-game .game, #v-game .table { gap: 4px; }
+  #v-game .hcard.full { width: 60px; height: 90px; }
+  #v-game .side > .box:first-child { padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); gap: 4px; }
+  #v-game .mainbtn { min-height: 40px; }
+  .pbar { padding: 3px 8px; }
+}
+@media (max-width: 920px) {
+  .cbar .pop-s span { padding: 2px 5px; } .cbar .pop-s b { font-size: 15px; }
+  .cbar .pop-g .mini { transform: scale(.72); margin-bottom: -16px; }
+  .cbar .pop-h b { font-size: 14px; } .cbar .pop-h .pe { min-width: 24px; height: 24px; font-size: 12px; }
+  /* Meldungen oben statt über dem großen Knopf */
+  #toast { bottom: auto; top: calc(10px + env(safe-area-inset-top, 0px)); }
+}
+@media (max-width: 920px) {
+  .pbar .hpx { display: none; }
+  .pbar.info { padding: 5px 8px 6px; }
+  .cbar { gap: 2px 8px; }
+  .cbar .pop-s { display: flex; gap: 6px; } .cbar .pop-s span { flex: 0 0 auto; font-size: 11px; }
+  .cbar .pop-gifts { flex-wrap: nowrap; overflow: hidden; white-space: nowrap; font-size: 11.5px; }
+  .cbar .pop-g { gap: 0; } .cbar .pop-g .mini span { font-size: 10px; }
+  .cbar .pop-g .mini { transform: scale(.62); margin: -6px -10px -22px; }
+  .cbar .pop-t { font-size: 12px; max-height: 3.9em; overflow: hidden; }
+  .cbar .pop-a .btn { min-height: 34px; padding: 4px 8px; font-size: 13px; }
+}
+@media (max-width: 920px) {
+  .cbar .pop-h { margin-right: 38px; }
+  .cbar .pop-g .mini { transform: scale(.74); margin: -4px -7px -15px; }
+}
+
+/* „Du bist dran“ (31.10.2026) */
+.turncall { position: relative; display: grid; justify-items: center; gap: 8px; padding: 26px 70px; text-align: center;
+  background: linear-gradient(90deg, transparent, rgba(34, 22, 6, .96) 14%, rgba(34, 22, 6, .96) 86%, transparent);
+  border-top: 2px solid #ecd08f; border-bottom: 2px solid #ecd08f; animation: tc-in .45s cubic-bezier(.2, .9, .3, 1.3) both; }
+.turncall b { font: 400 clamp(38px, 9vw, 92px)/1 var(--f-display); color: #ffe6a8; text-shadow: 0 0 26px #f0b040, 0 0 60px #e08a20aa; letter-spacing: .02em; animation: tc-pulse 1.1s ease-in-out infinite alternate; }
+.turncall small { font: 600 clamp(14px, 3.4vw, 20px)/1.2 var(--f-body); color: #f3e3c0; }
+.turncall .tc-rays { position: absolute; inset: -60% -10%; z-index: -1; background: repeating-conic-gradient(from 0deg, #ffd27a33 0 6deg, transparent 6deg 18deg); -webkit-mask: radial-gradient(closest-side, #000, transparent); mask: radial-gradient(closest-side, #000, transparent); animation: tc-spin 6s linear infinite; }
+.turncall.counter { background: linear-gradient(90deg, transparent, rgba(6, 16, 36, .96) 14%, rgba(6, 16, 36, .96) 86%, transparent); border-color: #7fb2ff; }
+.turncall.counter b { color: #d8e8ff; text-shadow: 0 0 26px #4f8bff, 0 0 60px #c0303088; }
+.turncall.counter .tc-rays { background: repeating-conic-gradient(from 0deg, #8fb8ff33 0 6deg, transparent 6deg 18deg); }
+@keyframes tc-in { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes tc-pulse { from { transform: scale(1); } to { transform: scale(1.05); } }
+@keyframes tc-spin { to { transform: rotate(360deg); } }
+/* solange du dran bist: Leiste, Hand und Knopf leuchten */
+#v-game.myturn #pb-bot { border-color: #ecd08f; box-shadow: 0 0 0 1px #ecd08f88, 0 0 18px #ecd08f55; }
+#v-game.myturn .hand { box-shadow: inset 0 0 0 1px #ecd08f55, 0 0 20px #ecd08f22; border-radius: 12px; }
+#v-game.myturn #mainbtn { animation: mb-pulse 1.6s ease-in-out infinite; }
+#v-game.mycounter #pb-bot { border-color: #7fb2ff; box-shadow: 0 0 0 1px #7fb2ff88, 0 0 18px #4f8bff55; }
+#v-game.myturn #turnwho { color: #ffe6a8; }
+@keyframes mb-pulse { 0%, 100% { box-shadow: 0 0 0 0 #ecd08f00; } 50% { box-shadow: 0 0 0 4px #ecd08f55, 0 0 18px #ecd08f88; } }
+@media (prefers-reduced-motion: reduce) { .turncall, .turncall b, .turncall .tc-rays, #v-game.myturn #mainbtn { animation: none; } }
+
+/* „Idee übernehmen“ und Dialog-✕ (31.10.2026) */
+.dialog .dlg-x { position: absolute; right: 10px; top: 10px; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel2); color: var(--text); font-size: 16px; cursor: pointer; }
+.dialog { position: relative; }
+.ideabar .castbox ul { margin: 4px 0 8px; }
+
+/* „Du bist dran“ blockiert keine Eingaben (4.7) */
+.fxlayer.fx-pass { pointer-events: none; cursor: default; background: radial-gradient(circle, rgba(0, 0, 0, .35), rgba(0, 0, 0, .12) 70%, transparent); }
+.fxlayer.fx-pass * { pointer-events: none; }
+
+/* 4.7: Pfeil-Ebene genau so groß wie das Spielfeld (5 Reihen sind nicht quadratisch) */
+.board > .arrows { width: 100%; height: 100%; }
+/* 4.7: Gaben-Knöpfe in der Spielerleiste */
+.qgifts.inbar { position: static; transform: none; grid-column: 1 / -1; flex-wrap: wrap; justify-content: flex-start; margin-top: 4px; background: transparent; border: 0; padding: 0; box-shadow: none; }
+.qgifts.inbar button { flex: 1 1 auto; }
+
+/* 4.7 (31.10.2026): PC – Partie füllt den Bildschirm. Spielfeldbreite richtet sich nach der Fensterhöhe
+   (Leisten + Hand abgezogen), Spielerleisten und Hand sind genau so breit wie das Spielfeld, Seitenleiste rechts daneben. */
+.pbar .hp { position: static; width: auto; aspect-ratio: auto; background: none; border-radius: 0; transition: none; } /* Startseiten-Klasse .hp darf die Lebensleiste nicht verschieben */
+@media (min-width: 921px) {
+  #v-game.wrap { max-width: none; padding-block: 10px; }
+  #v-game { --sidew: clamp(300px, 22vw, 420px); --handh: clamp(150px, 19vh, 250px); --pbh: 62px;
+    --bw: max(340px, min(calc(100vh - var(--handh) - 2 * var(--pbh) - 80px), calc(100vw - var(--sidew) - 60px))); --tw: max(var(--bw), min(620px, calc(100vw - var(--sidew) - 60px))); } /* 6 Reihen: quadratisches Feld */
+  #v-game .game { grid-template-columns: var(--tw) var(--sidew); justify-content: center; gap: 18px; }
+  #v-game .boardwrap { max-width: var(--bw); min-width: 0; width: 100%; margin: 0 auto; }
+  #v-game .table { gap: 8px; }
+  /* 4.11: 3D-Ansicht – Spielfeld schräg, darum breiter als hoch: Spalte breiter, Brett füllt die ganze Spaltenbreite */
+  #v-game.v3d { --tw: max(var(--bw), min(980px, calc(100vw - var(--sidew) - 60px))); }
+  #v-game.v3d .boardwrap { max-width: none; }
+  #v-game.v3d .board.b3d-on { aspect-ratio: auto; height: var(--bw); width: 100%; }
+  #v-game .hand { min-height: var(--handh); padding: 4px 2px 8px; }
+  #v-game .hcard.full { height: calc(var(--handh) - 16px); width: calc((var(--handh) - 16px) * 2 / 3); }
+  #v-game .side { max-height: calc(100vh - 20px); }
+  #v-game .pbar:not(.info) { grid-auto-flow: column; grid-template-columns: auto minmax(120px, 1fr); grid-auto-columns: auto; }
+  #v-game .pbar .pstats { grid-column: auto; }
+}
+
+/* 4.7: Handy – Wirk-Panel in der Spielerleiste (kompakt), Spielfeld bleibt frei */
+.pbar.info > .castbar, .cbar.castbar { display: block; }
+.cbar.castbar .castbox { margin: 0; padding: 0; border: 0; background: none; box-shadow: none; }
+.cbar.castbar .castbox p, .cbar.castbar .castbox li { font-size: 12.5px; margin: 2px 0; line-height: 1.3; }
+.cbar.castbar .castbox .eyebrow { font-size: 10.5px; }
+.cbar.castbar .castbox .hint { font-size: 12px; }
+.cbar.castbar .castbox ul { margin: 2px 0 4px; padding-left: 16px; }
+.cbar.castbar .row { gap: 6px; margin-top: 4px; }
+.cbar.castbar .btn { min-height: 36px; }
+#pb-bot.info .castbar { border-left: 3px solid #4fd18b; padding-left: 8px; }
+
+.errlog { max-height: 50vh; overflow: auto; font: 11px/1.4 ui-monospace, Consolas, monospace; white-space: pre-wrap; background: #0008; padding: 8px; border-radius: 8px; }
+
+
+/* ================= 1.11.2026: Effekte und Optik (Bilder aus assets/fx) ================= */
+.boardwrap { position: relative; }
+.spr { position: absolute; z-index: 6; aspect-ratio: 1; transform: translate(-50%, -50%) rotate(var(--r, 0deg)); pointer-events: none; background-repeat: no-repeat; will-change: background-position; }
+.spr.low { z-index: 2; }
+.spr.glow { mix-blend-mode: screen; z-index: 7; -webkit-mask: var(--fx-glow) center / contain no-repeat; mask: var(--fx-glow) center / contain no-repeat; background: var(--c, #ffd27a); background-image: none; }
+.fxlayer.fx-pass .fx-skip { display: none; }
+/* Phasenband */
+.phband { position: absolute; left: 50%; top: 14%; z-index: 25; width: min(78%, 520px); aspect-ratio: 1000 / 230; transform: translate(-50%, -50%); pointer-events: none; display: grid; place-items: center;
+  background: var(--fx-banner) center / 100% 100% no-repeat; filter: drop-shadow(0 6px 14px #000c); }
+.phband b { font: 400 clamp(15px, 3.3vw, 26px)/1 var(--f-display); letter-spacing: .08em; color: #ffe6a8; text-shadow: 0 0 12px #f0b04099, 0 2px 0 #000; padding: 0 12%; text-align: center; }
+.phband.foe b { color: #ffb4a8; text-shadow: 0 0 12px #e0503a88, 0 2px 0 #000; }
+.phband.counter b { color: #cfe2ff; text-shadow: 0 0 12px #4f8bff99, 0 2px 0 #000; }
+.turncall { background: var(--fx-banner) center / 100% 100% no-repeat; border: 0 !important; padding: 30px 90px !important; }
+/* Atmosphäre */
+.atmo { position: absolute; inset: 0; z-index: 4; pointer-events: none; overflow: hidden; border-radius: 14px; }
+.atmo .torch { position: absolute; width: 22%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(circle, #ffb35a66 0, #ff8a2a2a 35%, transparent 70%); mix-blend-mode: screen; animation: atmo-flick 2.6s ease-in-out infinite; }
+.atmo .t1 { left: 10.6%; top: 8%; } .atmo .t2 { left: 89.4%; top: 8%; animation-delay: -.9s; } .atmo .t3 { left: 10.6%; top: 89%; animation-delay: -1.7s; } .atmo .t4 { left: 89.4%; top: 89%; animation-delay: -.4s; }
+@keyframes atmo-flick { 0%, 100% { opacity: .75; transform: translate(-50%, -50%) scale(1); } 23% { opacity: 1; transform: translate(-50%, -50%) scale(1.06); } 41% { opacity: .62; } 67% { opacity: .95; transform: translate(-50%, -50%) scale(.97); } 82% { opacity: .7; } }
+.atmo .sidelight { position: absolute; left: 0; right: 0; bottom: 0; height: 70%; opacity: 0; transition: opacity .6s; background: radial-gradient(120% 100% at 50% 100%, #ffcf7a22 0%, #ffcf7a10 40%, #ffcf7a00 75%); mix-blend-mode: screen; }
+#v-game.myturn .atmo .sidelight { opacity: 1; }
+#v-game.mycounter .atmo .sidelight { opacity: 1; background: radial-gradient(120% 100% at 50% 100%, #6fa8ff26 0%, #6fa8ff12 40%, #6fa8ff00 75%); }
+.atmo .dust { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #ffe9c0; opacity: 0; box-shadow: 0 0 4px #ffd27a; animation: atmo-dust var(--d) linear infinite; }
+@keyframes atmo-dust { 0% { opacity: 0; transform: translate(0, 10px); } 20% { opacity: .55; } 80% { opacity: .35; } 100% { opacity: 0; transform: translate(var(--x), -46px); } }
+/* Energie-Kristalle */
+.energy i { width: 11px; height: 20px; border-radius: 0; background: var(--fx-en-off) center / contain no-repeat; box-shadow: none; opacity: .85; }
+.energy i.on { background: var(--fx-en-on) center / contain no-repeat; box-shadow: none; opacity: 1; filter: drop-shadow(0 0 3px #4aa3ffaa); }
+.pstats .enum { display: inline-flex; align-items: center; gap: 2px; }
+.encr { display: inline-block; width: 10px; height: 18px; background: var(--fx-en-off) center / contain no-repeat; }
+.encr.on { background-image: var(--fx-en-on); filter: drop-shadow(0 0 3px #4aa3ffaa); }
+/* Königsrahmen um das Porträt in der Leiste */
+.pbar .pb-av { position: relative; overflow: visible; border-color: transparent; box-shadow: none; }
+.pbar .pb-av::after { content: ""; position: absolute; left: 50%; top: 50%; width: 152%; aspect-ratio: 1; transform: translate(-50%, -57%); background: var(--fx-kframe) center / contain no-repeat; pointer-events: none; }
+/* Seltenheits-Rahmen entfernt (Entwickler, 1.11.2026: „sehen billig aus“) */
+/* Sieg / Niederlage */
+.dialog.endscreen { background-size: cover; background-position: center; min-width: min(560px, 92vw); text-align: center; box-shadow: 0 30px 80px #000c; }
+.dialog.endscreen.endwin { background-image: linear-gradient(#0006, #000b 70%), var(--fx-win); }
+.dialog.endscreen.endlose { background-image: linear-gradient(#0007, #000c 70%), var(--fx-lose); }
+.dialog.endscreen h2 { font-size: clamp(34px, 7vw, 56px); color: #ffe6a8; text-shadow: 0 0 24px #f0b040aa, 0 3px 0 #000; }
+.dialog.endscreen.endlose h2 { color: #cfd8e6; text-shadow: 0 0 24px #4f6b9aaa, 0 3px 0 #000; }
+.dialog.endscreen .row { justify-content: center; }
+@media (prefers-reduced-motion: reduce) { .atmo .torch, .atmo .dust { animation: none !important; } }
+
+/* 1.11.2026: permanente Gaben als ∞ statt „permanent“ */
+.inf { display: inline-block; font: 700 1.25em/1 var(--f-num), sans-serif; color: #ecd08f; vertical-align: -.08em; margin-left: 2px; }
+
+/* 4.11.2026: 3D-Spielfeld und Vollbild */
+.boardwrap > canvas.b3d { position: absolute; z-index: 1; display: block; touch-action: manipulation; border-radius: 12px; }
+.board.b3d-on { background: none !important; box-shadow: none; z-index: 2; pointer-events: none; }
+.board.b3d-on > .cell, .board.b3d-on > .tok { visibility: hidden; pointer-events: none; }
+.board.b3d-on > * { pointer-events: none; }
+#fsbtn { margin-left: auto; }
+.turninfo { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+#v-game.v3d .atmo .torch, #v-game.v3d .atmo .sidelight { display: none; } /* 4.11: 3D hat eigene Fackeln/Licht */
+@media (max-width: 920px) { #v-game.v3d .board.b3d-on { aspect-ratio: 1 / .86; } } /* 4.11: Handy – 3D-Feld ist schräg, weniger leerer Rand oben/unten */
+@media (pointer: coarse) { #fsbtn { display: none; } } /* Vollbild nur am PC */
+
+/* ============ 4.12: PC/TV-Bühne im Stil von Master Duel ============
+   Ganzer Bildschirm = Szene. Spielfeld 3D in der Mitte, Hand als Fächer unten, Gegner oben rechts, du unten links,
+   Phase rechts als Medaillon-Feld, Kartendetails links, Spielverlauf nur auf Knopfdruck (📜). Handy unverändert. */
+#v-game.duel { position: fixed !important; inset: 0 !important; height: 100vh; z-index: 5; max-width: none; padding: 0 !important; margin: 0; overflow: hidden;
+  background: radial-gradient(ellipse 70% 60% at 50% 52%, #3a2414 0%, #1a0f08 45%, #070405 80%, #020102 100%); }
+#v-game.duel .arena { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; pointer-events: none; }
+#v-game.duel::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; background: radial-gradient(ellipse 75% 70% at 50% 50%, transparent 55%, rgba(0, 0, 0, .55) 100%); }
+#v-game.duel .game { display: block; }
+#v-game.duel .table { display: block; }
+#v-game.duel .boardwrap { position: absolute; inset: 0; max-width: none; width: auto; margin: 0; z-index: 1; }
+#v-game.duel .board.b3d-on { width: 100vw; height: 100vh; aspect-ratio: auto; border-radius: 0; }
+#v-game.duel .boardwrap > canvas.b3d { border-radius: 0; }
+#v-game.duel .atmo { border-radius: 0; }
+/* Leisten */
+#v-game.duel .pbar { position: fixed; z-index: 8; width: clamp(350px, 23vw, 500px); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  background: linear-gradient(180deg, rgba(28, 20, 14, .86), rgba(12, 9, 7, .88)); border: 1px solid #8a6a36; box-shadow: 0 0 0 1px rgba(0, 0, 0, .6), 0 10px 30px rgba(0, 0, 0, .6), inset 0 1px 0 rgba(255, 220, 150, .15); }
+#v-game.duel #pb-top { top: 14px; right: 18px; }
+#v-game.duel #pb-bot { bottom: 14px; left: 18px; }
+#v-game.duel .pbar.active { border-color: #f0c774; box-shadow: 0 0 0 1px rgba(0, 0, 0, .6), 0 0 26px rgba(240, 190, 90, .45), inset 0 1px 0 rgba(255, 220, 150, .25); }
+/* Hand als Fächer */
+#v-game.duel #hand { position: fixed; left: 50%; bottom: calc(var(--fh) * -.28); transform: translateX(-50%); z-index: 9; width: max-content; max-width: 50vw; min-height: 0;
+  display: flex; justify-content: center; align-items: flex-end; padding: 0; margin: 0; background: none; border: 0; box-shadow: none; overflow: visible; --fh: clamp(150px, 24vh, 290px); }
+#v-game.duel #hand .hcard { height: var(--fh); width: calc(var(--fh) * 2 / 3); margin: 0 0 0 calc(var(--ov, 30px) * -1); flex: none; transform-origin: 50% 130%;
+  transform: translateY(calc(var(--d, 0) * 1px)) rotate(calc(var(--r, 0) * 1deg)); transition: transform .2s cubic-bezier(.2, .8, .3, 1.2), box-shadow .2s, filter .2s;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .7); border-radius: 10px; }
+#v-game.duel #hand .hcard:hover, #v-game.duel #hand .hcard:focus-visible { transform: translateY(calc(var(--fh) * -.42)) rotate(0deg) scale(1.15); z-index: 50 !important; box-shadow: 0 0 0 2px #f0c774, 0 18px 40px rgba(0, 0, 0, .8), 0 0 30px rgba(240, 190, 90, .5); }
+#v-game.duel #hand .hcard.sel { transform: translateY(calc(var(--fh) * -.26)) rotate(0deg) scale(1.12); z-index: 40 !important; box-shadow: 0 0 0 3px #ffd77a, 0 0 34px rgba(255, 200, 90, .8); }
+#v-game.duel #hand .hcard.no { filter: brightness(.62) saturate(.7); }
+#v-game.duel #hand.hidden-hand { color: #d8c49a; bottom: 20px; }
+/* Seitenfelder */
+#v-game.duel .side { display: block; position: static; max-height: none; overflow: visible; }
+#v-game.duel .side > .box { position: fixed; z-index: 8; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  background: linear-gradient(180deg, rgba(28, 20, 14, .84), rgba(12, 9, 7, .86)); border: 1px solid #8a6a36; box-shadow: 0 0 0 1px rgba(0, 0, 0, .6), 0 12px 34px rgba(0, 0, 0, .65), inset 0 1px 0 rgba(255, 220, 150, .15); }
+#v-game.duel .side > .box:has(.turninfo) { right: 18px; top: 50%; transform: translateY(-50%); width: clamp(230px, 17vw, 300px); }
+#v-game.duel .side > #detailbox { left: 18px; top: 14px; transform: none; max-height: calc(100vh - 150px) !important; width: clamp(230px, 18vw, 320px); max-height: 62vh; overflow-y: auto; }
+#v-game.duel .side > .box:has(#log) { display: none; }
+#v-game.duel .tutbox { position: fixed; z-index: 9; left: 50%; top: 14px; transform: translateX(-50%); width: min(560px, 40vw); }
+#v-game.duel .mbtns { display: inline-flex; gap: 6px; margin-left: auto; }
+#v-game.duel .mainbtn { font-size: 1.05rem; padding: 14px 10px; }
+#v-game.duel .mate { left: auto; right: 22px; bottom: 22px; }
+#v-game.duel .mate-img { width: 74px; }
+/* Kartendetails links (PC-Bühne) */
+.pop.duelpeek { position: fixed !important; left: 18px !important; top: 14px !important; transform: none; width: clamp(240px, 19vw, 340px); max-height: calc(100vh - 150px); overflow-y: auto; z-index: 60; pointer-events: none;
+  background: linear-gradient(180deg, #1c140e, #0c0907); border: 1px solid #b38a46; box-shadow: 0 0 0 1px rgba(0, 0, 0, .7), 0 16px 44px rgba(0, 0, 0, .75), 0 0 24px rgba(240, 190, 90, .18); }
+.pop.duelpeek .dp-img { width: min(100%, 46vh * 2 / 3); margin-inline: auto; aspect-ratio: 2 / 3; border-radius: 10px; background: #111 center / cover no-repeat; margin-bottom: 10px; box-shadow: 0 8px 24px rgba(0, 0, 0, .7); }
+/* Lebenspunkte groß wie bei Master Duel */
+#v-game.duel .pbar { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 6px 14px; padding: 10px 14px; }
+#v-game.duel .pbar .pwho { grid-column: 1; grid-row: 1 / span 2; }
+#v-game.duel .pbar .pname b, #v-game.duel .pbar .pname small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; max-width: 11vw; }
+#v-game.duel .pbar .hp { grid-column: 2; grid-row: 1; display: flex; flex-direction: column-reverse; gap: 3px; min-width: 0; }
+#v-game.duel .pbar .hp > span { white-space: nowrap; font: 700 clamp(22px, 1.7vw, 34px)/1 var(--f-head, serif); color: #ffe6a8; letter-spacing: .04em; text-shadow: 0 0 12px rgba(255, 190, 80, .45), 0 2px 0 #000; }
+#v-game.duel .pbar .hpx { font-size: .45em; color: #cbb68a; text-shadow: none; }
+#v-game.duel .pbar .hpbar { height: 7px; }
+#v-game.duel .pbar .hbacks, #v-game.duel .pbar .pstats { grid-column: 2; }
+#v-game.duel .pbar .hbacks { grid-row: 2; justify-self: start; }
+#v-game.duel .pbar .pstats { grid-row: 3; justify-self: start; }
+#v-game.duel #pb-bot .pstats { grid-row: 2; }
+#v-game.duel #hand .hcard:first-child { margin-left: 0; }
+.board.b3d-on .arrows { display: none; } /* 4.13: in 3D zeigt die Szene die Angriffspfeile */
+/* 4.13: Angriffsliste (Battle-/Konterphase) */
+.atklist { display: grid; gap: 4px; margin: 6px 0 8px; }
+.atklist .al { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 9px; background: rgba(0, 0, 0, .35); border: 1px solid rgba(255, 138, 42, .45); font: 600 13px/1.2 var(--f-body); color: #f3e6cf; }
+.atklist .al.foe { border-color: rgba(255, 42, 74, .55); }
+.atklist .al.king { border-color: rgba(255, 210, 74, .7); }
+.atklist .al i { font-style: normal; font-weight: 800; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: #120c08; border: 2px solid #ff8a2a; color: #fff; font-size: 12px; }
+.atklist .al.foe i { border-color: #ff2a4a; } .atklist .al.king i { border-color: #ffd24a; }
+.atklist .al span { min-width: 0; overflow-wrap: anywhere; line-height: 1.25; }
+.atklist .al b { font-weight: 800; letter-spacing: .02em; white-space: nowrap; }
+.atklist .o-win { color: #7dff9a; } .atklist .o-lose { color: #ff7a6a; } .atklist .o-both { color: #ffb35a; } .atklist .o-king { color: #ffe08a; } .atklist .o-none { color: #c8c8c8; }
+.atklist .al-x { border: 0; background: rgba(255, 255, 255, .08); color: #fff; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-size: 13px; }
+.atklist .al-x:hover { background: rgba(255, 90, 60, .5); }
+/* 4.13: Effekt-Knöpfe direkt an der Karte (zwei Tipps: ansehen, einsetzen) */
+.fxchips { position: absolute; inset: 0; pointer-events: none; z-index: 12; }
+.fxc { position: absolute; transform: translate(-50%, calc(-100% - 6px)); display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: auto; width: max-content; max-width: min(78vw, 320px); }
+.fxc.below { transform: translate(-50%, 6px); }
+.fxb { display: grid; gap: 2px; justify-items: center; border: 1px solid #ffcf6a; border-radius: 14px; padding: 8px 14px; min-height: 44px; cursor: pointer; color: #fff3d6;
+  background: linear-gradient(180deg, rgba(70, 44, 12, .96), rgba(26, 16, 6, .97)); box-shadow: 0 0 0 1px rgba(0, 0, 0, .7), 0 8px 22px rgba(0, 0, 0, .65), 0 0 18px rgba(255, 190, 70, .35); font: 700 15px/1.15 var(--f-body); animation: fxpop .18s ease-out; }
+.fxb b { font-weight: 800; letter-spacing: .02em; white-space: nowrap; } .fxb small { font-size: 11px; color: #e9c98a; }
+.fxb.open { border-color: #fff0b8; box-shadow: 0 0 0 1px rgba(0, 0, 0, .7), 0 10px 26px rgba(0, 0, 0, .7), 0 0 26px rgba(255, 210, 100, .7); }
+.fxb .fxt { font: 500 13px/1.3 var(--f-body); color: #f4ead6; max-width: 280px; text-align: center; white-space: normal; }
+.fxb .fxgo { margin-top: 3px; font: 800 12px/1 var(--f-body); color: #1a1006; background: #ffd25a; border-radius: 999px; padding: 4px 10px; animation: fxgo 1.1s ease-in-out infinite; }
+@keyframes fxpop { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: none; } }
+@keyframes fxgo { 50% { box-shadow: 0 0 14px rgba(255, 210, 90, .9); } }
+.tok.fxready::after { content: '⚡'; position: absolute; right: -4px; top: -6px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: #1a1008; border: 2px solid #ffd25a; color: #ffe27a; font-size: 12px; animation: fxgo 1.2s ease-in-out infinite; z-index: 3; }
+
+/* ============ 4.13: Handy-Bühne (3D) – Spielfeld bis an die Ränder, alles andere schwebt darüber ============ */
+#v-game.mstage { position: fixed !important; inset: 0 !important; height: 100vh; height: 100dvh; z-index: 5; max-width: none; padding: 0 !important; margin: 0; overflow: hidden;
+  background: radial-gradient(ellipse 90% 60% at 50% 45%, #3a2414 0%, #140c07 60%, #050304 100%); }
+#v-game.mstage .game, #v-game.mstage .table { display: block; }
+#v-game.mstage .boardwrap { position: absolute; inset: 0; max-width: none; width: auto; margin: 0; z-index: 1; }
+#v-game.mstage .board.b3d-on { width: 100vw; height: 100vh; height: 100dvh; aspect-ratio: auto !important; border-radius: 0; }
+#v-game.mstage .boardwrap > canvas.b3d { border-radius: 0; }
+#v-game.mstage .atmo { border-radius: 0; }
+#v-game.mstage #pb-top { position: fixed; z-index: 8; top: calc(4px + env(safe-area-inset-top, 0px)); left: 6px; right: 6px; }
+#v-game.mstage #pb-bot { position: fixed; z-index: 8; left: 6px; right: 6px; }
+#v-game.mstage .pbar { background: linear-gradient(180deg, rgba(22, 16, 11, .84), rgba(10, 8, 6, .86)); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+#v-game.mstage #hand { position: fixed; z-index: 9; left: 0; right: 0; margin: 0; background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, .55)); border: 0; box-shadow: none; padding: 4px 6px; }
+#v-game.mstage .side { display: block; }
+#v-game.mstage .side > .box:has(.turninfo) { position: fixed; z-index: 9; left: 0; right: 0; margin: 0; border-radius: 16px 16px 0 0; }
+#v-game.mstage .side > #detailbox, #v-game.mstage .side > .box:has(#log) { display: none; }
+#v-game.mstage .mate { position: fixed !important; left: 8px !important; right: auto !important; bottom: auto !important; top: calc(86px + env(safe-area-inset-top, 0px)) !important; z-index: 7; }
+#v-game.mstage .mate-img { width: 46px; }
+#v-game.duel .side > #detailbox.empty { display: none; } /* 4.13: Infokasten nur bei Bedarf */
+/* 5.11.2026: Kartenrückseite (Bild vom Entwickler) + Ziehen-Animation */
+.hasback .insp-face.back { background: var(--back-img) center / cover no-repeat; }
+.hasback .insp-face.back .cb { display: none; }
+.hasback .hbacks i { background: var(--back-sm) center / cover no-repeat !important; border-color: #8a6a36; }
+.hasback .hbacks i::after { content: none; }
+.drawdeck { position: fixed; left: 0; top: 0; z-index: 900; pointer-events: none; opacity: 0; }
+.drawdeck.in { opacity: 1; }
+.drawdeck i { position: absolute; inset: 0; border-radius: 7px; background: var(--back-img, #2a1a12) center / cover no-repeat; box-shadow: 0 4px 10px rgba(0, 0, 0, .7), 0 0 0 1px rgba(0, 0, 0, .6); }
+.drawdeck i:nth-child(1) { transform: translate(6px, 6px); filter: brightness(.55); } .drawdeck i:nth-child(2) { transform: translate(4px, 4px); filter: brightness(.7); } .drawdeck i:nth-child(3) { transform: translate(2px, 2px); filter: brightness(.85); }
+.drawdeck::after { content: ''; position: absolute; inset: -6px; border-radius: 12px; box-shadow: 0 0 22px rgba(90, 168, 255, .55); pointer-events: none; }
+.drawdeck.foe::after { box-shadow: 0 0 22px rgba(255, 58, 46, .55); }
+.flycard { position: fixed; left: 0; top: 0; z-index: 901; pointer-events: none; perspective: 900px; transform-origin: 50% 50%; }
+.flycard .fc-in { position: absolute; inset: 0; transform-style: preserve-3d; }
+.flycard .fc-back, .flycard .fc-front { position: absolute; inset: 0; border-radius: 7px; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 10px 26px rgba(0, 0, 0, .75); }
+.flycard .fc-back { background: var(--back-img, #2a1a12) center / cover no-repeat; }
+.flycard .fc-front { transform: rotateY(180deg); background: #1a1410 center / cover no-repeat; }
+#hand .hcard.drawing { opacity: 0; }
+/* gewählte Rückseiten-Farbe (Aussehen) bleibt als Tönung über dem Bild erhalten */
+.hasback .pbar[data-back="rot"] .hbacks i, .hasback #insp[data-back="rot"] .insp-face.back { box-shadow: inset 0 0 0 999px rgba(170, 30, 30, .3), 1px 1px 3px #000; }
+.hasback .pbar[data-back="gruen"] .hbacks i, .hasback #insp[data-back="gruen"] .insp-face.back { box-shadow: inset 0 0 0 999px rgba(30, 140, 60, .3), 1px 1px 3px #000; }
+.hasback .pbar[data-back="violett"] .hbacks i, .hasback #insp[data-back="violett"] .insp-face.back { box-shadow: inset 0 0 0 999px rgba(120, 50, 170, .32), 1px 1px 3px #000; }
+.hasback .pbar[data-back="gold"] .hbacks i, .hasback #insp[data-back="gold"] .insp-face.back { box-shadow: inset 0 0 0 999px rgba(220, 170, 40, .26), 1px 1px 3px #000; }
+.hasback #insp .insp-face.back { background: var(--back-img) center / cover no-repeat !important; }
+/* 5.11.2026 Handy-Bühne: Kasten oben für Karten-Info und Zauber – das Spielfeld bleibt frei */
+.mdock { display: none; }
+#v-game.mstage .mdock { display: block; position: fixed; left: 6px; right: 6px; z-index: 10; max-height: 34vh; overflow-y: auto; border-radius: 14px;
+  background: linear-gradient(180deg, rgba(28, 20, 14, .95), rgba(12, 9, 7, .96)); border: 1px solid #8a6a36; box-shadow: 0 10px 28px rgba(0, 0, 0, .7); padding: 8px 10px; animation: fxpop .16s ease-out; }
+#v-game.mstage .mdock[hidden] { display: none; }
+#v-game.mstage .mdock .cbar { position: relative; padding-right: 30px; }
+#v-game.mstage .mdock .cb-x { position: absolute; right: -2px; top: -2px; width: 30px; height: 30px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .08); color: #fff; font-size: 14px; }
+#v-game.mstage .mdock .pop-h b { font-size: 16px; }
+#v-game.mstage .mdock .pop-s { margin: 4px 0; }
+#v-game.mstage .mdock .castbox { font-size: 13.5px; line-height: 1.3; }
+#v-game.mstage .mdock .castbox p { margin: 4px 0; }
+#v-game.mstage .mdock .castbox .row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+#v-game.mstage .mdock .castbox .cpick { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+#v-game.mstage .mdock .castbox .cpick .btn { flex: none; }
+/* Effekt-Knöpfe am Handy kleiner */
+#v-game.mstage .fxb { padding: 5px 10px; min-height: 34px; font-size: 13px; border-radius: 11px; }
+#v-game.mstage .fxb .fxt { font-size: 12px; max-width: 220px; }
+/* Kasten oben kompakt: Info zweispaltig (links Name/Werte/Gaben, rechts Raster), Zauber in 3 Zeilen */
+#v-game.mstage .mdock { padding: 6px 8px; max-height: 30vh; }
+#v-game.mstage .mdock .cbar { display: grid; grid-template-columns: 1fr auto; column-gap: 8px; align-items: start; padding-right: 26px; }
+#v-game.mstage .mdock .cbar > * { grid-column: 1; }
+#v-game.mstage .mdock .cbar > .pop-g { grid-column: 2; grid-row: 1 / span 4; transform: scale(.82); transform-origin: top right; margin: 0; }
+#v-game.mstage .mdock .cbar > .cb-x { grid-column: auto; width: 26px; height: 26px; }
+#v-game.mstage .mdock .pop-h { margin: 0; } #v-game.mstage .mdock .pop-h b { font-size: 15px; }
+#v-game.mstage .mdock .pop-s { margin: 3px 0; font-size: 13px; } #v-game.mstage .mdock .pop-s b { font-size: 15px; }
+#v-game.mstage .mdock .pop-gifts, #v-game.mstage .mdock .pop-fx, #v-game.mstage .mdock .pop-t { font-size: 12px; margin: 2px 0; }
+#v-game.mstage .mdock .pop-a { margin-top: 4px; }
+#v-game.mstage .mdock .castbox .eyebrow { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; }
+#v-game.mstage .mdock .castbox p { margin: 2px 0; font-size: 12.5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+#v-game.mstage .mdock .castbox .hint { -webkit-line-clamp: 1; }
+#v-game.mstage .mdock .castbox ul { margin: 2px 0; padding-left: 16px; font-size: 12px; max-height: 3.6em; overflow: auto; }
+#v-game.mstage .mdock .castbox .row { margin-top: 4px; }
+#v-game.mstage .mdock .castbox .btn { padding: 6px 10px; font-size: 12.5px; }
+/* Handy-Bühne: Phasenkasten bleibt flach (Angriffsliste als eine Zeile, Spielhilfe-Knopf klein) – sonst rutschen Hand und Leiste über das Feld */
+#v-game.mstage .atklist { display: flex; gap: 6px; overflow-x: auto; margin: 4px 0; padding-bottom: 2px; }
+#v-game.mstage .atklist .al { flex: none; padding: 3px 6px; gap: 6px; font-size: 12px; grid-template-columns: auto auto auto auto; max-width: 86vw; }
+#v-game.mstage .atklist .al span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 46vw; }
+#v-game.mstage .atklist .al i { width: 18px; height: 18px; font-size: 11px; }
+#v-game.mstage .atklist .al-x { width: 22px; height: 22px; font-size: 11px; }
+#v-game.mstage .tipbtn { padding: 4px 10px; font-size: 12px; margin: 3px 0; }
+/* Handy-Bühne: Angriffsliste schwebt oben unter der Gegnerleiste (über der Thronhalle), Spielhilfe als kleiner 💡-Knopf –
+   so bleibt der Kasten unten immer gleich hoch und schiebt nichts über das Feld */
+#v-game.mstage .atklist { position: fixed; left: 6px; right: 6px; z-index: 9; margin: 0; }
+#v-game.mstage .atklist .al { background: rgba(12, 9, 7, .9); }
+#v-game.mstage .mdock:not([hidden]) ~ .game .atklist { visibility: hidden; } /* dann steht die Liste im Kasten oben */
+#v-game.mstage .mdock .mdatk { position: static; display: flex; margin: 6px 0 0; grid-column: 1 / -1; }
+#v-game.mstage .tipbtn { position: absolute; top: 10px; right: 112px; width: 42px; height: 42px; padding: 0; margin: 0; border-radius: 12px; font-size: 0; overflow: hidden; display: grid; place-items: center; }
+#v-game.mstage .tipbtn::before { content: '💡'; font-size: 19px; }
+#v-game.mstage .tipbtn[hidden] { display: none; }
+#v-game.mstage .side > .box:has(.turninfo) { position: fixed; }
+#v-game.mstage .mdock .fxdesc { grid-column: 1 / -1; margin-top: 6px; padding: 6px 8px; border-radius: 10px; background: rgba(255, 200, 90, .12); border: 1px solid rgba(255, 207, 106, .55); font-size: 12.5px; line-height: 1.3; color: #fff0cc; }
+#v-game.mstage .mdock .fxdesc i { display: block; font-style: normal; color: #ffd25a; font-weight: 700; margin-top: 2px; }
+/* 5.11.2026: Gaben-Knöpfe im Kasten oben (Handy-Bühne) */
+#v-game.mstage .mdock .mgifts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+#v-game.mstage .mdock .mgb { display: grid; gap: 1px; justify-items: start; padding: 6px 12px; border-radius: 10px; border: 1px solid #c99a4c; background: linear-gradient(180deg, #3a2612, #1c1208); color: #fff0cc; font: 700 13px/1.15 var(--f-body); }
+#v-game.mstage .mdock .mgb small { font-weight: 600; font-size: 10.5px; color: #d9bd84; }
+#v-game.mstage .mdock .mgb.on { border-color: #ffe29a; background: linear-gradient(180deg, #6a4614, #2e1d08); box-shadow: 0 0 14px rgba(255, 200, 90, .6); }
+#v-game.mstage .mdock .mgb.on small { color: #ffd25a; }
+
+/* ===== 5.11.2026: Handy – Hand gleitet weg, wenn sie nicht gebraucht wird; Kasten oben leicht und mit großem ✕ ===== */
+#v-game.mstage #hand, #v-game.mstage #pb-bot { transition: bottom .45s cubic-bezier(.3, .8, .3, 1), transform .45s cubic-bezier(.3, .8, .3, 1), opacity .3s; }
+#v-game.mstage.handaway #hand { transform: translateY(calc(100% + 120px)); opacity: 0; pointer-events: none; }
+.handgrip { display: none; }
+#v-game.mstage.handaway .handgrip { display: flex; position: fixed; z-index: 11; right: 10px; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 999px 999px 10px 10px;
+  border: 1px solid #8a6a36; background: rgba(20, 13, 7, .88); color: #f3dfae; font: 700 12px/1 var(--f-body); bottom: var(--gripb, 150px); box-shadow: 0 4px 12px rgba(0, 0, 0, .6); }
+#v-game.mstage .mdock { background: linear-gradient(180deg, rgba(24, 17, 11, .72), rgba(10, 8, 6, .76)) !important; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); padding-right: 50px !important; }
+#v-game.mstage .mdock .cb-x, #v-game.mstage .mdock .mdx { position: absolute !important; right: 6px !important; top: 6px !important; width: 40px !important; height: 40px !important; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .25) !important;
+  background: rgba(0, 0, 0, .55) !important; color: #fff !important; font-size: 18px !important; z-index: 2; display: grid; place-items: center; }
+#v-game.mstage .mdock .cbar { padding-right: 0; }
+/* König getroffen: roter Rest der Lebensleiste läuft langsam ab, große Zahl, Leiste zuckt */
+.hpghost { position: absolute; top: 0; bottom: 0; background: linear-gradient(180deg, #ff6a50, #c4160c); box-shadow: 0 0 10px #ff3a20; border-radius: 0 3px 3px 0; transition: width 1s cubic-bezier(.4, 0, .2, 1), opacity 1s; }
+.hpghost.go { width: 0 !important; opacity: .4; }
+.kingdmg { position: fixed; z-index: 950; transform: translate(-50%, -50%); pointer-events: none; font: 900 38px/1 var(--f-display, serif); color: #ffe08a; letter-spacing: .02em;
+  text-shadow: 0 0 14px rgba(255, 120, 40, .9), 0 3px 0 #5a0a00, 0 0 2px #000; animation: kdmg 1.4s cubic-bezier(.2, .8, .3, 1) forwards; }
+.kingdmg.own { color: #ff9a8a; }
+@keyframes kdmg { 0% { transform: translate(-50%, -30%) scale(.4); opacity: 0; } 15% { transform: translate(-50%, -60%) scale(1.25); opacity: 1; } 30% { transform: translate(-50%, -70%) scale(1); } 100% { transform: translate(-50%, -150%) scale(1); opacity: 0; } }
+.pbar.kinghit { animation: kinghit .45s ease; } .pbar.kinghit .hpbar { box-shadow: 0 0 12px #ff3a20; }
+@keyframes kinghit { 0%, 100% { transform: none; } 20% { transform: translateX(-6px) rotate(-.6deg); } 40% { transform: translateX(6px) rotate(.6deg); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
+.hurtflash { position: fixed; inset: 0; z-index: 940; pointer-events: none; box-shadow: inset 0 0 90px 30px rgba(220, 20, 10, .55); animation: hurt .7s ease-out forwards; }
+@keyframes hurt { from { opacity: 1; } to { opacity: 0; } }
+/* 5.11.2026: Königsbild in der Spielerleiste (Kartenbild, oberer Teil) */
+.pbar .pb-av.kingav { background-size: cover !important; background-position: 50% 25% !important; background-repeat: no-repeat; background-color: #111; border-radius: 50%; }

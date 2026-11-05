@@ -5,7 +5,7 @@
  */
 (function (root) {
   'use strict';
-  const FORMAT = 'wok-zauber', VERSION = 1;
+  const FORMAT = 'wok-zauber', VERSION = 2; // 2 (31.10.2026): Abwehren/Durchgehen, Laufen nach Kontrolle/Wiederbeleben
 
   // Effektarten. side: wofür gedacht; targets: erlaubte Zielarten; lasting: braucht eine Dauer; defined: Regelgrundlage vorhanden
   const KINDS = {
@@ -145,6 +145,48 @@
   }
   // Ungültige Dauer automatisch korrigieren: „bis Zugende“ bei Wirkungen im Gegnerzug → 1 Zug des Gegners (außer reine Konterphase)
   function needsOppFix(e, timing) { return !!(e && e.duration && e.duration.kind === 'turn' && phaseOf(e) === 'opp' && timing !== 'counter' && e.trigger !== 'enemyAttack'); }
+  // Werkstatt-Vorschlag (31.10.2026): Wofür eignet sich ein Effekt? battle = Angriff vorbereiten, counter = Falle/Schutz, both = beides
+  function effectPhase(e) {
+    const t = e.target || {}, p = e.params || {};
+    if (e.trigger === 'enemyAttack') return 'counter';
+    switch (e.kind) {
+      case 'neutralize': case 'protect': case 'deathWard': return 'counter';
+      case 'revive': return 'battle';
+      case 'control': return p.extraMove ? 'battle' : 'both';
+      case 'moveBlock': case 'giftBlock': case 'giftRemove': case 'fieldLock': return 'battle';
+      case 'stat': {
+        if (t.what === 'king' || p.mode === 'set' || t.side === 'both') return 'both';
+        const up = +p.amount > 0;
+        if (p.stat === 'move') return up && t.side === 'own' ? 'battle' : 'both';
+        if (t.side === 'own') return p.stat === 'atk' ? (up ? 'battle' : 'both') : (up ? 'counter' : 'both');
+        return p.stat === 'atk' ? (up ? 'both' : 'counter') : (up ? 'both' : 'battle');
+      }
+      default: return 'both';
+    }
+  }
+  const PHASE_WHY = { battle: 'hilft deinem eigenen Angriff – also in deiner Battlephase spielen', counter: 'reagiert auf einen gegnerischen Angriff – also als Konter spielen (Falle oder Schutz)', both: 'wirkt in beiden Phasen sinnvoll' };
+  function phaseSuggest(sp) {
+    const ph = ((sp && sp.effects) || []).map(effectPhase), b = ph.includes('battle'), c = ph.includes('counter');
+    // Auslöser „gegnerischer Angriff“ gibt es nur in der Konterphase – dann ist die ganze Karte eine Konterkarte
+    const trap = ((sp && sp.effects) || []).some(e => e.trigger === 'enemyAttack');
+    const timing = trap ? 'counter' : b && c ? 'both' : b ? 'battle' : c ? 'counter' : 'both';
+    return { timing, why: PHASE_WHY[timing] };
+  }
+  // Kombinationen, die im Spiel nie (oder fast nie) etwas bewirken – nur Hinweise, nichts wird verboten
+  function phaseIssues(sp) {
+    const out = [], timing = (sp && sp.timing) || 'both';
+    ((sp && sp.effects) || []).forEach((e, i) => {
+      const w = 'Effekt ' + (i + 1), t = e.target || {}, p = e.params || {}, turn = e.duration && e.duration.kind === 'turn';
+      if (e.kind === 'stat' && timing === 'counter' && turn && t.side === 'own' && p.stat === 'atk' && +p.amount > 0 && p.mode !== 'set') out.push({ text: w + ': In deiner Konterphase greifst du nicht an – mehr ATK bis Zugende bringt dort nichts.', timing: 'battle' });
+      if (e.kind === 'stat' && timing === 'counter' && turn && t.side === 'enemy' && p.stat === 'def' && +p.amount < 0 && p.mode !== 'set') out.push({ text: w + ': In deiner Konterphase greift der Gegner an – weniger DEF für ihn bis Zugende bringt dort nichts.', timing: 'battle' });
+      if ((e.kind === 'revive' || e.kind === 'control') && p.extraMove && timing === 'counter') out.push({ text: w + ': „Laufen und angreifen“ geht nur in deiner Battlephase.', timing: 'battle' });
+      if (e.trigger === 'enemyAttack' && timing === 'both') out.push({ text: w + ': „Bei einem gegnerischen Angriff“ gibt es nur in deiner Konterphase – die Karte ist also nur dort spielbar.', timing: 'counter' });
+      if (e.kind === 'destroy' && timing !== 'battle' && (t.side === 'enemy' || t.side === 'both') && p.block === undefined) out.push({ text: w + ': Lege fest, was in deiner Konterphase passiert: Angriff abwehren oder durchgehen lassen (ohne Angabe: abwehren).' });
+    });
+    return out;
+  }
+  // Effektformat-Version, die eine Karte braucht (ältere Spiele lehnen neuere Karten mit Hinweis ab, statt falsch zu spielen)
+  function needVersion(sp) { return ((sp && sp.effects) || []).some(e => e.params && (e.params.block === false || e.params.extraMove)) ? 2 : 1; }
   function autoFix(sp) { let n = 0; for (const e of (sp && sp.effects) || []) if (needsOppFix(e, sp.timing || 'both')) { e.duration = { kind: 'rounds', n: 1 }; n++; } return n; }
   function condText(c, D) {
     if (!c) return '–';
@@ -176,14 +218,22 @@
     const T = e.trigger === 'enemyAttack' && (e.target || {}).what === 'unit' ? Object.assign({}, e.target, { attackedTag: true }) : e.target || {}, t = targetText(T, D, 'acc'), tn = targetText(T, D, 'nom'), td = targetText(T, D, 'dat'), many = T.count !== 'one' && T.what !== 'king', d = durText(e.duration, D, e, timing), p = e.params || {};
     const v = (one, more) => many ? more : one;
     switch (e.kind) {
-      case 'destroy': return 'Zerstöre ' + t + '.';
+      case 'destroy': {
+        // Konterphase (Festlegung 30.10.2026): auf der Karte steht, ob der Angriff abgewehrt wird oder durchgeht
+        let x = 'Zerstöre ' + t + '.';
+        if (timing !== 'battle' && (T.side === 'enemy' || T.side === 'both')) {
+          const ko = timing !== 'counter' && e.trigger !== 'enemyAttack';
+          x += ' ' + (p.block === false ? (ko ? 'In deiner Konterphase geht der Angriff trotzdem durch' : 'Der Angriff geht trotzdem durch') + ' – erst danach wird zerstört.' : (ko ? 'In deiner Konterphase wehrt das den Angriff ab.' : 'Wehrt den Angriff ab.'));
+        }
+        return x; }
       case 'status': return cap(tn) + ' ' + v('wird', 'werden') + ' ' + (p.status === 'freeze' ? 'eingefroren' : 'vergiftet (Poison)') + '.';
       case 'moveBlock': return cap(tn) + ' ' + v('kann', 'können') + d + ' nicht laufen.';
       case 'stat': { const st = STATS[p.stat] || p.stat; if (p.mode === 'set') return st + ' von ' + td + ' wird' + d + ' auf ' + p.amount + ' gesetzt.'; return cap(tn) + ' ' + v('erhält', 'erhalten') + ' ' + ((+p.amount || 0) >= 0 ? '+' : '−') + Math.abs(+p.amount || 0) + ' ' + st + d + '.'; }
       case 'giftBlock': return cap(giftNames(p.gifts, D)) + ' von ' + td + ' ' + (p.gifts === 'all' || (p.gifts || []).length > 1 ? 'sind' : 'ist') + d + ' blockiert.';
       case 'giftRemove': return 'Entferne ' + giftNames(p.gifts, D) + ' von ' + td + '.';
       case 'fieldLock': return 'Sperre ' + t + d + (p.noSummon ? '; dort kann auch nicht beschworen werden' : '') + '.';
-      case 'revive': return 'Belebe ' + t + ' wieder und beschwöre ' + v('ihn', 'sie') + ' unter deiner Kontrolle auf ' + (p.place === 'auto' ? 'einem freien' : 'einem frei wählbaren') + ' Beschwörungsfeld' + (p.lock === false ? ' (ohne Beschwörungssperre)' : '') + '.';
+      case 'revive': return 'Belebe ' + t + ' wieder und beschwöre ' + v('ihn', 'sie') + ' unter deiner Kontrolle auf ' + (p.place === 'auto' ? 'einem freien' : 'einem frei wählbaren') + ' Beschwörungsfeld' + (p.lock === false ? ' (ohne Beschwörungssperre)' : '') + '.'
+        + (timing === 'counter' ? '' : ' ' + (timing === 'battle' ? 'Wirkt sofort: ' + v('Er', 'Sie') : 'In deiner Battlephase wirkt das sofort: ' + v('Er', 'Sie')) + ' ' + v('kann', 'können') + ' noch in dieser Battlephase ' + (p.extraMove ? 'laufen und ' : '') + 'angreifen.');
       case 'protect': { const f = p.from || 'attacks'; if (f === 'curses') return 'Gegnerische Flüche wirken' + d + ' nicht auf ' + t + '.'; if (f === 'both') return cap(tn) + ' ' + v('kann', 'können') + d + ' weder durch Angriffe noch durch gegnerische Flüche besiegt oder geschwächt werden (Angriffe gegen ' + v('ihn', 'sie') + ' sind wirkungslos, Flüche wirken nicht).'; return 'Angriffe gegen ' + t + ' sind' + d + ' wirkungslos.'; }
       case 'deathWard': return cap(tn) + ' ' + v('wird', 'werden') + d + ' vor Zerstörung bewahrt' + (p.uses ? ' (' + p.uses + '× je Held)' : '') + '.';
       case 'heal': return 'Heile ' + t + ' um ' + (p.amount || 0) + ' HP' + (p.cap === 'none' ? ' (ohne Obergrenze)' : ' (höchstens bis zu seinen Start-HP)') + '.';
@@ -192,7 +242,7 @@
       case 'neutralize': return 'Neutralisiere ' + t + '.';
       case 'damage': { const amt = Math.abs(+p.amount || 0); if (p.per === 'fixed' || !p.per) return cap(tn) + ' verliert ' + amt + ' HP.'; const pile = p.per === 'hand' ? (p.from === 'enemy' ? 'auf der Hand deines Gegners' : p.from === 'both' ? 'auf beiden Händen' : 'auf deiner Hand') : p.per === 'field' ? (p.from === 'enemy' ? 'auf dem gegnerischen Spielfeld' : p.from === 'both' ? 'auf dem Spielfeld' : 'auf deinem Spielfeld') : (p.from === 'enemy' ? 'im gegnerischen Ablagestapel' : p.from === 'both' ? 'in beiden Ablagestapeln' : 'in deinem Ablagestapel'); const f = filterText(p.count, D); const what = p.per === 'field' ? 'Held' : 'Karte'; return cap(tn) + ' verliert ' + amt + ' HP je ' + (f ? what + ' (' + f + ')' : what) + ' ' + pile + (+p.max > 0 ? ' (höchstens ' + p.max + ' HP)' : '') + '.'; }
       case 'control': return 'Übernimm die Kontrolle über ' + t + (e.duration && e.duration.kind === 'rounds' ? ' bis zum Ende deines ' + ((+e.duration.n || 1) === 1 ? 'nächsten Zuges' : (+e.duration.n) + '. nächsten Zuges') : d) + '. Er umgeht Beschwörungssperre, Fesseln und Bewegungssperren und kann sofort handeln'
-        + (timing === 'counter' ? '; sein festgelegter Angriff entfällt.' : timing === 'battle' ? '. Wirkt sofort, noch vor den Angriffen: Er greift in dieser Battlephase mit an.' : '. In deiner Battlephase wirkt das sofort, noch vor den Angriffen: Er greift in dieser Battlephase mit an. In der Konterphase entfällt sein Angriff.');
+        + (timing === 'counter' ? '; sein festgelegter Angriff entfällt.' : timing === 'battle' ? '. Wirkt sofort, noch vor den Angriffen: Er ' + (p.extraMove ? 'darf noch laufen und greift' : 'greift') + ' in dieser Battlephase mit an.' : '. In deiner Battlephase wirkt das sofort, noch vor den Angriffen: Er ' + (p.extraMove ? 'darf noch laufen und greift' : 'greift') + ' in dieser Battlephase mit an. In der Konterphase entfällt sein Angriff.');
       case 'discard': { const n = Math.max(1, +p.n || 1); return (T.side === 'enemy' ? 'Dein Gegner legt ' : 'Lege ') + (n === 1 ? 'eine zufällige Handkarte' : n + ' zufällige Handkarten') + ' ab.'; }
       case 'mill': { const n = Math.max(1, +p.n || 1); return (n === 1 ? 'Die oberste Karte' : 'Die obersten ' + n + ' Karten') + ' ' + (T.side === 'enemy' ? 'des gegnerischen' : 'deines') + ' Nachziehstapels ' + (n === 1 ? 'kommt' : 'kommen') + ' auf den Ablagestapel.'; }
       case 'draw': { const n = Math.max(1, +p.n || 1); return (T.side === 'enemy' ? 'Dein Gegner zieht ' : 'Ziehe ') + (n === 1 ? 'eine Karte' : n + ' Karten') + '.'; }
@@ -266,6 +316,7 @@
       if (e.kind === 'draw') { if (!(+p.n >= 1 && +p.n <= 10)) errors.push(w + ': Anzahl der Karten (1–10) fehlt.'); if (!['own', 'enemy'].includes(t.side)) errors.push(w + ': Wer zieht? (du oder dein Gegner)'); }
       if (e.kind === 'neutralize' && sp.timing === 'battle' && ct) warnings.push(w + ': Neutralisieren in der eigenen Battlephase trifft nur Karten, die der Gegner schon gespielt hat (normalerweise erst in seiner Konterphase).');
     });
+    for (const x of phaseIssues(sp)) warnings.push(x.text);
     return { errors, warnings, open, playable: !errors.length && !open.length };
   }
 
@@ -298,6 +349,6 @@
     return { playable: !reasons.length, reasons, validation: v, text: tc };
   }
 
-  const api = { phaseOf, autoFix, needsOppFix, durText, costText, FORMAT, VERSION, KINDS, STATUSES, STATS, DURATIONS, TRIGGERS, TIMINGS, SIDES, COND_KINDS, FILTER_KINDS, blankEffect, blankSpell, normalizeSpell, describe, describeEffect, condText, filterText, validate, textCheck, status, hash };
+  const api = { phaseOf, autoFix, effectPhase, phaseSuggest, phaseIssues, needVersion, PHASE_WHY, needsOppFix, durText, costText, FORMAT, VERSION, KINDS, STATUSES, STATS, DURATIONS, TRIGGERS, TIMINGS, SIDES, COND_KINDS, FILTER_KINDS, blankEffect, blankSpell, normalizeSpell, describe, describeEffect, condText, filterText, validate, textCheck, status, hash };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.WOK_EFFECTS = api;
 })(typeof window !== 'undefined' ? window : globalThis);

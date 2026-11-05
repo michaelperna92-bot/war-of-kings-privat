@@ -1,0 +1,34 @@
+// Spielfeld mit 6 Reihen (Festlegung 1.11.2026): Felder, Könige, Beschwörung, Wachen, zwei Mittelreihen, Hälften, Angriffe, Grafik-Raster.
+global.window = global; require(require('path').join(require('../ccpath.js'), 'data.js')); delete global.window;
+const W = require('../src/engine.js');
+let pass = 0, failN = 0; const ok = (c, m) => { if (c) pass++; else { failN++; console.log('FEHLER:', m); } };
+const eq = (a, b, m) => ok(JSON.stringify(a) === JSON.stringify(b), m + ' – erwartet ' + JSON.stringify(b) + ', erhalten ' + JSON.stringify(a));
+ok(W.ROWS === 6, 'Standard: 6 Reihen');
+eq(W.FIELDS.length, 30, 'Felder: 3 + 7 + 5 + 5 + 7 + 3');
+eq(W.KING_FIELD, ['D6', 'D1'], 'Könige');
+eq(W.summonFields(0).sort(), ['A5', 'B5', 'C5', 'C6', 'D5', 'E5', 'E6', 'F5', 'G5'], 'Beschwörungsfelder unten: Reihe 5 + Wachen');
+eq(W.summonFields(1).sort(), ['A2', 'B2', 'C1', 'C2', 'D2', 'E1', 'E2', 'F2', 'G2'], 'Beschwörungsfelder oben');
+ok(['B3', 'F3', 'B4', 'F4'].every(W.exists) && !['A3', 'G3', 'A4', 'G4', 'D7'].some(W.exists), 'zwei Mittelreihen B–F');
+eq(W.step('D5', 'n', 0), 'D4', 'unten vorwärts'); eq(W.step('D4', 'n', 0), 'D3', 'Mitte → Mitte'); eq(W.step('D3', 'n', 0), 'D2', 'Mitte → gegnerische Beschwörungsreihe');
+eq(W.step('A5', 'ne', 0), 'B4', 'diagonal in die Mitte'); ok(!W.exists(W.step('A5', 'n', 0)), 'A4 gibt es nicht');
+eq(W.halfFields(0, 'own').map(f => +f.slice(1)).filter((x, i, l) => l.indexOf(x) === i).sort(), [4, 5, 6], 'eigene Hälfte: Reihen 4–6');
+eq(W.halfFields(0, 'enemy').map(f => +f.slice(1)).filter((x, i, l) => l.indexOf(x) === i).sort(), [1, 2, 3], 'gegnerische Hälfte: Reihen 1–3');
+const H = id => W.normalizeCard({ id, type: 'hero', name: id, rarity: 'gewoehnlich', energy: 1, atk: 1500, def: 1000, move: { dirs: { n: 1, e: 1, w: 1 }, showNumber: true, number: 2 }, attack: { dirs: { n: 1, ne: 1, nw: 1 } }, gifts: [] });
+const K = id => W.normalizeCard({ id, type: 'king', name: id, rarity: 'selten', atk: 2000, hp: 10000, attack: { dirs: { n: 1, ne: 1, nw: 1 } }, gifts: [] });
+const cards = { KA: K('KA'), KB: K('KB'), F: H('F') };
+let s = W.newGame({ cards, decks: [['KA'].concat(Array(39).fill('F')), ['KB'].concat(Array(39).fill('F'))], seed: 5, fixedSides: true, mulligan: false }).state;
+ok(s.rows === 6 && W.kingOf(s, 0).pos === 'D6' && W.kingOf(s, 1).pos === 'D1', 'Partie: Könige auf D6 und D1');
+for (const u of Object.values(s.units)) if (!u.king) delete s.units[u.uid];
+const put = (owner, pos) => { const uid = 'u' + (s.nextId++); s.units[uid] = { uid, cid: 'F', owner, pos, king: false, summonTurn: -5, moved: false, cd: {}, fx: [], poison: null, flags: {}, attached: [] }; return uid; };
+s.active = 0; s.phase = 'move'; s.players[0].turns = 3;
+const a = put(0, 'D5'); const r = Object.keys(W.reachable(s, a)).sort();
+ok(r.includes('D4') && r.includes('D3') && !r.includes('D2'), '2 Schritte: Beschwörungsreihe → zweite Mittelreihe: ' + r.join(','));
+s.phase = 'battle'; const e = put(1, 'D2'); s.units[a].pos = 'D3';
+ok(W.targetsOf(s, a).some(t => t.uid === e), 'Angriff aus der Mitte auf die gegnerische Beschwörungsreihe');
+s.units[a].pos = 'C2'; ok(W.targetsOf(s, a).some(t => t.uid === W.kingOf(s, 1).uid), 'von C2 diagonal auf den gegnerischen König');
+const old = JSON.parse(JSON.stringify(s)); old.rows = 5; ok(/anderen Spielfeld/.test(W.apply(old, { type: 'endPhase' }).error || ''), 'Spielstand vom 5-Reihen-Feld: klare Meldung');
+// Grafik: jedes Feld hat genau ein Feld im Bild
+const L = require('../assets/spielfeld/layout.json'); const ids = new Set(L.slots.map(x => x.id));
+ok(L.slots.length === 30 && W.FIELDS.every(f => ids.has('r' + W.rowOf(f) + 'c' + (W.colOf(f) + 1))), 'Spielfeld-Bild: 30 Felder passend zum Raster');
+ok(L.slots.every(x => x.x >= 0 && x.y >= 0 && x.x + x.width <= 1 && x.y + x.height <= 1), 'alle Felder im Bild');
+console.log('Spielfeld-6-Tests: ' + pass + ' bestanden, ' + failN + ' fehlgeschlagen.'); process.exit(failN ? 1 : 0);

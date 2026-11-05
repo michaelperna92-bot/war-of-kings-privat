@@ -495,7 +495,7 @@ window.WOK_DATA = (function () {
  */
 (function (root) {
   'use strict';
-  const FORMAT = 'wok-zauber', VERSION = 1;
+  const FORMAT = 'wok-zauber', VERSION = 2; // 2 (31.10.2026): Abwehren/Durchgehen, Laufen nach Kontrolle/Wiederbeleben
 
   // Effektarten. side: wofür gedacht; targets: erlaubte Zielarten; lasting: braucht eine Dauer; defined: Regelgrundlage vorhanden
   const KINDS = {
@@ -635,6 +635,48 @@ window.WOK_DATA = (function () {
   }
   // Ungültige Dauer automatisch korrigieren: „bis Zugende“ bei Wirkungen im Gegnerzug → 1 Zug des Gegners (außer reine Konterphase)
   function needsOppFix(e, timing) { return !!(e && e.duration && e.duration.kind === 'turn' && phaseOf(e) === 'opp' && timing !== 'counter' && e.trigger !== 'enemyAttack'); }
+  // Werkstatt-Vorschlag (31.10.2026): Wofür eignet sich ein Effekt? battle = Angriff vorbereiten, counter = Falle/Schutz, both = beides
+  function effectPhase(e) {
+    const t = e.target || {}, p = e.params || {};
+    if (e.trigger === 'enemyAttack') return 'counter';
+    switch (e.kind) {
+      case 'neutralize': case 'protect': case 'deathWard': return 'counter';
+      case 'revive': return 'battle';
+      case 'control': return p.extraMove ? 'battle' : 'both';
+      case 'moveBlock': case 'giftBlock': case 'giftRemove': case 'fieldLock': return 'battle';
+      case 'stat': {
+        if (t.what === 'king' || p.mode === 'set' || t.side === 'both') return 'both';
+        const up = +p.amount > 0;
+        if (p.stat === 'move') return up && t.side === 'own' ? 'battle' : 'both';
+        if (t.side === 'own') return p.stat === 'atk' ? (up ? 'battle' : 'both') : (up ? 'counter' : 'both');
+        return p.stat === 'atk' ? (up ? 'both' : 'counter') : (up ? 'both' : 'battle');
+      }
+      default: return 'both';
+    }
+  }
+  const PHASE_WHY = { battle: 'hilft deinem eigenen Angriff – also in deiner Battlephase spielen', counter: 'reagiert auf einen gegnerischen Angriff – also als Konter spielen (Falle oder Schutz)', both: 'wirkt in beiden Phasen sinnvoll' };
+  function phaseSuggest(sp) {
+    const ph = ((sp && sp.effects) || []).map(effectPhase), b = ph.includes('battle'), c = ph.includes('counter');
+    // Auslöser „gegnerischer Angriff“ gibt es nur in der Konterphase – dann ist die ganze Karte eine Konterkarte
+    const trap = ((sp && sp.effects) || []).some(e => e.trigger === 'enemyAttack');
+    const timing = trap ? 'counter' : b && c ? 'both' : b ? 'battle' : c ? 'counter' : 'both';
+    return { timing, why: PHASE_WHY[timing] };
+  }
+  // Kombinationen, die im Spiel nie (oder fast nie) etwas bewirken – nur Hinweise, nichts wird verboten
+  function phaseIssues(sp) {
+    const out = [], timing = (sp && sp.timing) || 'both';
+    ((sp && sp.effects) || []).forEach((e, i) => {
+      const w = 'Effekt ' + (i + 1), t = e.target || {}, p = e.params || {}, turn = e.duration && e.duration.kind === 'turn';
+      if (e.kind === 'stat' && timing === 'counter' && turn && t.side === 'own' && p.stat === 'atk' && +p.amount > 0 && p.mode !== 'set') out.push({ text: w + ': In deiner Konterphase greifst du nicht an – mehr ATK bis Zugende bringt dort nichts.', timing: 'battle' });
+      if (e.kind === 'stat' && timing === 'counter' && turn && t.side === 'enemy' && p.stat === 'def' && +p.amount < 0 && p.mode !== 'set') out.push({ text: w + ': In deiner Konterphase greift der Gegner an – weniger DEF für ihn bis Zugende bringt dort nichts.', timing: 'battle' });
+      if ((e.kind === 'revive' || e.kind === 'control') && p.extraMove && timing === 'counter') out.push({ text: w + ': „Laufen und angreifen“ geht nur in deiner Battlephase.', timing: 'battle' });
+      if (e.trigger === 'enemyAttack' && timing === 'both') out.push({ text: w + ': „Bei einem gegnerischen Angriff“ gibt es nur in deiner Konterphase – die Karte ist also nur dort spielbar.', timing: 'counter' });
+      if (e.kind === 'destroy' && timing !== 'battle' && (t.side === 'enemy' || t.side === 'both') && p.block === undefined) out.push({ text: w + ': Lege fest, was in deiner Konterphase passiert: Angriff abwehren oder durchgehen lassen (ohne Angabe: abwehren).' });
+    });
+    return out;
+  }
+  // Effektformat-Version, die eine Karte braucht (ältere Spiele lehnen neuere Karten mit Hinweis ab, statt falsch zu spielen)
+  function needVersion(sp) { return ((sp && sp.effects) || []).some(e => e.params && (e.params.block === false || e.params.extraMove)) ? 2 : 1; }
   function autoFix(sp) { let n = 0; for (const e of (sp && sp.effects) || []) if (needsOppFix(e, sp.timing || 'both')) { e.duration = { kind: 'rounds', n: 1 }; n++; } return n; }
   function condText(c, D) {
     if (!c) return '–';
@@ -666,14 +708,22 @@ window.WOK_DATA = (function () {
     const T = e.trigger === 'enemyAttack' && (e.target || {}).what === 'unit' ? Object.assign({}, e.target, { attackedTag: true }) : e.target || {}, t = targetText(T, D, 'acc'), tn = targetText(T, D, 'nom'), td = targetText(T, D, 'dat'), many = T.count !== 'one' && T.what !== 'king', d = durText(e.duration, D, e, timing), p = e.params || {};
     const v = (one, more) => many ? more : one;
     switch (e.kind) {
-      case 'destroy': return 'Zerstöre ' + t + '.';
+      case 'destroy': {
+        // Konterphase (Festlegung 30.10.2026): auf der Karte steht, ob der Angriff abgewehrt wird oder durchgeht
+        let x = 'Zerstöre ' + t + '.';
+        if (timing !== 'battle' && (T.side === 'enemy' || T.side === 'both')) {
+          const ko = timing !== 'counter' && e.trigger !== 'enemyAttack';
+          x += ' ' + (p.block === false ? (ko ? 'In deiner Konterphase geht der Angriff trotzdem durch' : 'Der Angriff geht trotzdem durch') + ' – erst danach wird zerstört.' : (ko ? 'In deiner Konterphase wehrt das den Angriff ab.' : 'Wehrt den Angriff ab.'));
+        }
+        return x; }
       case 'status': return cap(tn) + ' ' + v('wird', 'werden') + ' ' + (p.status === 'freeze' ? 'eingefroren' : 'vergiftet (Poison)') + '.';
       case 'moveBlock': return cap(tn) + ' ' + v('kann', 'können') + d + ' nicht laufen.';
       case 'stat': { const st = STATS[p.stat] || p.stat; if (p.mode === 'set') return st + ' von ' + td + ' wird' + d + ' auf ' + p.amount + ' gesetzt.'; return cap(tn) + ' ' + v('erhält', 'erhalten') + ' ' + ((+p.amount || 0) >= 0 ? '+' : '−') + Math.abs(+p.amount || 0) + ' ' + st + d + '.'; }
       case 'giftBlock': return cap(giftNames(p.gifts, D)) + ' von ' + td + ' ' + (p.gifts === 'all' || (p.gifts || []).length > 1 ? 'sind' : 'ist') + d + ' blockiert.';
       case 'giftRemove': return 'Entferne ' + giftNames(p.gifts, D) + ' von ' + td + '.';
       case 'fieldLock': return 'Sperre ' + t + d + (p.noSummon ? '; dort kann auch nicht beschworen werden' : '') + '.';
-      case 'revive': return 'Belebe ' + t + ' wieder und beschwöre ' + v('ihn', 'sie') + ' unter deiner Kontrolle auf ' + (p.place === 'auto' ? 'einem freien' : 'einem frei wählbaren') + ' Beschwörungsfeld' + (p.lock === false ? ' (ohne Beschwörungssperre)' : '') + '.';
+      case 'revive': return 'Belebe ' + t + ' wieder und beschwöre ' + v('ihn', 'sie') + ' unter deiner Kontrolle auf ' + (p.place === 'auto' ? 'einem freien' : 'einem frei wählbaren') + ' Beschwörungsfeld' + (p.lock === false ? ' (ohne Beschwörungssperre)' : '') + '.'
+        + (timing === 'counter' ? '' : ' ' + (timing === 'battle' ? 'Wirkt sofort: ' + v('Er', 'Sie') : 'In deiner Battlephase wirkt das sofort: ' + v('Er', 'Sie')) + ' ' + v('kann', 'können') + ' noch in dieser Battlephase ' + (p.extraMove ? 'laufen und ' : '') + 'angreifen.');
       case 'protect': { const f = p.from || 'attacks'; if (f === 'curses') return 'Gegnerische Flüche wirken' + d + ' nicht auf ' + t + '.'; if (f === 'both') return cap(tn) + ' ' + v('kann', 'können') + d + ' weder durch Angriffe noch durch gegnerische Flüche besiegt oder geschwächt werden (Angriffe gegen ' + v('ihn', 'sie') + ' sind wirkungslos, Flüche wirken nicht).'; return 'Angriffe gegen ' + t + ' sind' + d + ' wirkungslos.'; }
       case 'deathWard': return cap(tn) + ' ' + v('wird', 'werden') + d + ' vor Zerstörung bewahrt' + (p.uses ? ' (' + p.uses + '× je Held)' : '') + '.';
       case 'heal': return 'Heile ' + t + ' um ' + (p.amount || 0) + ' HP' + (p.cap === 'none' ? ' (ohne Obergrenze)' : ' (höchstens bis zu seinen Start-HP)') + '.';
@@ -682,7 +732,7 @@ window.WOK_DATA = (function () {
       case 'neutralize': return 'Neutralisiere ' + t + '.';
       case 'damage': { const amt = Math.abs(+p.amount || 0); if (p.per === 'fixed' || !p.per) return cap(tn) + ' verliert ' + amt + ' HP.'; const pile = p.per === 'hand' ? (p.from === 'enemy' ? 'auf der Hand deines Gegners' : p.from === 'both' ? 'auf beiden Händen' : 'auf deiner Hand') : p.per === 'field' ? (p.from === 'enemy' ? 'auf dem gegnerischen Spielfeld' : p.from === 'both' ? 'auf dem Spielfeld' : 'auf deinem Spielfeld') : (p.from === 'enemy' ? 'im gegnerischen Ablagestapel' : p.from === 'both' ? 'in beiden Ablagestapeln' : 'in deinem Ablagestapel'); const f = filterText(p.count, D); const what = p.per === 'field' ? 'Held' : 'Karte'; return cap(tn) + ' verliert ' + amt + ' HP je ' + (f ? what + ' (' + f + ')' : what) + ' ' + pile + (+p.max > 0 ? ' (höchstens ' + p.max + ' HP)' : '') + '.'; }
       case 'control': return 'Übernimm die Kontrolle über ' + t + (e.duration && e.duration.kind === 'rounds' ? ' bis zum Ende deines ' + ((+e.duration.n || 1) === 1 ? 'nächsten Zuges' : (+e.duration.n) + '. nächsten Zuges') : d) + '. Er umgeht Beschwörungssperre, Fesseln und Bewegungssperren und kann sofort handeln'
-        + (timing === 'counter' ? '; sein festgelegter Angriff entfällt.' : timing === 'battle' ? '. Wirkt sofort, noch vor den Angriffen: Er greift in dieser Battlephase mit an.' : '. In deiner Battlephase wirkt das sofort, noch vor den Angriffen: Er greift in dieser Battlephase mit an. In der Konterphase entfällt sein Angriff.');
+        + (timing === 'counter' ? '; sein festgelegter Angriff entfällt.' : timing === 'battle' ? '. Wirkt sofort, noch vor den Angriffen: Er ' + (p.extraMove ? 'darf noch laufen und greift' : 'greift') + ' in dieser Battlephase mit an.' : '. In deiner Battlephase wirkt das sofort, noch vor den Angriffen: Er ' + (p.extraMove ? 'darf noch laufen und greift' : 'greift') + ' in dieser Battlephase mit an. In der Konterphase entfällt sein Angriff.');
       case 'discard': { const n = Math.max(1, +p.n || 1); return (T.side === 'enemy' ? 'Dein Gegner legt ' : 'Lege ') + (n === 1 ? 'eine zufällige Handkarte' : n + ' zufällige Handkarten') + ' ab.'; }
       case 'mill': { const n = Math.max(1, +p.n || 1); return (n === 1 ? 'Die oberste Karte' : 'Die obersten ' + n + ' Karten') + ' ' + (T.side === 'enemy' ? 'des gegnerischen' : 'deines') + ' Nachziehstapels ' + (n === 1 ? 'kommt' : 'kommen') + ' auf den Ablagestapel.'; }
       case 'draw': { const n = Math.max(1, +p.n || 1); return (T.side === 'enemy' ? 'Dein Gegner zieht ' : 'Ziehe ') + (n === 1 ? 'eine Karte' : n + ' Karten') + '.'; }
@@ -756,6 +806,7 @@ window.WOK_DATA = (function () {
       if (e.kind === 'draw') { if (!(+p.n >= 1 && +p.n <= 10)) errors.push(w + ': Anzahl der Karten (1–10) fehlt.'); if (!['own', 'enemy'].includes(t.side)) errors.push(w + ': Wer zieht? (du oder dein Gegner)'); }
       if (e.kind === 'neutralize' && sp.timing === 'battle' && ct) warnings.push(w + ': Neutralisieren in der eigenen Battlephase trifft nur Karten, die der Gegner schon gespielt hat (normalerweise erst in seiner Konterphase).');
     });
+    for (const x of phaseIssues(sp)) warnings.push(x.text);
     return { errors, warnings, open, playable: !errors.length && !open.length };
   }
 
@@ -788,7 +839,7 @@ window.WOK_DATA = (function () {
     return { playable: !reasons.length, reasons, validation: v, text: tc };
   }
 
-  const api = { phaseOf, autoFix, needsOppFix, durText, costText, FORMAT, VERSION, KINDS, STATUSES, STATS, DURATIONS, TRIGGERS, TIMINGS, SIDES, COND_KINDS, FILTER_KINDS, blankEffect, blankSpell, normalizeSpell, describe, describeEffect, condText, filterText, validate, textCheck, status, hash };
+  const api = { phaseOf, autoFix, effectPhase, phaseSuggest, phaseIssues, needVersion, PHASE_WHY, needsOppFix, durText, costText, FORMAT, VERSION, KINDS, STATUSES, STATS, DURATIONS, TRIGGERS, TIMINGS, SIDES, COND_KINDS, FILTER_KINDS, blankEffect, blankSpell, normalizeSpell, describe, describeEffect, condText, filterText, validate, textCheck, status, hash };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.WOK_EFFECTS = api;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -821,7 +872,9 @@ window.WOK_DATA = (function () {
     { k: 'stat', w: { feuer: 3, blitz: 2, dunkelheit: 2 }, make: (m, g) => eff('stat', 'curse', { 'params.stat': g() < .7 ? 'atk' : 'def', 'params.amount': -r100(300 * m + g() * 300), 'duration.kind': g() < .5 ? 'turn' : 'rounds', 'duration.n': 1 + (g() < m / 3 ? 1 : 0) }), v: e => Math.abs(e.params.amount) / 1000 * 1.6 * (e.duration.kind === 'rounds' ? 1.3 : 1) },
     { k: 'stat', all: true, w: { wind: 2, wasser: 2, dunkelheit: 1 }, make: (m, g) => eff('stat', 'curse', { 'target.count': 'all', 'params.stat': 'atk', 'params.amount': -r100(150 * m + g() * 150), 'duration.kind': 'turn' }), v: e => Math.abs(e.params.amount) / 1000 * 1.6 * 2.2 },
     { k: 'status', w: { dunkelheit: 4, erde: 1 }, make: () => eff('status', 'curse', { 'params.status': 'poison' }), v: () => 2.4 },
-    { k: 'destroy', w: { dunkelheit: 2, blitz: 2, feuer: 1 }, min: 1.6, make: () => eff('destroy', 'curse', {}), v: () => 3.2 },
+    { k: 'destroy', w: { dunkelheit: 2, blitz: 2, feuer: 1 }, min: 1.6, make: (m, g) => eff('destroy', 'curse', { 'params.block': g() < .65 }), v: () => 3.2 },
+    // Falle (31.10.2026): greift der Gegner an, wird ein Angreifer zerstört – Angriff abgewehrt oder durchgelassen
+    { k: 'destroy', trap: true, counter: true, w: { dunkelheit: 3, blitz: 2, feuer: 1 }, min: 1.3, make: (m, g) => Object.assign(eff('destroy', 'curse', { 'target.side': 'enemy', 'params.block': g() < .5 }), { trigger: 'enemyAttack' }), v: e => e.params.block === false ? 2.4 : 3 },
     { k: 'moveBlock', w: { wasser: 4, erde: 2 }, make: (m, g) => eff('moveBlock', 'curse', { 'duration.kind': 'rounds', 'duration.n': m > 1.5 ? 2 : 1, 'target.count': m > 2 ? 'n' : 'one', 'target.n': 2 }), v: e => 1 * (e.duration.n || 1) * (e.target.count === 'n' ? 1.6 : 1) },
     { k: 'giftBlock', w: { licht: 1, dunkelheit: 2, wind: 1 }, make: (m) => eff('giftBlock', 'curse', { 'params.gifts': 'all', 'duration.kind': 'rounds', 'duration.n': m > 1.5 ? 2 : 1 }), v: e => 1.1 * (e.duration.n || 1) },
     { k: 'fieldLock', w: { erde: 3, wasser: 1 }, make: (m) => eff('fieldLock', 'curse', { 'target.count': 'n', 'target.n': m > 1.5 ? 3 : 2, 'target.side': 'own', 'duration.kind': 'rounds', 'duration.n': 1 }), v: e => 0.35 * e.target.n },
@@ -833,7 +886,7 @@ window.WOK_DATA = (function () {
     { k: 'discard', w: { dunkelheit: 2, wind: 2 }, make: (m) => eff('discard', 'curse', { 'params.n': m > 1.8 ? 2 : 1 }), v: e => e.params.n * 1.1 },
     { k: 'mill', w: { wasser: 2, erde: 2 }, make: (m) => eff('mill', 'curse', { 'params.n': Math.round(2 + m) }), v: e => e.params.n * 0.35 },
     { k: 'damage', per: true, w: { dunkelheit: 3, feuer: 1 }, make: (m, g, D) => { const race = D && D.RACES && D.RACES.length ? pickR(g, D.RACES).id : null; return eff('damage', 'curse', { 'params.amount': r100(150 * m + g() * 150), 'params.per': 'discard', 'params.from': 'own', 'params.count': g() < .55 && race ? { op: 'and', items: [{ k: 'race', v: race }] } : { op: 'and', items: [] }, 'params.max': r100(1500 * m) }); }, v: e => e.params.amount / 1000 * 4 * 1.2 },
-    { k: 'control', w: { dunkelheit: 4, wind: 1, blitz: 1 }, min: 1.3, make: (m) => eff('control', 'curse', { 'duration.kind': m >= 2.4 ? 'permanent' : m >= 1.6 ? 'rounds' : 'turn', 'duration.n': 1 }), v: e => e.duration.kind === 'permanent' ? 4.4 : e.duration.kind === 'turn' ? 1.9 : 2.6 }, // „turn“ = greift nur in dieser Battlephase mit an
+    { k: 'control', w: { dunkelheit: 4, wind: 1, blitz: 1 }, min: 1.3, make: (m, g) => eff('control', 'curse', { 'params.extraMove': g() < .35, 'duration.kind': m >= 2.4 ? 'permanent' : m >= 1.6 ? 'rounds' : 'turn', 'duration.n': 1 }), v: e => e.duration.kind === 'permanent' ? 4.4 : e.duration.kind === 'turn' ? 1.9 : 2.6 }, // „turn“ = greift nur in dieser Battlephase mit an
     { k: 'stat', both: true, w: { blitz: 2, dunkelheit: 2, feuer: 1 }, make: (m, g) => eff('stat', 'curse', { 'target.side': 'both', 'target.count': 'all', 'params.stat': g() < .5 ? 'atk' : 'def', 'params.amount': -r100(250 * m + g() * 250), 'duration.kind': 'turn' }), v: e => Math.abs(e.params.amount) / 1000 * 1.4 },
     { k: 'destroy', both: true, w: { feuer: 2, dunkelheit: 2 }, min: 2.4, make: (m, g, D) => { const cl = D && D.CLASSES && D.CLASSES.length ? pickR(g, D.CLASSES).id : null; return eff('destroy', 'curse', { 'target.side': 'both', 'target.count': 'all', 'target.filter': { op: 'and', items: cl ? [{ k: 'class', v: cl }] : [] } }); }, v: () => 4.2 }
   ];
@@ -843,12 +896,12 @@ window.WOK_DATA = (function () {
     { k: 'stat', move: true, w: { wind: 4 }, make: () => eff('stat', 'spell', { 'params.stat': 'move', 'params.amount': 1, 'duration.kind': 'rounds', 'duration.n': 1 }), v: () => 0.8 },
     { k: 'protect', w: { licht: 4, erde: 1 }, make: () => Object.assign(eff('protect', 'spell', { 'duration.kind': 'turn' }), { trigger: 'enemyAttack' }), counter: true, v: () => 1.6 },
     { k: 'deathWard', w: { licht: 3, erde: 2 }, make: (m) => eff('deathWard', 'spell', { 'duration.kind': 'turn', 'params.uses': 1, 'target.count': m > 2 ? 'all' : 'one' }), v: e => 1.6 * (e.target.count === 'all' ? 1.8 : 1) },
-    { k: 'revive', w: { dunkelheit: 2, licht: 2 }, min: 1.3, make: () => eff('revive', 'spell', { 'params.place': 'player', 'params.lock': true }), v: () => 2.8 },
+    { k: 'revive', w: { dunkelheit: 2, licht: 2 }, min: 1.3, make: (m, g) => eff('revive', 'spell', { 'params.place': 'player', 'params.lock': true, 'params.extraMove': g() < .4 }), v: e => e.params.extraMove ? 3.2 : 2.8 },
     { k: 'heal', w: { licht: 4, wasser: 2 }, make: (m, g) => eff('heal', 'spell', { 'params.amount': r100(1000 * m + g() * 1000), 'params.cap': 'start' }), v: e => e.params.amount / 1500 },
     { k: 'draw', w: { wasser: 2, wind: 2, licht: 1, blitz: 1 }, make: (m) => eff('draw', 'spell', { 'params.n': Math.min(4, Math.max(1, Math.round(m + .4))) }), v: e => e.params.n * 0.9 },
     { k: 'damage', w: { feuer: 3, blitz: 3, licht: 1 }, make: (m, g) => eff('damage', 'spell', { 'params.amount': r100(400 * m + g() * 400) }), v: e => e.params.amount / 1000 * 1.3 },
     { k: 'neutralize', w: { licht: 2, wind: 1 }, counter: true, make: () => eff('neutralize', 'spell', {}), v: () => 1.5 },
-    { k: 'control', w: { licht: 1, wind: 2, dunkelheit: 2 }, min: 1.3, make: () => eff('control', 'spell', { 'target.side': 'enemy', 'duration.kind': 'rounds', 'duration.n': 1 }), v: () => 2.6 },
+    { k: 'control', w: { licht: 1, wind: 2, dunkelheit: 2 }, min: 1.3, make: (m, g) => eff('control', 'spell', { 'target.side': 'enemy', 'duration.kind': 'rounds', 'duration.n': 1, 'params.extraMove': g() < .35 }), v: e => e.params.extraMove ? 3 : 2.6 },
     { k: 'protect', all: true, w: { licht: 3, erde: 2 }, make: () => eff('protect', 'spell', { 'target.count': 'all', 'duration.kind': 'turn' }), v: () => 2.4 },
     { k: 'stat', all: true, w: { feuer: 2, blitz: 1 }, make: (m, g, D) => { const r = D && D.RACES && D.RACES.length ? pickR(g, D.RACES).id : null; return eff('stat', 'spell', { 'target.count': 'all', 'target.filter': { op: 'and', items: r ? [{ k: 'race', v: r }] : [] }, 'params.stat': 'atk', 'params.amount': r100(300 * m + g() * 300), 'duration.kind': 'turn' }); }, v: e => e.params.amount / 1000 * 1.5 }
   ];
@@ -866,8 +919,16 @@ window.WOK_DATA = (function () {
       if (rng() < .65) { sp.cost.hp = r100((500 + rng() * 700) * MULT[rarity]); disc += sp.cost.hp / 1000 * 1.1; }
       else { sp.cost.discard = 1; disc += 1; }
     }
-    if (sp.timing === 'both' && !sp.effects.some(e => e.kind === 'neutralize')) { const x = rng(); if (x < .2) sp.timing = 'battle'; else if (x < .32) sp.timing = 'counter'; }
+    setTiming(sp, rng);
     return disc;
+  }
+  // 31.10.2026: Phase passend zum Effekt – Fallen/Schutz als Konter, Angriffshilfen in der Battlephase, „beide“ nur wo es passt
+  function setTiming(sp, rng) {
+    const sg = EF.phaseSuggest(sp).timing, ph = sp.effects.map(EF.effectPhase);
+    sp.timing = sg;
+    if (sg === 'both' && rng) { const x = rng(); if (x < .2 && ph.every(p => p !== 'counter')) sp.timing = 'battle'; else if (x < .32 && ph.every(p => p !== 'battle') && !sp.effects.some(e => (e.kind === 'revive' || e.kind === 'control'))) sp.timing = 'counter'; }
+    // Zerstören im Konter immer ausdrücklich festlegen (steht so auf der Karte)
+    for (const e of sp.effects) if (e.kind === 'destroy' && sp.timing !== 'battle' && (e.target.side === 'enemy' || e.target.side === 'both') && e.params.block === undefined) e.params.block = true;
   }
   function eff(kind, type, ch) { const e = EF.blankEffect(kind, type); for (const [p, v] of Object.entries(ch || {})) { const ks = p.split('.'); let x = e; while (ks.length > 1) x = x[ks.shift()]; x[ks[0]] = v; } return e; }
   function weightedPick(list, element, rng, m) {
@@ -894,11 +955,12 @@ window.WOK_DATA = (function () {
     const element = o.element || pickR(rng, Object.keys(THEME));
     for (let tries = 0; tries < 20; tries++) {
       const list = type === 'curse' ? CURSES : SPELLS, t1 = weightedPick(list, element, rng, m), effects = [t1.make(m, rng, o.D)];
-      let timing = t1.counter ? 'counter' : 'both';
+      let timing = t1.counter ? 'counter' : 'both';  // wird unten von setTiming() passend gesetzt
       if ((rarity === 'selten' && rng() < .4) || rarity === 'legendaer') { const t2 = weightedPick(list.filter(t => t.k !== t1.k && !t.counter), element, rng, m * .7); effects.push(t2.make(m * .7, rng, o.D)); }
       const sp = EF.normalizeSpell(Object.assign(EF.blankSpell(type), { timing, effects }), type);
       EF.autoFix(sp);
-      const disc = o.plain ? 0 : addTwists(sp, type, rarity, rng, o.D); EF.autoFix(sp);
+      const disc = o.plain ? 0 : addTwists(sp, type, rarity, rng, o.D); if (o.plain) setTiming(sp, null); EF.autoFix(sp);
+      if (EF.phaseIssues(sp).length) continue; // nie Karten, die in ihrer Phase nichts bewirken
       const card = { type, name: o.name || makeName(type, element, rng, t1.k), subtitle: (type === 'curse' ? CURSE_SUB : SPELL_SUB)[t1.k] || (type === 'curse' ? 'Fluch' : 'Zauber'), flavor: pickR(rng, FLAVOR[type]), rarity, ruleText: '', spell: sp };
       card.energy = energyFor(Math.max(0.4, estimate(sp, type) - disc * 0.6));
       if (EF.validate(card, o.D).errors.length === 0) return Object.assign(card, { element, generator: 'zufall' });
@@ -915,6 +977,9 @@ window.WOK_DATA = (function () {
     EF.autoFix(sp);
     // Voraussetzung und Zusatzkosten der KI nur übernehmen, wenn sie gültig sind
     if (a.require && Array.isArray(a.require.items)) { const t = Object.assign({}, sp, { require: { op: a.require.op === 'or' ? 'or' : 'and', items: a.require.items.slice(0, 2) } }); if (!EF.validate({ type, name: 'x', rarity: 'gewoehnlich', energy: 1, ruleText: '', spell: t }, D).errors.length) sp.require = t.require; }
+    if (EF.phaseIssues(sp).some(x => x.timing)) sp.timing = EF.phaseSuggest(sp).timing;
+    for (const e of sp.effects) if (e.kind === 'destroy' && sp.timing !== 'battle' && (e.target.side === 'enemy' || e.target.side === 'both') && e.params.block === undefined) e.params.block = true;
+    EF.autoFix(sp);
     if (a.cost) sp.cost = { hp: Math.max(0, Math.min(5000, Math.round((+a.cost.hp || 0) / 100) * 100)), discard: Math.max(0, Math.min(3, Math.round(+a.cost.discard || 0))) };
     const card = { type, name: String(a.name || '').trim().slice(0, 28), subtitle: String(a.subtitle || '').trim().slice(0, 30), flavor: String(a.flavor || '').replace(/\d/g, '').trim().slice(0, 120), rarity: RAR.includes(rarity) ? rarity : chooseRarity(null, Math.random), ruleText: '', spell: sp };
     card.energy = Number.isFinite(+a.energy) ? Math.max(0, Math.min(10, Math.round(+a.energy))) : energyFor(estimate(sp, type));
@@ -4464,6 +4529,10 @@ function spEffectHTML(c, e, i, n) {
   if (e.kind === 'control') par = '<p class="muted sphelp"><b>Umgeht Sperren:</b> Der übernommene Held kann sofort laufen und angreifen. Beschwörungssperre, Fesseln und Bewegungssperren auf ihm gelten nicht, solange er übernommen ist. Endet die Dauer, geht er an seinen Besitzer zurück; stirbt er vorher, kommt er auf den Ablagestapel seines Besitzers. Göttlicher Segen schützt davor.</p><p class="muted sphelp"><b>⚔ Sofort in der Battlephase:</b> In deiner Battlephase gewirkt, wirkt die Kontrolle sofort – noch vor den Angriffen. Der Held greift in derselben Battlephase mit an; danach hat der Gegner seine Konterphase und kann darauf reagieren, dann folgt die Schadensberechnung. <b>Bis Zugende</b> = nur dieser Angriff. <b>1–3 Runden</b> = er läuft und kämpft zusätzlich in deinen nächsten Zügen – dazwischen kann der Gegner ihn angreifen und zerstören. In der <b>Konterphase</b> auf einen gegnerischen Angreifer gewirkt, fällt dessen Angriff weg.</p>';
   if (e.kind === 'revive') par = '<div class="row2">' + spSel(p + '.params.place', { player: 'Feld wählt der Spieler', auto: 'erstes freies Beschwörungsfeld' }, P.place, 'Platzierung') + '<label class="inline" style="align-self:end"><input type="checkbox" data-sp="' + p + '.params.lock" data-t="bool" ' + (P.lock !== false ? 'checked' : '') + '> mit Beschwörungssperre</label></div><p class="muted sphelp">Kontrolle: der Wirkende. Stirbt der Held wieder, kommt er auf den Ablagestapel seines Besitzers (Abschnitt 8).</p>';
   if (e.kind === 'protect') par = spSel(p + '.params.from', { attacks: 'Angriffen', curses: 'gegnerischen Flüchen', both: 'Angriffen und gegnerischen Flüchen' }, P.from || 'attacks', 'Schützt vor', 'data-rebuild="1"') + '<p class="muted sphelp">Gilt, solange der Zauber wirkt. Wähle „Runden“: Sie zählen die Züge deines Gegners – dort greift er an und spielt Flüche.</p>';
+  // 31.10.2026: Zerstören in der Konterphase – Angriff abwehren oder durchgehen lassen (steht so auf der Karte)
+  if (e.kind === 'destroy' && (c.spell.timing || 'both') !== 'battle' && (t.side === 'enemy' || t.side === 'both')) par = '<label>Was passiert in deiner Konterphase mit dem gegnerischen Angriff?<select data-sp="' + p + '.params.block" data-t="boolsel" data-rebuild="1">' + spOpt(Object.assign(P.block === undefined ? { '': '– bitte festlegen (ohne Angabe: abwehren) –' } : {}, { true: '🛡 Angriff abwehren – der Angreifer kommt nicht mehr zum Angriff', false: '⚔ Angriff geht durch – der Angreifer wird erst danach zerstört' }), P.block === undefined ? '' : String(P.block)) + '</select></label><p class="muted sphelp">' + (P.block === false ? '<b>Durchgehen lassen:</b> Erst wird ganz normal gekämpft – dein Held kann dabei fallen. Danach wird der Angreifer trotzdem zerstört.' : '<b>Abwehren:</b> Der Fluch wirkt vor dem Kampf. Ein zerstörter Angreifer greift gar nicht mehr an, dein Held bekommt nichts ab.') + ' Das steht automatisch im Kartentext.</p>';
+  // 31.10.2026: Kontrolle/Wiederbeleben – in der eigenen Battlephase greift der Held noch an; optional darf er vorher laufen
+  if ((e.kind === 'revive' || e.kind === 'control') && (c.spell.timing || 'both') !== 'counter') par += '<label>Was darf der Held in deiner Battlephase noch tun?<select data-sp="' + p + '.params.extraMove" data-t="boolsel" data-rebuild="1">' + spOpt({ false: '⚔ Sofort angreifen', true: '👣 Erst laufen (wie auf seiner Karte), dann angreifen' }, String(!!P.extraMove)) + '</select></label><p class="muted sphelp">Der Held kann <b>immer</b> noch in derselben Battlephase angreifen – das steht automatisch auf der Karte. Mit „erst laufen“ darf er sich vorher einmal nach seiner eigenen Laufrichtung und Schrittzahl bewegen.</p>';
   if (e.kind === 'deathWard') par = spNum(p + '.params.uses', P.uses, 'Wie oft je Einheit (0 = unbegrenzt während der Dauer)', 'min="0"');
   if (e.kind === 'heal') par = '<div class="row2">' + spNum(p + '.params.amount', P.amount, 'HP', 'min="0" step="100"') + spSel(p + '.params.cap', { start: 'höchstens bis zu den Start-HP', none: 'ohne Obergrenze' }, P.cap, 'Grenze') + '</div>';
   if (e.kind === 'damage') {
@@ -4586,7 +4655,7 @@ function renderSpellPanel() {
     <div class="row2"><label>Energiekosten (0–10)<input type="number" id="sp-energy" data-sp="energy" data-t="num" min="0" max="10" value="${c.energy === '' || c.energy == null ? '' : esc(c.energy)}"></label>
     <label>Untertyp im Banner<input type="text" data-sp="subtitle" data-t="str" maxlength="40" value="${esc(c.subtitle || '')}" placeholder="${cur ? 'z. B. Schwächungsfluch' : 'z. B. Schutzzauber'}"></label></div>
     <div><div class="eyebrow" style="margin-bottom:6px">Seltenheit (Kopienlimit im Deck)</div>${pickerHTML('rarity', D.RARITIES, c.rarity)}</div>
-    <div><div class="eyebrow" style="margin-bottom:6px">Wann spielbar</div><div class="sptiming">${Object.entries({ both: 'Battle- oder Konterphase', battle: 'Nur Battlephase', counter: 'Nur Konterphase' }).map(([k, t]) => '<button class="' + ((c.spell.timing || 'both') === k ? 'on' : '') + '" data-spact="timing:' + k + '">' + t + '</button>').join('')}</div><p class="muted" style="font-size:12px;margin:5px 0 0">Auf der Karte oben rechts im Bild: Siegel <b style="color:#ff9a8a">B</b> = Battlephase, <b style="color:#9cc8ff">K</b> = Konterphase. Beide Siegel = in beiden Phasen spielbar.</p></div>
+    <div><div class="eyebrow" style="margin-bottom:6px">Wann spielbar</div><div class="sptiming">${Object.entries({ both: 'Battle- oder Konterphase', battle: 'Nur Battlephase', counter: 'Nur Konterphase' }).map(([k, t]) => '<button class="' + ((c.spell.timing || 'both') === k ? 'on' : '') + '" data-spact="timing:' + k + '">' + t + '</button>').join('')}</div>${(() => { const sg = EF.phaseSuggest(c.spell), cur = c.spell.timing || 'both'; if (!(c.spell.effects || []).length) return ''; const nm2 = { both: 'Battle- oder Konterphase', battle: 'Battlephase', counter: 'Konterphase' }; return '<p class="sphint" style="font-size:12.5px;margin:6px 0 0">💡 <b>Vorschlag: ' + nm2[sg.timing] + '</b> – diese Karte ' + esc(sg.why) + '.' + (sg.timing !== cur ? ' <button class="ghost" data-spact="timing:' + sg.timing + '">übernehmen</button>' : ' ✓') + '</p>'; })()}<p class="muted" style="font-size:12px;margin:5px 0 0">Auf der Karte oben rechts im Bild: Siegel <b style="color:#ff9a8a">B</b> = Battlephase, <b style="color:#9cc8ff">K</b> = Konterphase. Beide Siegel = in beiden Phasen spielbar.</p></div>
     <div><div class="eyebrow" style="margin-bottom:6px">Zusätzliche Kosten (optional)</div><div class="row2">${spNum('spell.cost.hp', c.spell.cost.hp || 0, 'Eigener König opfert HP', 'min="0" step="100"')}${spNum('spell.cost.discard', c.spell.cost.discard || 0, 'Handkarten abwerfen (zufällig)', 'min="0" max="9"')}</div><p class="muted" style="font-size:12px;margin:4px 0 0">Wird beim Ausspielen sofort bezahlt, auch wenn die Karte später neutralisiert wird. Der König darf dadurch nicht auf 0 HP fallen.</p></div>
     <p class="muted" style="font-size:12px">${nm}karten haben keine ATK, DEF, Lauf- oder Angriffsrichtungen und kein Elementwappen. Elemente, Rassen und Klassen nutzt du in Voraussetzungen und Zielen.</p></section>
   <section class="sec" data-sec="name"><h3>Name</h3>
@@ -4629,7 +4698,7 @@ function bindSpellPanel() {
   const drop = $('#drop');
   drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); }; drop.ondragleave = () => drop.classList.remove('over');
   drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) uploadArt(f); };
-  const val = el => el.dataset.t === 'num' ? (el.value === '' ? '' : +el.value) : el.dataset.t === 'bool' ? el.checked : el.value;
+  const val = el => el.dataset.t === 'num' ? (el.value === '' ? '' : +el.value) : el.dataset.t === 'bool' ? el.checked : el.dataset.t === 'boolsel' ? (el.value === '' ? undefined : el.value === 'true') : el.value;
   panel.oninput = e => { const el = e.target; if (!el.dataset.sp || el.tagName === 'SELECT' || el.type === 'checkbox') return; spSet(c, el.dataset.sp, val(el)); spChanged(false); };
   panel.onchange = e => {
     const el = e.target;
@@ -5979,7 +6048,8 @@ async function gameExportRun() {
         if (isSpellCard(card)) {
           const out = clone(card); delete out.art; delete out.giftDetails; delete out.attack; delete out.move; delete out.gifts; delete out.style;
           const sst = window.WOK_EFFECTS.status(card, D);
-          cards.push(Object.assign(out, gxPool(raw), { id: raw.id || id, image: fullPath, token: tokPath, spellFormat: window.WOK_EFFECTS.FORMAT, spellVersion: window.WOK_EFFECTS.VERSION, ruleTextShown: card.ruleText && card.ruleText.trim() ? card.ruleText : window.WOK_EFFECTS.describe(card, D),
+          if (out.spell) out.spell.v = window.WOK_EFFECTS.needVersion(out.spell); // ältere Spiele erkennen neue Wirkungen und sagen „neuere Version nötig“
+          cards.push(Object.assign(out, gxPool(raw), { id: raw.id || id, image: fullPath, token: tokPath, spellFormat: window.WOK_EFFECTS.FORMAT, spellVersion: window.WOK_EFFECTS.needVersion(card.spell), ruleTextShown: card.ruleText && card.ruleText.trim() ? card.ruleText : window.WOK_EFFECTS.describe(card, D),
             playable: sst.playable, notPlayableReasons: sst.reasons,
             validation: { errors: v.filter(x => x.level === 'error').map(x => x.text), warnings: v.filter(x => x.level === 'warn').map(x => x.text) } }));
           await new Promise(r => setTimeout(r, 0)); continue;

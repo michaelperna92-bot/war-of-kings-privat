@@ -192,10 +192,7 @@ func installer() {
 	if b, err := appFS.ReadFile("app/icon.ico"); err == nil {
 		os.WriteFile(icon, b, 0o644)
 	}
-	makeShortcut(filepath.Join(desktopDir(), appName+".lnk"), installedExe(), icon, "")
-	if pd := programsDir(); pd != "" {
-		makeShortcut(filepath.Join(pd, appName+".lnk"), installedExe(), icon, "")
-	}
+	installShortcuts(icon)
 	regSet("DisplayName", "REG_SZ", appName)
 	regSet("DisplayVersion", "REG_SZ", appVersion)
 	regSet("Publisher", "REG_SZ", "War of Kings")
@@ -205,26 +202,9 @@ func installer() {
 	regSet("NoModify", "REG_DWORD", "1")
 	regSet("NoRepair", "REG_DWORD", "1")
 	setupDirs()
-	if msgBox(appName, "Fertig installiert.\n\nDu findest die Kartenwerkstatt auf dem Desktop und im Startmenü.\nDeinstallieren geht über Windows-Einstellungen → Apps.\n\nJetzt starten?", mbYesNo|mbIconInfo) == idYes {
+	if msgBox(appName, "Fertig installiert.\n\nDu findest die Kartenwerkstatt auf dem Desktop und im Startmenü.\nDeinstallieren: Startmenü → War of Kings → „… deinstallieren“ oder Windows-Einstellungen → Apps.\n\nJetzt starten?", mbYesNo|mbIconInfo) == idYes {
 		exec.Command(installedExe(), "--app").Start()
 	}
-}
-
-func uninstall() {
-	docs := filepath.Join(documentsDir(), appName)
-	if msgBox(appName, "Kartenwerkstatt deinstallieren?\n\nDeine Karten, Bilder und Exporte in\n"+docs+"\nbleiben erhalten.", mbYesNo|mbIconQuest) != idYes {
-		return
-	}
-	quitRunning()
-	os.Remove(filepath.Join(desktopDir(), appName+".lnk"))
-	if pd := programsDir(); pd != "" {
-		os.Remove(filepath.Join(pd, appName+".lnk"))
-	}
-	hidden(exec.Command("reg", "delete", uninstKey, "/f")).Run()
-	os.RemoveAll(filepath.Join(localAppData(), "WoK Kartenwerkstatt"))
-	// Die laufende .exe kann sich nicht selbst löschen: kurz warten, dann Ordner entfernen
-	hidden(exec.Command("cmd", "/c", "ping 127.0.0.1 -n 3 >nul & rmdir /s /q \""+installDir()+"\"")).Start()
-	msgBox(appName, "Die Kartenwerkstatt wurde entfernt. Deine Karten liegen weiter in\n"+docs, mbOK|mbIconInfo)
 }
 
 // Ordnerauswahl von Windows (FolderBrowserDialog über PowerShell), Fenster im Vordergrund

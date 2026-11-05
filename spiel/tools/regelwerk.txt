@@ -11,7 +11,11 @@ WAR OF KINGS – MASTER-REGELWERK
  später hypothetisch entstehenden Königsschaden aufgehoben.
  • Wenn ein regulärer Nachzug bei leerem Stapel scheitert, verliert der eigene König sofort 1.000 HP. Der
  Ablagestapel wird niemals neu gemischt.
- 2. Spielfeld • Das verbindliche symmetrische Spielfeld besitzt ein
+ 2. Spielfeld • Festlegung des Entwicklers vom 1.11.2026: Das Spielfeld hat 6 Reihen – König mit zwei
+ Wachfeldern, Beschwörungsreihe (7 Felder), zwei Mittelreihen (je 5 Felder, B–F), Beschwörungsreihe (7 Felder),
+ König mit zwei Wachfeldern. Jede Seite besitzt drei Reihen; es gibt keine neutrale Mittelreihe.
+ (Vorher: 7 Reihen bis 30.10.2026, 5 Reihen am 31.10.2026.)
+ • Das verbindliche symmetrische Spielfeld besitzt ein
  zentrales Schlachtfeld mit Brücke; die offizielle Spielfeldreferenz ist als
  Bildanlage enthalten.
  • Jeder König steht auf dem vorgesehenen K-Feld und bleibt dort. Helden werden auf der gesamten eigenen
@@ -109,6 +113,12 @@ WAR OF KINGS – MASTER-REGELWERK
  dürfen nur in der eigenen Battlephase oder eigenen Konterphase
  eingesetzt werden, soweit Energie und Kartentext dies zulassen. Der
  Verteidiger hat nur eine Konterphase.
+ • Zerstörungsflüche in der Konterphase (Festlegung des Entwicklers vom 30.10.2026): Die Karte legt fest und nennt im
+ Kartentext, ob sie den Angriff abwehrt (Zerstörung vor dem Kampf, der zerstörte Angreifer greift nicht an) oder ob der
+ Angriff durchgeht (es wird normal gekämpft, danach wird der Angreifer trotzdem zerstört). Ohne Angabe: abwehren.
+ • Kontrolle übernehmen und Wiederbeleben (Festlegung des Entwicklers vom 30.10.2026): In der eigenen Battlephase gewirkt,
+ wirken sie sofort; der Held kann noch in derselben Battlephase angreifen (steht immer auf der Karte). Je Karte kann
+ zusätzlich festgelegt sein, dass er vorher einmal nach seiner eigenen Laufrichtung und Schrittzahl laufen darf.
  • Alle in diesen Phasen ausgespielten Zauber und Flüche werden erst nach Abschluss der Konterphase
  gemeinsam ausgewertet. Eine ausdrücklich ausgespielte Neutralisierung hebt ihren betroffenen Zauber auf.
  Beide Karten sind verbraucht und ihre Energiekosten bleiben bezahlt.

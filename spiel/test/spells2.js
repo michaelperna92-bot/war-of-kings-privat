@@ -1,6 +1,7 @@
 // Tests für Kontrolle, Zusatzkosten, neue Voraussetzungen, Ausspielzeitpunkt, Kopienlimit, Reichweite. Aufruf: node test/spells2.js
 global.window = global; require(require('path').join(require('../ccpath.js'), 'data.js')); delete global.window;
 const W = require('../src/engine.js'), EF = W.EF, D = global.WOK_DATA;
+W.setLayout(7); // Regeltests mit festen Feldern des früheren 7-Reihen-Feldes (Mechanik unverändert); das 5-Reihen-Feld prüft test/feld5.js
 let pass = 0, failN = 0;
 const ok = (c, msg) => { if (c) pass++; else { failN++; console.log('FEHLER:', msg); } };
 const eq = (a, b, msg) => ok(JSON.stringify(a) === JSON.stringify(b), msg + ' – erwartet ' + JSON.stringify(b) + ', erhalten ' + JSON.stringify(a));

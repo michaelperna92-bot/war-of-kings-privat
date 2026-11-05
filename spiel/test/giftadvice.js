@@ -19,7 +19,7 @@ const { chromium } = require('playwright'); const SH = '/tmp/claude-0/sf/shots/'
     } else { mine = put('T_ML', 0, 'D5'); put('T_D', 1, 'D4'); s.active = 0; s.phase = 'battle'; s.counter = null; }
     g.s = s; g.sel = { kind: 'unit', uid: mine }; g.gift = null; g.view = 0; WOK_APP.renderNow(); return mine;
   }, sc);
-  const giftBtn = async () => { await pg.waitForTimeout(300); const r = await pg.evaluate(() => { const bt = document.querySelector('#qgifts button:not([disabled])'); if (!bt) return 'kein Knopf: ' + (document.querySelector('#qgifts') ? document.querySelector('#qgifts').textContent : '-'); bt.click(); return 'ok'; }); await pg.waitForTimeout(400); return r; };
+  const giftBtn = async () => { await pg.waitForTimeout(300); const r = await pg.evaluate(() => { const bt = document.querySelector('.qgifts.inbar button:not([disabled])'); if (!bt) return 'kein Knopf: ' + (document.querySelector('.qgifts.inbar') ? document.querySelector('.qgifts.inbar').textContent : '-'); bt.click(); return 'ok'; }); await pg.waitForTimeout(400); return r; };
   const res = async (label) => { const dlg = await pg.isVisible('#dlg [data-act="go"]'); const t = dlg ? await pg.textContent('#dlg') : await pg.textContent('#toast'); console.log(label, dlg ? '[Warnung]' : '[Hinweis]', t.replace(/\s+/g, ' ').slice(0, 260)); return dlg; };
   // 1. Konterphase: Eisenpanzer rettet den Helden
   let me = await setup('counterGood'); console.log('Knopf:', await giftBtn()); await res('1 Eisenpanzer sinnvoll:'); await pg.screenshot({ path: SH + 'gift-good.png' });

@@ -23,11 +23,25 @@ const menu = (() => { const b64 = (f, t) => 'data:' + t + ';base64,' + fs.readFi
   fs.mkdirSync(path.join(__dirname, 'desktop', 'app', 'basar'), { recursive: true });
   fs.copyFileSync(path.join(__dirname, 'assets', 'basar', 'basar.mp4'), path.join(__dirname, 'desktop', 'app', 'basar', 'basar.mp4'));
   return 'window.WOK_MENU = ' + JSON.stringify({ menu: b64('menu/hauptmenue.webp', 'image/webp'), poster: b64('basar/basar-start.webp', 'image/webp'), pack7: b64('basar/pack-7.webp', 'image/webp'), pack12: b64('basar/pack-12.webp', 'image/webp'), video: 'basar/basar.mp4', mates: Object.fromEntries(['ritter', 'alter-koenig', 'junger-koenig', 'haendler'].map(k => [k, b64('menu/mate-' + k + '.webp', 'image/webp')])) }) + ';'; })();
+// Effekt-Bilder (1.11.2026, aufbereitet mit tools/fx/build-fx.py): eingebettet, Spritesheets als Streifen mit Bildzahl
+const fxPack = (() => { const D = path.join(__dirname, 'assets', 'fx'); const frames = JSON.parse(fs.readFileSync(path.join(D, 'frames.json'), 'utf8')); const img = {};
+  for (const f of fs.readdirSync(D).filter(f => /\.webp$/.test(f))) img[f.replace(/\.webp$/, '')] = 'data:image/webp;base64,' + fs.readFileSync(path.join(D, f)).toString('base64');
+  return 'window.WOK_FX = ' + JSON.stringify({ img, frames }) + ';'; })();
+// Arena hinter dem 3D-Spielfeld (4.12): assets/arena/arena.mp4 (Video, als eigene Datei daneben wie die Musik) und/oder arena.webp (Standbild, eingebettet)
+const ARENA = (() => { const D = path.join(__dirname, 'assets', 'arena'), has = f => fs.existsSync(path.join(D, f)), o = {};
+  if (has('arena.webp')) o.image = 'data:image/webp;base64,' + fs.readFileSync(path.join(D, 'arena.webp')).toString('base64');
+  if (has('arena.mp4')) { o.video = 'arena/arena.mp4'; for (const d of [path.join(__dirname, 'desktop', 'app', 'arena'), path.join(__dirname, 'dist', 'web', 'arena')]) { fs.mkdirSync(d, { recursive: true }); fs.copyFileSync(path.join(D, 'arena.mp4'), path.join(d, 'arena.mp4')); } }
+  try { Object.assign(o, JSON.parse(fs.readFileSync(path.join(D, 'arena.json'), 'utf8'))); } catch (e) {}
+  return 'window.WOK_ARENA = window.WOK_ARENA || ' + JSON.stringify(o) + ';'; })();
+// Kartenrückseite (5.11.2026, vom Entwickler, Higgsfield): eingebettet, groß (Ziehen, große Ansicht) und klein (gegnerische Hand)
+const BACK = (() => { const D = path.join(__dirname, 'assets', 'rueckseite'), b = f => 'data:image/webp;base64,' + fs.readFileSync(path.join(D, f)).toString('base64');
+  return 'window.WOK_BACK = ' + JSON.stringify({ big: b('rueckseite.webp'), small: b('rueckseite-klein.webp') }) + ';'; })();
 // Adresse des Spielservers (nach der Bereitstellung in server-url.txt eintragen) – für PC-Version und Browser-Datei
 const SERVER_URL = (() => { try { return fs.readFileSync(path.join(__dirname, 'server-url.txt'), 'utf8').trim(); } catch (e) { return ''; } })();
 const serverCfg = 'window.WOK_SERVER_URL = ' + JSON.stringify(SERVER_URL) + ';';
-const blocks = [['server', serverCfg], ['spielfeld', field], ['menu', menu], ['musik', music], ['werkstatt-assets', assets], ['regelwerk', rules], ['werkstatt-data', ccr('data.js')], ['werkstatt-effects', ccr('effects.js')], ['werkstatt-render', ccr('render.js')]]
-  .concat(['gamedata.js', 'demo-cards.js', 'engine.js', 'ai.js', 'advisor.js', 'deckbuilder.js', 'cardart.js', 'app.js'].map(f => [f, r(f)]));
+const blocks = [['server', serverCfg], ['arena', ARENA], ['rueckseite', BACK], ['spielfeld', field], ['effekte', fxPack], ['menu', menu], ['musik', music], ['werkstatt-assets', assets], ['regelwerk', rules], ['werkstatt-data', ccr('data.js')], ['werkstatt-effects', ccr('effects.js')], ['werkstatt-render', ccr('render.js')]]
+  .concat([['3d-three', fs.readFileSync(path.join(__dirname, 'assets', '3d', 'three-bundle.js'), 'utf8')], ['3d-gsap', fs.readFileSync(path.join(__dirname, 'assets', '3d', 'gsap.min.js'), 'utf8')]]) // 4.11.2026: three.js r169 (MIT) + GSAP 3.12.5 – tools/3d/build-3d.sh
+  .concat(['gamedata.js', 'demo-cards.js', 'engine.js', 'ai.js', 'advisor.js', 'deckbuilder.js', 'cardart.js', 'board3d.js', 'app.js'].map(f => [f, r(f)]));
 const js = blocks.map(([n, src]) => { if (/<\/script/i.test(src)) throw new Error('script-Ende in ' + n); return '<script>\n' + src + '\n</script>'; }).join('\n');
 const UI_FONTS = ['Alegreya+Sans:wght@400;500;700', 'Barlow+Semi+Condensed:wght@600;700', 'Marcellus+SC'];
 const CARD_FONTS = ['Cinzel:wght@500;600;700;800;900', 'Cinzel+Decorative:wght@400;700;900', 'Cormorant+Garamond:wght@500;600;700', 'Cormorant+SC:wght@500;600;700', 'EB+Garamond:wght@500;600;700;800', 'Marcellus', 'Spectral:wght@400;500;600;700', 'Spectral+SC:wght@500;600;700', 'IM+Fell+English', 'IM+Fell+English+SC', 'Alegreya:wght@500;700;800', 'Alegreya+SC:wght@500;700;800', 'Playfair+Display+SC:wght@700;900', 'Almendra+SC', 'Grenze+Gotisch:wght@500;600;700;800', 'UnifrakturMaguntia', 'Pirata+One', 'Uncial+Antiqua', 'Forum'];

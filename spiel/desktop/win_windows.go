@@ -103,7 +103,7 @@ func openWindowWait(url string) func() {
 	}
 	prof := filepath.Join(localAppData(), "WoK Probe-Spiel", "browser")
 	cmd := exec.Command(b, "--app="+url, "--user-data-dir="+prof, "--no-first-run", "--no-default-browser-check",
-		"--window-size=1440,920", "--lang=de", "--disable-features=Translate,msEdgeSidebarV2")
+		"--window-size=1440,920", "--start-maximized", "--lang=de", "--disable-features=Translate,msEdgeSidebarV2")
 	if cmd.Start() != nil {
 		return nil
 	}
@@ -190,10 +190,7 @@ func installer() {
 	if b, err := appFS.ReadFile("app/icon.ico"); err == nil {
 		os.WriteFile(icon, b, 0o644)
 	}
-	makeShortcut(filepath.Join(desktopDir(), appName+".lnk"), installedExe(), icon, "")
-	if pd := programsDir(); pd != "" {
-		makeShortcut(filepath.Join(pd, appName+".lnk"), installedExe(), icon, "")
-	}
+	installShortcuts(icon)
 	regSet("DisplayName", "REG_SZ", appName)
 	regSet("DisplayVersion", "REG_SZ", appVersion)
 	regSet("Publisher", "REG_SZ", "War of Kings")
@@ -202,22 +199,7 @@ func installer() {
 	regSet("UninstallString", "REG_SZ", `"`+installedExe()+`" --uninstall`)
 	regSet("NoModify", "REG_DWORD", "1")
 	regSet("NoRepair", "REG_DWORD", "1")
-	if msgBox(appName, "Fertig installiert.\n\nDu findest das Probe-Spiel auf dem Desktop und im Startmenü.\nDeinstallieren geht über Windows-Einstellungen → Apps.\n\nJetzt starten?", mbYesNo|mbIconInfo) == idYes {
+	if msgBox(appName, "Fertig installiert.\n\nDu findest das Probe-Spiel auf dem Desktop und im Startmenü.\nDeinstallieren: Startmenü → War of Kings → „… deinstallieren“ oder Windows-Einstellungen → Apps.\n\nJetzt starten?", mbYesNo|mbIconInfo) == idYes {
 		exec.Command(installedExe(), "--app").Start()
 	}
-}
-
-func uninstall() {
-	if msgBox(appName, "Probe-Spiel deinstallieren?\n\nDie Kartenwerkstatt bleibt unberührt.", mbYesNo|mbIconQuest) != idYes {
-		return
-	}
-	quitRunning()
-	os.Remove(filepath.Join(desktopDir(), appName+".lnk"))
-	if pd := programsDir(); pd != "" {
-		os.Remove(filepath.Join(pd, appName+".lnk"))
-	}
-	hidden(exec.Command("reg", "delete", uninstKey, "/f")).Run()
-	os.RemoveAll(filepath.Join(localAppData(), "WoK Probe-Spiel"))
-	hidden(exec.Command("cmd", "/c", "ping 127.0.0.1 -n 3 >nul & rmdir /s /q \""+installDir()+"\"")).Start()
-	msgBox(appName, "Das Probe-Spiel wurde entfernt.", mbOK|mbIconInfo)
 }

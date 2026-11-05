@@ -177,6 +177,7 @@
         <select class="search" id="rp-speed" aria-label="Geschwindigkeit"><option value="0.5">0,5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></div>
       <span class="rp-pos" id="rp-pos"></span><button class="btn small" data-rp="close">✕ Beenden</button>
     </div>
+    <div class="mdock" id="mdock" hidden></div>
     <div class="game">
       <div class="table">
         <div class="pbar" id="pb-top"></div>
@@ -187,9 +188,10 @@
       <aside class="side">
         <div class="tutbox" id="tutbox" hidden></div>
         <div class="box">
-          <div class="turninfo"><b id="turnwho"></b><span class="timer" id="clock"></span><span id="netdot" hidden></span></div>
+          <div class="turninfo"><b id="turnwho"></b><span class="timer" id="clock"></span><span id="netdot" hidden></span><button class="btn small iconbtn fsbtn" id="fsbtn" aria-label="Vollbild (F)" title="Vollbild (F)">⛶</button><span class="mbtns"><button class="btn small iconbtn" id="logbtn" aria-label="Spielverlauf und Hinweise" title="Spielverlauf">📜</button><button class="btn small iconbtn" id="mmenu" aria-label="Menü" title="Ton, Aufgeben, Menü">☰</button></span></div>
           <div class="phases" id="phases"></div>
           <p class="hint" id="hint"></p>
+          <div class="atklist" id="atklist" hidden></div>
           <button class="tipbtn" id="tips" hidden></button>
           <button class="btn primary mainbtn" id="mainbtn"></button>
         </div>

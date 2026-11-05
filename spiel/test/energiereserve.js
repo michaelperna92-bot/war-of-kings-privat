@@ -1,6 +1,7 @@
 // Festlegung 30.10.2026: Restenergie bleibt nach dem eigenen Zugende für die gegnerische Konterphase. Aufruf: node test/energiereserve.js
 global.window = global; require(require('path').join(require('../ccpath.js'), 'data.js')); delete global.window;
 const W = require('../src/engine.js'), EF = W.EF;
+W.setLayout(7); // Regeltests mit festen Feldern des früheren 7-Reihen-Feldes (Mechanik unverändert); das 5-Reihen-Feld prüft test/feld5.js
 let pass = 0, failN = 0; const ok = (c, m) => { if (c) pass++; else { failN++; console.log('FEHLER:', m); } };
 const H = (id, o) => W.normalizeCard(Object.assign({ id, type: 'hero', name: id, rarity: 'gewoehnlich', energy: 1, atk: 1000, def: 1000, move: { dirs: { n: 1 }, showNumber: true, number: 1 }, attack: { dirs: { n: 1 } }, gifts: [] }, o));
 const K = id => W.normalizeCard({ id, type: 'king', name: id, rarity: 'selten', atk: 2000, hp: 10000, attack: { dirs: { n: 1 } }, gifts: [] });

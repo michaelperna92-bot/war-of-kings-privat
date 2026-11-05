@@ -45,7 +45,7 @@
       const sc = pv.kind === 'king' ? 3 + pv.dmg / 1000 * 1.5 : pv.kind === 'win' ? value(t, tg) + 1 : pv.kind === 'both' ? value(t, tg) - value(t, tu) + 0.3 : -1;
       best = Math.max(best, sc);
     }
-    const forward = u.owner === 0 ? 7 - W.rowOf(f) : W.rowOf(f) - 1;
+    const forward = u.owner === 0 ? W.ROWS - W.rowOf(f) : W.rowOf(f) - 1;
     const ek = W.kingOf(s, 1 - u.owner), near = 6 - dist(f, ek.pos);
     return best - danger(s, u, f, tm) * (level === 'leicht' ? 0.3 : 0.8) + forward * 0.25 + near * 0.3;
   }

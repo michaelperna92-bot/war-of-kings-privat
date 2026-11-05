@@ -15,7 +15,7 @@ const OUT = '/tmp/claude-0/sf/shots/';
         WOK_APP.renderNow && WOK_APP.renderNow();
         const bd = document.querySelector('#board').getBoundingClientRect(), out = {}; let bad = 0;
         for (const el of document.querySelectorAll('#board .cell')) { const r = el.getBoundingClientRect(); out[el.dataset.f] = el.dataset.slot; if (r.left < bd.left - 1 || r.right > bd.right + 1 || r.top < bd.top - 1 || r.bottom > bd.bottom + 1) bad++; }
-        return { n: Object.keys(out).length, slots: new Set(Object.values(out)).size, d7: out.D7, d1: out.D1, c7: out.C7, a2: out.A2, bad, ratio: (bd.width / bd.height).toFixed(3) };
+        return { n: Object.keys(out).length, slots: new Set(Object.values(out)).size, d6: out.D6, d1: out.D1, c6: out.C6, a2: out.A2, bad, ratio: (bd.width / bd.height).toFixed(3) };
       }, view);
       console.log(n, 'Sicht', view, JSON.stringify(r));
       await pg.screenshot({ path: OUT + n + '-v' + view + '.png' });

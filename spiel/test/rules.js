@@ -1,5 +1,6 @@
 // Regeltests für die Engine. Aufruf: node test/rules.js
 const W = require('../src/engine.js');
+W.setLayout(7); // Regeltests mit festen Feldern des früheren 7-Reihen-Feldes (Mechanik unverändert); das 5-Reihen-Feld prüft test/feld5.js
 let pass = 0, failN = 0;
 const ok = (c, msg) => { if (c) pass++; else { failN++; console.log('FEHLER:', msg); } };
 const eq = (a, b, msg) => ok(JSON.stringify(a) === JSON.stringify(b), msg + ' – erwartet ' + JSON.stringify(b) + ', erhalten ' + JSON.stringify(a));

@@ -27,7 +27,9 @@
     { k: 'stat', w: { feuer: 3, blitz: 2, dunkelheit: 2 }, make: (m, g) => eff('stat', 'curse', { 'params.stat': g() < .7 ? 'atk' : 'def', 'params.amount': -r100(300 * m + g() * 300), 'duration.kind': g() < .5 ? 'turn' : 'rounds', 'duration.n': 1 + (g() < m / 3 ? 1 : 0) }), v: e => Math.abs(e.params.amount) / 1000 * 1.6 * (e.duration.kind === 'rounds' ? 1.3 : 1) },
     { k: 'stat', all: true, w: { wind: 2, wasser: 2, dunkelheit: 1 }, make: (m, g) => eff('stat', 'curse', { 'target.count': 'all', 'params.stat': 'atk', 'params.amount': -r100(150 * m + g() * 150), 'duration.kind': 'turn' }), v: e => Math.abs(e.params.amount) / 1000 * 1.6 * 2.2 },
     { k: 'status', w: { dunkelheit: 4, erde: 1 }, make: () => eff('status', 'curse', { 'params.status': 'poison' }), v: () => 2.4 },
-    { k: 'destroy', w: { dunkelheit: 2, blitz: 2, feuer: 1 }, min: 1.6, make: () => eff('destroy', 'curse', {}), v: () => 3.2 },
+    { k: 'destroy', w: { dunkelheit: 2, blitz: 2, feuer: 1 }, min: 1.6, make: (m, g) => eff('destroy', 'curse', { 'params.block': g() < .65 }), v: () => 3.2 },
+    // Falle (31.10.2026): greift der Gegner an, wird ein Angreifer zerstört – Angriff abgewehrt oder durchgelassen
+    { k: 'destroy', trap: true, counter: true, w: { dunkelheit: 3, blitz: 2, feuer: 1 }, min: 1.3, make: (m, g) => Object.assign(eff('destroy', 'curse', { 'target.side': 'enemy', 'params.block': g() < .5 }), { trigger: 'enemyAttack' }), v: e => e.params.block === false ? 2.4 : 3 },
     { k: 'moveBlock', w: { wasser: 4, erde: 2 }, make: (m, g) => eff('moveBlock', 'curse', { 'duration.kind': 'rounds', 'duration.n': m > 1.5 ? 2 : 1, 'target.count': m > 2 ? 'n' : 'one', 'target.n': 2 }), v: e => 1 * (e.duration.n || 1) * (e.target.count === 'n' ? 1.6 : 1) },
     { k: 'giftBlock', w: { licht: 1, dunkelheit: 2, wind: 1 }, make: (m) => eff('giftBlock', 'curse', { 'params.gifts': 'all', 'duration.kind': 'rounds', 'duration.n': m > 1.5 ? 2 : 1 }), v: e => 1.1 * (e.duration.n || 1) },
     { k: 'fieldLock', w: { erde: 3, wasser: 1 }, make: (m) => eff('fieldLock', 'curse', { 'target.count': 'n', 'target.n': m > 1.5 ? 3 : 2, 'target.side': 'own', 'duration.kind': 'rounds', 'duration.n': 1 }), v: e => 0.35 * e.target.n },
@@ -39,7 +41,7 @@
     { k: 'discard', w: { dunkelheit: 2, wind: 2 }, make: (m) => eff('discard', 'curse', { 'params.n': m > 1.8 ? 2 : 1 }), v: e => e.params.n * 1.1 },
     { k: 'mill', w: { wasser: 2, erde: 2 }, make: (m) => eff('mill', 'curse', { 'params.n': Math.round(2 + m) }), v: e => e.params.n * 0.35 },
     { k: 'damage', per: true, w: { dunkelheit: 3, feuer: 1 }, make: (m, g, D) => { const race = D && D.RACES && D.RACES.length ? pickR(g, D.RACES).id : null; return eff('damage', 'curse', { 'params.amount': r100(150 * m + g() * 150), 'params.per': 'discard', 'params.from': 'own', 'params.count': g() < .55 && race ? { op: 'and', items: [{ k: 'race', v: race }] } : { op: 'and', items: [] }, 'params.max': r100(1500 * m) }); }, v: e => e.params.amount / 1000 * 4 * 1.2 },
-    { k: 'control', w: { dunkelheit: 4, wind: 1, blitz: 1 }, min: 1.3, make: (m) => eff('control', 'curse', { 'duration.kind': m >= 2.4 ? 'permanent' : m >= 1.6 ? 'rounds' : 'turn', 'duration.n': 1 }), v: e => e.duration.kind === 'permanent' ? 4.4 : e.duration.kind === 'turn' ? 1.9 : 2.6 }, // „turn“ = greift nur in dieser Battlephase mit an
+    { k: 'control', w: { dunkelheit: 4, wind: 1, blitz: 1 }, min: 1.3, make: (m, g) => eff('control', 'curse', { 'params.extraMove': g() < .35, 'duration.kind': m >= 2.4 ? 'permanent' : m >= 1.6 ? 'rounds' : 'turn', 'duration.n': 1 }), v: e => e.duration.kind === 'permanent' ? 4.4 : e.duration.kind === 'turn' ? 1.9 : 2.6 }, // „turn“ = greift nur in dieser Battlephase mit an
     { k: 'stat', both: true, w: { blitz: 2, dunkelheit: 2, feuer: 1 }, make: (m, g) => eff('stat', 'curse', { 'target.side': 'both', 'target.count': 'all', 'params.stat': g() < .5 ? 'atk' : 'def', 'params.amount': -r100(250 * m + g() * 250), 'duration.kind': 'turn' }), v: e => Math.abs(e.params.amount) / 1000 * 1.4 },
     { k: 'destroy', both: true, w: { feuer: 2, dunkelheit: 2 }, min: 2.4, make: (m, g, D) => { const cl = D && D.CLASSES && D.CLASSES.length ? pickR(g, D.CLASSES).id : null; return eff('destroy', 'curse', { 'target.side': 'both', 'target.count': 'all', 'target.filter': { op: 'and', items: cl ? [{ k: 'class', v: cl }] : [] } }); }, v: () => 4.2 }
   ];
@@ -49,12 +51,12 @@
     { k: 'stat', move: true, w: { wind: 4 }, make: () => eff('stat', 'spell', { 'params.stat': 'move', 'params.amount': 1, 'duration.kind': 'rounds', 'duration.n': 1 }), v: () => 0.8 },
     { k: 'protect', w: { licht: 4, erde: 1 }, make: () => Object.assign(eff('protect', 'spell', { 'duration.kind': 'turn' }), { trigger: 'enemyAttack' }), counter: true, v: () => 1.6 },
     { k: 'deathWard', w: { licht: 3, erde: 2 }, make: (m) => eff('deathWard', 'spell', { 'duration.kind': 'turn', 'params.uses': 1, 'target.count': m > 2 ? 'all' : 'one' }), v: e => 1.6 * (e.target.count === 'all' ? 1.8 : 1) },
-    { k: 'revive', w: { dunkelheit: 2, licht: 2 }, min: 1.3, make: () => eff('revive', 'spell', { 'params.place': 'player', 'params.lock': true }), v: () => 2.8 },
+    { k: 'revive', w: { dunkelheit: 2, licht: 2 }, min: 1.3, make: (m, g) => eff('revive', 'spell', { 'params.place': 'player', 'params.lock': true, 'params.extraMove': g() < .4 }), v: e => e.params.extraMove ? 3.2 : 2.8 },
     { k: 'heal', w: { licht: 4, wasser: 2 }, make: (m, g) => eff('heal', 'spell', { 'params.amount': r100(1000 * m + g() * 1000), 'params.cap': 'start' }), v: e => e.params.amount / 1500 },
     { k: 'draw', w: { wasser: 2, wind: 2, licht: 1, blitz: 1 }, make: (m) => eff('draw', 'spell', { 'params.n': Math.min(4, Math.max(1, Math.round(m + .4))) }), v: e => e.params.n * 0.9 },
     { k: 'damage', w: { feuer: 3, blitz: 3, licht: 1 }, make: (m, g) => eff('damage', 'spell', { 'params.amount': r100(400 * m + g() * 400) }), v: e => e.params.amount / 1000 * 1.3 },
     { k: 'neutralize', w: { licht: 2, wind: 1 }, counter: true, make: () => eff('neutralize', 'spell', {}), v: () => 1.5 },
-    { k: 'control', w: { licht: 1, wind: 2, dunkelheit: 2 }, min: 1.3, make: () => eff('control', 'spell', { 'target.side': 'enemy', 'duration.kind': 'rounds', 'duration.n': 1 }), v: () => 2.6 },
+    { k: 'control', w: { licht: 1, wind: 2, dunkelheit: 2 }, min: 1.3, make: (m, g) => eff('control', 'spell', { 'target.side': 'enemy', 'duration.kind': 'rounds', 'duration.n': 1, 'params.extraMove': g() < .35 }), v: e => e.params.extraMove ? 3 : 2.6 },
     { k: 'protect', all: true, w: { licht: 3, erde: 2 }, make: () => eff('protect', 'spell', { 'target.count': 'all', 'duration.kind': 'turn' }), v: () => 2.4 },
     { k: 'stat', all: true, w: { feuer: 2, blitz: 1 }, make: (m, g, D) => { const r = D && D.RACES && D.RACES.length ? pickR(g, D.RACES).id : null; return eff('stat', 'spell', { 'target.count': 'all', 'target.filter': { op: 'and', items: r ? [{ k: 'race', v: r }] : [] }, 'params.stat': 'atk', 'params.amount': r100(300 * m + g() * 300), 'duration.kind': 'turn' }); }, v: e => e.params.amount / 1000 * 1.5 }
   ];
@@ -72,8 +74,16 @@
       if (rng() < .65) { sp.cost.hp = r100((500 + rng() * 700) * MULT[rarity]); disc += sp.cost.hp / 1000 * 1.1; }
       else { sp.cost.discard = 1; disc += 1; }
     }
-    if (sp.timing === 'both' && !sp.effects.some(e => e.kind === 'neutralize')) { const x = rng(); if (x < .2) sp.timing = 'battle'; else if (x < .32) sp.timing = 'counter'; }
+    setTiming(sp, rng);
     return disc;
+  }
+  // 31.10.2026: Phase passend zum Effekt – Fallen/Schutz als Konter, Angriffshilfen in der Battlephase, „beide“ nur wo es passt
+  function setTiming(sp, rng) {
+    const sg = EF.phaseSuggest(sp).timing, ph = sp.effects.map(EF.effectPhase);
+    sp.timing = sg;
+    if (sg === 'both' && rng) { const x = rng(); if (x < .2 && ph.every(p => p !== 'counter')) sp.timing = 'battle'; else if (x < .32 && ph.every(p => p !== 'battle') && !sp.effects.some(e => (e.kind === 'revive' || e.kind === 'control'))) sp.timing = 'counter'; }
+    // Zerstören im Konter immer ausdrücklich festlegen (steht so auf der Karte)
+    for (const e of sp.effects) if (e.kind === 'destroy' && sp.timing !== 'battle' && (e.target.side === 'enemy' || e.target.side === 'both') && e.params.block === undefined) e.params.block = true;
   }
   function eff(kind, type, ch) { const e = EF.blankEffect(kind, type); for (const [p, v] of Object.entries(ch || {})) { const ks = p.split('.'); let x = e; while (ks.length > 1) x = x[ks.shift()]; x[ks[0]] = v; } return e; }
   function weightedPick(list, element, rng, m) {
@@ -100,11 +110,12 @@
     const element = o.element || pickR(rng, Object.keys(THEME));
     for (let tries = 0; tries < 20; tries++) {
       const list = type === 'curse' ? CURSES : SPELLS, t1 = weightedPick(list, element, rng, m), effects = [t1.make(m, rng, o.D)];
-      let timing = t1.counter ? 'counter' : 'both';
+      let timing = t1.counter ? 'counter' : 'both';  // wird unten von setTiming() passend gesetzt
       if ((rarity === 'selten' && rng() < .4) || rarity === 'legendaer') { const t2 = weightedPick(list.filter(t => t.k !== t1.k && !t.counter), element, rng, m * .7); effects.push(t2.make(m * .7, rng, o.D)); }
       const sp = EF.normalizeSpell(Object.assign(EF.blankSpell(type), { timing, effects }), type);
       EF.autoFix(sp);
-      const disc = o.plain ? 0 : addTwists(sp, type, rarity, rng, o.D); EF.autoFix(sp);
+      const disc = o.plain ? 0 : addTwists(sp, type, rarity, rng, o.D); if (o.plain) setTiming(sp, null); EF.autoFix(sp);
+      if (EF.phaseIssues(sp).length) continue; // nie Karten, die in ihrer Phase nichts bewirken
       const card = { type, name: o.name || makeName(type, element, rng, t1.k), subtitle: (type === 'curse' ? CURSE_SUB : SPELL_SUB)[t1.k] || (type === 'curse' ? 'Fluch' : 'Zauber'), flavor: pickR(rng, FLAVOR[type]), rarity, ruleText: '', spell: sp };
       card.energy = energyFor(Math.max(0.4, estimate(sp, type) - disc * 0.6));
       if (EF.validate(card, o.D).errors.length === 0) return Object.assign(card, { element, generator: 'zufall' });
@@ -121,6 +132,9 @@
     EF.autoFix(sp);
     // Voraussetzung und Zusatzkosten der KI nur übernehmen, wenn sie gültig sind
     if (a.require && Array.isArray(a.require.items)) { const t = Object.assign({}, sp, { require: { op: a.require.op === 'or' ? 'or' : 'and', items: a.require.items.slice(0, 2) } }); if (!EF.validate({ type, name: 'x', rarity: 'gewoehnlich', energy: 1, ruleText: '', spell: t }, D).errors.length) sp.require = t.require; }
+    if (EF.phaseIssues(sp).some(x => x.timing)) sp.timing = EF.phaseSuggest(sp).timing;
+    for (const e of sp.effects) if (e.kind === 'destroy' && sp.timing !== 'battle' && (e.target.side === 'enemy' || e.target.side === 'both') && e.params.block === undefined) e.params.block = true;
+    EF.autoFix(sp);
     if (a.cost) sp.cost = { hp: Math.max(0, Math.min(5000, Math.round((+a.cost.hp || 0) / 100) * 100)), discard: Math.max(0, Math.min(3, Math.round(+a.cost.discard || 0))) };
     const card = { type, name: String(a.name || '').trim().slice(0, 28), subtitle: String(a.subtitle || '').trim().slice(0, 30), flavor: String(a.flavor || '').replace(/\d/g, '').trim().slice(0, 120), rarity: RAR.includes(rarity) ? rarity : chooseRarity(null, Math.random), ruleText: '', spell: sp };
     card.energy = Number.isFinite(+a.energy) ? Math.max(0, Math.min(10, Math.round(+a.energy))) : energyFor(estimate(sp, type));

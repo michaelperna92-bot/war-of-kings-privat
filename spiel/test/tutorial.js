@@ -18,7 +18,7 @@ const OUT = '/tmp/claude-0/sf/shots/';
       if (await pg.isVisible('#dlg') && await pg.evaluate(() => /geschafft/.test(document.querySelector('#dlg').textContent))) break;
       const st = await step(); if (!st) break;
       await pg.waitForFunction(() => document.querySelector('#fxlayer').hidden, null, { timeout: 8000 }).catch(() => {});
-      if (await hasNext()) { await pg.click('[data-tutx="next"]'); await pg.waitForTimeout(300); continue; }
+      if (await hasNext()) { if (process.env.SHOT) await pg.screenshot({ path: '/tmp/claude-0/wokui/tut.png' }); await pg.click('[data-tutx="next"]'); await pg.waitForTimeout(300); continue; }
       const txt = await pg.textContent('#tutbox p');
       if (/Doppelklick/.test(txt)) { const el = (await pg.$$('.tut-hl'))[0]; await el.dblclick({ force: true }); await pg.waitForTimeout(900); continue; }
       if (/Schließe sie/.test(txt)) { await pg.click('.insp-x'); await pg.waitForTimeout(600); continue; }

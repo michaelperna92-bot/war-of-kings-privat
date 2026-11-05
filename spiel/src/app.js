@@ -11,7 +11,7 @@
   const ARROW = { n: '↑', ne: '↗', e: '→', se: '↘', s: '↓', sw: '↙', w: '←', nw: '↖' };
   const GRID9 = ['nw', 'n', 'ne', 'w', null, 'e', 'sw', 's', 'se'];
   const ELCOL = { feuer: '#8a3324', wasser: '#24527a', erde: '#5b4a2c', wind: '#3d6b5a', blitz: '#6b5a1c', licht: '#7a6f44', dunkelheit: '#3a2a4a' };
-  const VERSION = '4.5';
+  const VERSION = '4.21';
   const isSp = c => !!c && (c.type === 'spell' || c.type === 'curse');
   const TYPEN = c => c.type === 'king' ? 'König' : c.type === 'spell' ? 'Zauber' : c.type === 'curse' ? 'Fluch' : 'Held';
   const SPCOL = { spell: '#1f4a35', curse: '#3d2350' };
@@ -39,7 +39,25 @@
   const POOL = { cards: {}, raw: {}, src: {}, art: {}, full: {}, fullv: {}, remote: {}, decks: [], source: '', layout: null, own: false };
   const urls = { art: {}, full: {}, src: {} };
   function remoteURL(ref) { return !ref ? '' : STORE.kind === 'cloud' ? '/_blob/' + ref : STORE.kind === 'pc' ? '/api/store/img?name=' + encodeURIComponent(ref) : ''; }
-  function setImg(kind, id, blob) {
+  /* ---------- Fehlerprotokoll (31.10.2026): jede Ausnahme und jeder Notfall-Eingriff wird mit Zeit, Version, Phase festgehalten ---------- */
+  // 5.11.2026: Kartenrückseite als CSS-Bild (gegnerische Hand, große Ansicht, Ziehen)
+  { const B = window.WOK_BACK; if (B) { const r = document.documentElement.style; r.setProperty('--back-img', 'url(' + B.big + ')'); r.setProperty('--back-sm', 'url(' + B.small + ')'); document.documentElement.classList.add('hasback'); } }
+  const ERRLOG = (() => {
+    const KEY = 'wok-spiel-fehler', MAX = 150; let list = LS.get(KEY) || []; let last = '';
+    function add(kind, msg, extra) {
+      const g = (typeof G !== 'undefined' && G && G.s) ? G.s : null;
+      const e = { t: new Date().toISOString(), v: VERSION, kind, msg: String(msg || '').slice(0, 400), ph: g ? g.phase + '/z' + g.turn + '/a' + g.active + (g.counter !== null && g.counter !== undefined ? '/k' + g.counter : '') : '-', x: extra ? String(extra).slice(0, 600) : undefined };
+      const sig = kind + e.msg; if (sig === last) return; last = sig;
+      list.push(e); if (list.length > MAX) list = list.slice(-MAX); LS.set(KEY, list);
+      try { console.warn('[WoK-Fehler]', kind, e.msg, extra || ''); } catch (x) { }
+    }
+    window.addEventListener('error', ev => add('Ausnahme', ev.message, (ev.error && ev.error.stack) || (ev.filename + ':' + ev.lineno)));
+    window.addEventListener('unhandledrejection', ev => add('Ausnahme (async)', ev.reason && ev.reason.message || ev.reason, ev.reason && ev.reason.stack));
+    return { add, get list() { return list.slice(); }, clear() { list = []; LS.set(KEY, list); }, text() { return list.map(e => e.t + ' · ' + e.v + ' · ' + e.ph + ' · ' + e.kind + ': ' + e.msg + (e.x ? '\n    ' + e.x.split('\n').slice(0, 3).join('\n    ') : '')).join('\n') || 'Keine Fehler aufgezeichnet.'; } };
+  })();
+  { const X = window.WOK_FX && WOK_FX.img; if (X) { const r = document.documentElement.style; for (const [k, v] of Object.entries({ 'en-on': 'energie_voll', 'en-off': 'energie_leer', 'kframe': 'koenig_rahmen', 'banner': 'phasen_banner', 'win': 'sieg_hintergrund', 'lose': 'niederlage_hintergrund', 'g-un': 'glanz_ungewoehnlich', 'g-se': 'glanz_selten', 'g-le': 'glanz_legendaer', 'foil': 'glanz_folie', 'glow': 'fx_glow' })) if (X[v]) r.setProperty('--fx-' + k, 'url(' + X[v] + ')'); } }
+  const THUMB = {}; // kleine Hand-Vorschaubilder (siehe handImg)
+  function setImg(kind, id, blob) { if (kind === 'full') delete THUMB[id];
     if (urls[kind][id] && urls[kind][id].startsWith('blob:')) URL.revokeObjectURL(urls[kind][id]);
     const rem = POOL.remote[id]; if (rem && rem[kind]) { STORE.trash.push(rem[kind]); delete rem[kind]; }
     if (blob) { POOL[kind][id] = blob; urls[kind][id] = URL.createObjectURL(blob); } else { delete POOL[kind][id]; delete urls[kind][id]; }
@@ -221,7 +239,7 @@
           setImg('full', id, r.full); if (r.art) setImg('art', id, r.art); POOL.fullv[id] = CARDART.VERSION;
         } catch (e) { POOL.fullv[id] = 'fehler'; try { console.warn('Kartenbild „' + id + '“ nicht gezeichnet:', e && (e.message || e)); } catch (x) { } }
         n++;
-        if (todo.length > 3 && (n % 4 === 0 || n === todo.length)) toast('Kartenbilder im Werkstatt-Design: ' + n + ' von ' + todo.length + ' gezeichnet.', 2500);
+        if (false) toast('Kartenbilder im Werkstatt-Design: ' + n + ' von ' + todo.length + ' gezeichnet.', 2500);
         if (n % 6 === 0) { refreshViews(); await savePool(); }
       }
       if (todo.length) { await savePool(); refreshViews(); }
@@ -416,7 +434,7 @@
   }
 
   /* ---------------- Ansichten ---------------- */
-  function show(v) { try { PEEK.hide(); } catch (e) { } for (const s of $$('main > section')) s.hidden = s.id !== 'v-' + v; window.scrollTo(0, 0); document.body.classList.toggle('full', v === 'home' || v === 'bazar'); if (v !== 'bazar') BAZAR.leave(); if (v !== 'home') closeSetup(); if (v === 'decks') renderDecks(); if (v === 'rules') renderRules(); if (v === 'home') renderHome(); if (v === 'bazar') BAZAR.enter(); if (v === 'tutorial') TUT.renderList(); if (v !== 'game') { const rb = $('#rpbar'); if (rb) rb.hidden = true; } }
+  function show(v) { try { PEEK.hide(); } catch (e) { } try { if (v !== 'game' && window.WOK_BOARD3D && WOK_BOARD3D.active()) { WOK_BOARD3D.unmount(); const bd = document.getElementById('board'); if (bd) bd.dataset.view = ''; } } catch (e) { } for (const s of $$('main > section')) s.hidden = s.id !== 'v-' + v; window.scrollTo(0, 0); document.body.classList.toggle('full', v === 'home' || v === 'bazar'); if (v !== 'bazar') BAZAR.leave(); if (v !== 'home') closeSetup(); if (v === 'decks') renderDecks(); if (v === 'rules') renderRules(); if (v === 'home') renderHome(); if (v === 'bazar') BAZAR.enter(); if (v === 'tutorial') TUT.renderList(); if (v !== 'game') { const rb = $('#rpbar'); if (rb) rb.hidden = true; } }
   let toastT = 0;
   function toast(t, ms) { const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, ms || 3200); }
   let DLGN = 0;
@@ -528,7 +546,7 @@
       S('Ziel', ['Ein König mit 0 oder weniger HP verliert. Fallen beide Könige im selben Angriffspaket: unentschieden.', 'Wer gleichzeitig keine Handkarten und keinen Nachziehstapel hat, verliert sofort.', 'Scheitert der Nachzug am leeren Stapel, verliert der eigene König 1.000 HP. Der Ablagestapel wird nie neu gemischt.']),
       S('Zugablauf', ['Vorbereitung: Karte ziehen, Energie auffüllen (Zug n = n Energie, höchstens 10), Abklingzeiten −1, abgelaufene Wirkungen enden, dann Poison.', '1. Beschwörung → Bewegung → Battlephase → Konterphase des Gegners → gemeinsame Auswertung → Nachbeschwörung.', 'Beschworen wird auf der ganzen Reihe vor dem eigenen König und auf den Feldern links und rechts des Königs.', 'Frisch beschworene Helden laufen, greifen und nutzen aktivierbare Gaben erst im nächsten eigenen Zug (außer Ansturm).']),
       S('Bewegung und Kampf', ['1–3 Schritte in den erlaubten Richtungen der Karte, Richtungswechsel zwischen den Schritten erlaubt. Besetzte und fehlende Felder sind tabu, es wird nicht gesprungen.', 'Richtungen gelten aus Sicht der eigenen Seite. Die Felder neben dem gegnerischen König darf man nicht betreten, dort stehende Verteidiger aber angreifen.', 'Jeder Held greift höchstens einmal pro Battlephase an. Angriffe bleiben bis zum Abschluss der Battlephase änderbar, Gaben sind sofort verbindlich.', 'Alle Angriffe werden gleichzeitig berechnet: ATK > DEF Verteidiger fällt, ATK < DEF Angreifer fällt, gleich: beide fallen. Mehrere Angreifer addieren ATK nicht.', 'Der König bewegt sich nie, greift einmal gerade oder schräg nach vorn an, hat keine DEF und verliert bei Treffern HP. Greift er einen Helden an: ATK ≥ DEF besiegt ihn, sonst passiert nichts.']),
-      S('Gaben', GD.gifts.map(g => '<b>' + esc(g.name) + '</b>' + (g.kind === 'ct' ? ' (CT ' + g.ct + ')' : ' (permanent)') + ': ' + esc(g.text)).concat(GD.royal.map(g => '<b>' + esc(g.name) + '</b> (Königsgabe): ' + esc(g.text)))),
+      S('Gaben', GD.gifts.map(g => '<b>' + esc(g.name) + '</b>' + (g.kind === 'ct' ? ' (CT ' + g.ct + ')' : ' <span class="inf" title="permanent">∞</span>') + ': ' + esc(g.text)).concat(GD.royal.map(g => '<b>' + esc(g.name) + '</b> (Königsgabe): ' + esc(g.text)))),
       S('Zauber und Flüche (Abschnitt 8)', ['Nur in der eigenen Battlephase oder der eigenen Konterphase, soweit Energie und Kartentext es erlauben. Ausspielen ist sofort verbindlich, die Energie bleibt bezahlt.', 'Alle gespielten Karten werden erst nach der Konterphase gemeinsam ausgewertet, vor den Angriffen. Eine Neutralisierung hebt den betroffenen Zauber auf, beide Karten sind verbraucht.', '„Bis zum Ende des Zuges“ endet am Zugende. „Runden“ zählen dort, wo die Wirkung gebraucht wird (Festlegung 30.10.2026): Schwächungen des Gegners (ATK, Schritte, Bewegung, Gaben), Feldsperren, eigener Schutz und eigene DEF gelten für so viele Züge des Gegners; eigene Stärkungen (ATK, Schritte) und gegnerische DEF-Senkungen bis zum Ende deines n-ten nächsten Zuges. Ohne Frist ist die Wirkung permanent.', 'Wirkungen, die erst im Zug des Gegners zählen, dürfen nicht nur „bis Zugende“ gelten, außer die Karte ist nur in der Konterphase spielbar (die liegt im Zug des Gegners). Schutz kann vor Angriffen, vor gegnerischen Flüchen oder vor beidem schützen.', 'Permanente Einzelziel-Karten bleiben am Monster und gehen mit ihm auf den Ablagestapel ihres Besitzers. Flächeneffekte bleiben bestehen und erfassen auch neu beschworene passende Monster.', 'Könige sind nur Ziel, wenn die Karte es ausdrücklich sagt. Ein Monster zeigt höchstens ein Zauber- (✦) und ein Fluchsymbol (☾); antippen zeigt alle Wirkungen mit Laufzeit.', 'Die strukturierten Effekte aus der Werkstatt sind verbindlich. Karten mit offenen Regeln oder nicht abgeglichenem Text sind als „nicht spielbar“ markiert und lassen sich nicht ausspielen.']),
       S('So setzt das Probe-Spiel offene Stellen um (bitte bestätigen oder ändern)', W.ASSUMPTIONS.map(esc)),
       S('Offene Regelfragen zu Zaubern und Flüchen', W.SPELL_OPEN.map(esc)),
@@ -1021,7 +1039,7 @@
       const gi = giftInfo(g.id);
       if (king) return '<div class="gift royal"><b>♛ ' + esc(gi.name) + '</b><span>' + esc(royalText(g)) + '</span><span class="meta">PERMANENT · SOLANGE DER KÖNIG IM SPIEL IST</span></div>';
       const cd = u && u.cd[g.id];
-      return '<div class="gift"><b>' + esc(gi.name) + '</b><span>' + esc(gi.text || gi.short || '') + '</span><span class="meta">' + (gi.kind === 'ct' ? 'AKTIVIERBAR · CT ' + gi.ct + (cd ? ' · NOCH ' + cd + ' ZUG' + (cd > 1 ? 'E' : '') + ' ABKLINGZEIT' : u ? ' · BEREIT' : '') : 'PERMANENT · WIRKT AUTOMATISCH') + '</span></div>';
+      return '<div class="gift"><b>' + esc(gi.name) + '</b><span>' + esc(gi.text || gi.short || '') + '</span><span class="meta">' + (gi.kind === 'ct' ? 'AKTIVIERBAR · CT ' + gi.ct + (cd ? ' · NOCH ' + cd + ' ZUG' + (cd > 1 ? 'E' : '') + ' ABKLINGZEIT' : u ? ' · BEREIT' : '') : '<span class="inf" title="permanent">∞</span> WIRKT IMMER') + '</span></div>';
     }).join('') + '</div>' : '<p class="hint">Keine Gaben.</p>';
     let fx = '';
     if (u && s) {
@@ -1094,6 +1112,7 @@
   }
   function resumeGame() {
     const sv = LS.get('wok-spiel-save'); if (!sv) return;
+    if (!sv.s || (sv.s.rows || 7) !== W.ROWS) { LS.del('wok-spiel-save'); $('#resume').hidden = true; toast('Diese Partie lief noch auf dem alten Spielfeld (7 Reihen) und kann nicht fortgesetzt werden. Starte eine neue Partie.', 7000); return; }
     G = Object.assign({ sel: null, gift: null, busy: false, deadline: 0, handover: false, memo: { seed: 7 } }, sv); G.lastActive = G.s.active;
     show('game'); $('#rpbar').hidden = true; $('#tutbox').hidden = true; MUSIC.start(); MATE.setup(); afterEvents([]);
   }
@@ -1116,7 +1135,8 @@
   function afterEvents(events) {
     const s = G.s;
     for (const e of events) {
-      if (e.t === 'turn') { G.sel = null; G.gift = null; G.cast = null; G.memo.turn = null; if (G.timer) G.deadline = Date.now() + W.RULES.turnSeconds * 1000; }
+      if (e.t === 'turn' || e.t === 'phase') G.handPeek = false;
+      if (e.t === 'turn') { G.sel = null; G.gift = null; G.cast = null; G.ideaQueue = null; G.memo.turn = null; if (G.timer) G.deadline = Date.now() + W.RULES.turnSeconds * 1000; }
       // Zuguhr pausiert während der Konterphase, die eigene 120 Sekunden hat
       if (e.t === 'phase' && e.phase === 'counter' && G.timer) { G.paused = Math.max(0, G.deadline - Date.now()); G.deadline = Date.now() + W.RULES.counterSeconds * 1000; }
       if (e.t === 'phase' && e.phase === 'resolve' && G.timer && G.paused !== undefined) { G.deadline = Date.now() + G.paused; G.paused = undefined; }
@@ -1124,8 +1144,8 @@
     // Spielerwechsel im Zwei-Spieler-Modus: Gerät übergeben
     const who = actor(s);
     if (G.mode === 'hot' && !s.result && who !== G.view) { G.view = who; G.handover = true; }
-    render(events);
-    saveGame();
+    try { render(events); } catch (e) { ERRLOG.add('Zeichnen', e.message, e.stack); }
+    try { saveGame(); } catch (e) { ERRLOG.add('Speichern', e.message, e.stack); }
     if (G.tutorial) { if (G && G.tutorial) { TUT.scrollTo(); scheduleAI(); } return; }
     if (G.handover) handover();
     else if (s.result) gameOver();
@@ -1160,12 +1180,12 @@
   function handover() {
     const P = G.s.players[G.view];
     $('#v-game').style.filter = 'blur(14px)';
-    dialog('<span class="eyebrow">Spielerwechsel</span><h2>' + esc(P.name) + ' ist am Zug</h2><p class="muted">Gib das Gerät weiter. Die Hand wird erst nach dem Tippen sichtbar.</p><button class="btn primary" data-act="go">Ich bin ' + esc(P.name) + ' – weiter</button>', () => { G.handover = false; $('#v-game').style.filter = ''; render([]); if (G.s.pendingDiscard !== null) discardPrompt(); else if (G.s.phase === 'mulligan') mulliganPrompt(); if (G.timer) G.deadline = Date.now() + W.RULES.turnSeconds * 1000; });
+    dialog('<span class="eyebrow">Spielerwechsel</span><h2>' + esc(P.name) + ' ist am Zug</h2><p class="muted">Gib das Gerät weiter. Die Hand wird erst nach dem Tippen sichtbar.</p><button class="btn primary" data-act="go">Ich bin ' + esc(P.name) + ' – weiter</button>', () => { G.handover = false; $('#v-game').style.filter = ''; render([]); if (G.s.pendingDiscard !== null) discardPrompt(); else if (G.s.phase === 'mulligan') mulliganPrompt(); else if (!G.tutorial && !G.s.result) FX.turnCall(G.s.phase === 'counter' ? 'counter' : 'turn'); if (G.timer) G.deadline = Date.now() + W.RULES.turnSeconds * 1000; });
   }
   function discardPrompt() {
     const p = G.s.pendingDiscard, P = G.s.players[p];
     dialog('<span class="eyebrow">Handlimit</span><h2>Eine Karte ablegen</h2><p class="muted">Höchstens 10 Handkarten. Wähle die Karte, die auf den Ablagestapel geht.</p><div class="hand">' + P.hand.map(h => handCard(h, p, false, 'data-act="d:' + h.iid + '"')).join('') + '</div>',
-      act => { if (act.startsWith('d:')) dispatch({ type: 'discard', p, iid: act.slice(2) }); });
+      act => { if (act.startsWith('d:')) { if (dispatch({ type: 'discard', p, iid: act.slice(2) }) === false) return false; } });
   }
   function gameOver() {
     $('#v-game').style.filter = ''; saveReplay();
@@ -1174,8 +1194,9 @@
     if (solo && G.s.result && !G.s.result.draw) FX.banner(G.s.result.winner === meP ? 'Sieg!' : 'Niederlage', G.s.result.winner === meP ? 'win' : 'lose');
     const r = G.s.result;
     const title = r.draw ? 'Unentschieden' : (solo ? (r.winner === meP ? 'Sieg!' : 'Niederlage') : G.s.players[r.winner].name + ' gewinnt');
+    const endCls = r.draw ? 'enddraw' : (solo ? (r.winner === meP ? 'endwin' : 'endlose') : 'endwin');
     dialog('<span class="eyebrow">Partie beendet</span><h2>' + esc(title) + '</h2><p>' + esc(r.reason) + '</p><p class="muted">' + G.s.turn + ' Züge gespielt.</p><div class="row"><button class="btn primary" data-act="again">Neue Partie</button><button class="btn" data-act="board">Brett ansehen</button><button class="btn" data-act="replay">▶ Wiederholung ansehen</button><button class="btn" data-act="menu">Menü</button></div>',
-      act => { if (act === 'replay') { const x = replayList()[0]; if (x) setTimeout(() => playReplay(x), 0); return; } if (act === 'again') { if (G && G.mode === 'online') { ONLINE.leave(); G = null; MUSIC.stop(); show('home'); setTimeout(() => ONLINE.open(), 0); } else startGame(); } if (act === 'menu') { if (G && G.mode === 'online') ONLINE.leave(); G = null; MUSIC.stop(); show('home'); } });
+      act => { if (act === 'replay') { const x = replayList()[0]; if (x) setTimeout(() => playReplay(x), 0); return; } if (act === 'again') { if (G && G.mode === 'online') { ONLINE.leave(); G = null; MUSIC.stop(); show('home'); setTimeout(() => ONLINE.open(), 0); } else startGame(); } if (act === 'menu') { if (G && G.mode === 'online') ONLINE.leave(); G = null; MUSIC.stop(); show('home'); } }, { cls: 'endscreen ' + endCls });
   }
 
   /* ================= Online-Duell =================
@@ -1461,7 +1482,7 @@
         if (m.t === 'created') { if (srvWait) srvWait(m); return; }
         if (m.t === 'start') { srvStart(m); return; }
         if (m.t === 'act') { srvAct(m); return; }
-        if (m.t === 'reject') { if (R && R.kind === 'srv') { R.pending = false; if (m.error !== 'veraltet') toast(m.error, 5000); else resync(); } return; }
+        if (m.t === 'reject') { if (G) G.ideaQueue = null; if (R && R.kind === 'srv') { R.pending = false; if (m.error !== 'veraltet') toast(m.error, 5000); else resync(); } return; }
         if (m.t === 'img') { if (m.full && !fullURL(m.id)) urls.full[m.id] = m.full; if (m.art && !artURL(m.id)) urls.art[m.id] = m.art; if (G) render([]); return; }
         if (m.t === 'peer') { if (G && G.online === R) { const el = $('#netdot'); if (el) { el.hidden = false; el.className = m.online ? 'ok' : 'bad'; el.textContent = m.online ? '● Gegner online' : '○ Gegner getrennt'; } if (!m.online && !G.s.result) toast('Dein Gegner ist gerade nicht verbunden – die Partie wartet auf ihn.', 5000); } return; }
         if (m.t === 'error') { if (srvWait) srvWait(null); toast(m.msg, 8000); if (m.code === 'no_room' && LS.get(KEY) && LS.get(KEY).kind === 'srv') LS.del(KEY); return; }
@@ -1502,7 +1523,7 @@
       for (const [id, im] of Object.entries(m.imgs || {})) { if (im.full && !fullURL(id)) urls.full[id] = im.full; if (im.art && !artURL(id)) urls.art[id] = im.art; }
       R = { code: m.code, me: m.me, kind: 'srv', n: m.acts.length };
       LS.set(KEY, { code: m.code, me: m.me, kind: 'srv' });
-      if (same) { G.s = s; G.online = R; G.rec.acts = m.acts.slice(); render([]); if (s.result) gameOver(); else if (s.phase === 'mulligan') mulliganPrompt(); return; }
+      if (same) { if (G.idea) { G.idea = null; renderIdea(); } G.ideaQueue = null; G.cast = null; G.gift = null; G.s = s; G.online = R; G.rec.acts = m.acts.slice(); render([]); if (s.result) gameOver(); else if (s.phase === 'mulligan') mulliganPrompt(); else if (s.pendingDiscard === m.me) discardPrompt(); return; } // nach dem Abgleich offene Pflicht-Fenster wieder öffnen
       G = { s, mode: 'online', level: '', aiSide: -1, view: m.me, sel: null, gift: null, memo: { seed: 7 }, busy: false, timer: false, deadline: 0, handover: false, online: R };
       G.lastActive = -1; G.rec = { init: W.clone(res.state), acts: m.acts.slice() }; G.looks = { A: lookOf(m.me === 0 ? deckById(SET.deckA) : null), B: lookOf(m.me === 1 ? deckById(SET.deckA) : null) }; G.avatars = [PROF.src(m.me === 0 ? 'p1' : 'p2'), PROF.src(m.me === 0 ? 'p2' : 'p1')];
       show('game'); $('#log').innerHTML = ''; $('#rpbar').hidden = true; $('#tutbox').hidden = true; MUSIC.start(); MATE.setup();
@@ -1520,6 +1541,7 @@
       const r = W.apply(G.s, m.a); if (r.error) { resync(); return; }
       G.s = r.state; G.rec.acts.push(m.a); R.n++; if (m.p === R.me) R.pending = false;
       afterEvents(r.events);
+      if (m.p === R.me && G.ideaQueue && G.ideaQueue.length) { const next = G.ideaQueue.shift(); setTimeout(() => { if (G && !R.pending && G.ideaQueue !== null && dispatch(next) === false) G.ideaQueue = null; }, 0); }
     }
     function srvSend(a) { if (!R || R.kind !== 'srv') return false; if (R.pending && a.type !== 'concede') { toast('Einen Moment – der letzte Zug ist unterwegs.'); return false; } R.pending = a.type !== 'concede'; SRV.send({ t: 'act', code: R.code, n: R.n, a }); setTimeout(() => { if (R && R.pending) { R.pending = false; syncAt = 0; resync(); } }, 6000); return true; }
     // Einladungslink ?raum=CODE: direkt in den Raum
@@ -1594,19 +1616,33 @@
     if (!G || G.s.result || G.handover) return;
     const p = actor(G.s); if (!isAI(p)) return;
     aiTimer = setTimeout(() => {
+      aiTimer = 0;
       if (!G || G.s.result) return;
-      const a = G.tutorial ? TUT.ai(p) : AI.decide(G.s, p, G.level, G.memo);
-      if (!a) return;
-      const ok = dispatch(a);
-      if (ok === false) dispatch({ type: 'endPhase', p });
+      let a = null; try { a = G.tutorial ? TUT.ai(p) : AI.decide(G.s, p, G.level, G.memo); } catch (e) { ERRLOG.add('KI', e.message, e.stack); }
+      if (!a) { if (!G.tutorial) aiFallback(p, 'KI ohne Entscheidung'); return; }
+      let ok = false; try { ok = dispatch(a); } catch (e) { ERRLOG.add('KI-Zug', e.message, e.stack); }
+      if (ok === false) { ERRLOG.add('KI-Zug abgelehnt', JSON.stringify(a)); aiFallback(p, 'abgelehnter KI-Zug'); }
     }, aiDelay());
   }
-  function aiDelay() { const ph = G.s.phase; return ph === 'battle' || ph === 'move' ? 650 : 480; }
+  // Ersatzaktion, wenn die KI keinen gültigen Zug liefert: immer eine regelkonforme Aktion, die die Partie weiterbringt
+  function aiFallback(p, why) {
+    const s = G.s; if (s.result || actor(s) !== p) return false;
+    const tries = s.pendingDiscard === p ? [{ type: 'discard', p, iid: s.players[p].hand[0] && s.players[p].hand[0].iid }] : s.phase === 'mulligan' ? [{ type: 'mulligan', p, redraw: false }] : s.phase === 'counter' ? [{ type: 'pass', p }] : [{ type: 'endPhase', p }, { type: 'pass', p }];
+    for (const a of tries) { const r = W.apply(s, a); if (!r.error) { ERRLOG.add('KI-Ersatzaktion', why + ' → ' + a.type); dispatch(a); return true; } }
+    ERRLOG.add('KI blockiert', why + ' – keine Ersatzaktion möglich'); return false;
+  }
+  let fxSince = 0;
+  setInterval(() => {
+    if (!G || G.s.result || G.replay) return;
+    if (FX.busy) { if (!fxSince) fxSince = Date.now(); else if (Date.now() - fxSince > 12000) { ERRLOG.add('Wächter', 'Einblendung hing > 12 s – beendet'); FX.reset(); fxSince = 0; } return; } fxSince = 0;
+    const p = actor(G.s); if (isAI(p) && !G.handover && !aiTimer && G.mode !== 'online' && !G.tutorial) { ERRLOG.add('Wächter', 'KI war nicht eingeplant – neu angestoßen'); scheduleAI(); }
+  }, 2500);
+  function aiDelay() { const ph = G.s.phase; return ph === 'battle' || ph === 'move' ? 480 : 360; } // 31.10.2026: KI zügiger (vorher 650/480 ms)
 
   /* ---------------- Bedienung auf dem Brett ---------------- */
   function myTurn() { const s = G.s, p = actor(s); if (G.replay) return false; return !s.result && !isAI(p) && p === G.view && !G.handover; }
   function clickField(f) {
-    if (!myTurn()) return;
+    if (!myTurn() || ideaBusy()) return;
     const s = G.s;
     if (G.cast) { const st = castStep(); if (st && (st.type === 'place' || st.what === 'field') && st.cands.includes(f)) castToggle(f); return; }
     if (G.gift && G.gift.id === 'blitzschritt') { if (G.gift.targets.includes(f)) { const g = G.gift; G.gift = null; giftGo({ type: 'gift', uid: g.uid, gift: g.id, target: f }); } else { G.gift = null; render([]); } return; }
@@ -1619,10 +1655,12 @@
     G.sel = null; render([]);
   }
   function clickUnit(uid) {
+    if (ideaBusy()) return;
     const s = G.s, u = s.units[uid]; if (!u) return;
-    if (myTurn() && G.cast) { const st = castStep(); if (st && st.type === 'pick' && st.cands.includes(uid)) { castToggle(uid); return; } }
+    if (myTurn() && G.cast) { const st = castStep(); if (st && st.type === 'pick' && st.cands.includes(uid)) { castToggle(uid); return; } if (st && (st.type === 'place' || st.what === 'field') && st.cands.includes(u.pos)) { castToggle(u.pos); return; } }
     if (myTurn()) {
       if (G.gift && G.gift.targets.includes(uid)) { const g = G.gift; G.gift = null; giftGo({ type: 'gift', uid: g.uid, gift: g.id, target: uid }); return; }
+      if (G.fxOpen && G.fxOpen.gid !== 'blitzschritt') { const o = W.giftOptions(s, G.fxOpen.uid).find(x => x.id === G.fxOpen.gid); if (o && o.ok && o.targets.includes(uid) && W.GIFTS[o.id].target !== 'self') { const f = G.fxOpen; G.fxOpen = null; giftGo({ type: 'gift', uid: f.uid, gift: f.gid, target: uid }); return; } }
       if (G.gift) { G.gift = null; }
       if (s.phase === 'battle' && G.sel && G.sel.kind === 'unit' && G.sel.uid !== uid) {
         const a = G.sel.uid, tg = W.attackTargets(s, a);
@@ -1632,7 +1670,7 @@
           if (cur.includes(uid)) next = cur.filter(x => x !== uid);
           else if (W.has(s, s.units[a], 'doppelschlag') && !s.units[a].king && cur.length === 1 && !s.units[uid].king && !s.units[cur[0]].king) next = cur.concat(uid);
           else next = [uid];
-          dispatch({ type: 'declare', uid: a, targets: next }); return;
+          dispatch({ type: 'declare', uid: a, targets: next }); if (next.length < cur.length) toast('Angriff zurückgenommen.');  return;
         }
       }
       if (s.phase === 'move' && G.sel && G.sel.kind === 'unit' && u.owner !== s.active) { G.sel = { kind: 'unit', uid }; render([]); if (bigOn()) openInspector({ uid, from: tokEls.get(uid) }); return; }
@@ -1641,17 +1679,25 @@
     G.sel = G.sel && G.sel.kind === 'unit' && G.sel.uid === uid ? null : { kind: 'unit', uid };
     render([]);
   }
-  function clickHand(iid) {
+  function clickHand(iid, touch) {
+    if (ideaBusy()) return;
     const from = $('.hcard[data-iid="' + iid + '"]');
-    if (!myTurn()) { const h = G.s.players[G.view].hand.find(x => x.iid === iid); if (h) openInspector({ cid: h.cid, from }); return; }
+    // nicht am Zug: nur die Werte aufploppen lassen (keine riesige Ansicht mehr)
+    if (touch && isPhone()) { const same = (G.info && G.info.iid === iid) || (G.sel && G.sel.kind === 'hand' && G.sel.iid === iid); G.info = same ? null : { iid }; PEEK.hide(); }
+    if (!myTurn()) { if (touch && !isPhone() && from) PEEK.toggle(from); else render([]); return; }
     if (G.cast && G.cast.iid !== iid) G.cast = null;
     G.gift = null;
-    // Schnellwirken (4.5): spielbarer Zauber/Fluch → Wirkung sofort über dem Spielfeld, nur noch Ziel wählen und bestätigen
+    // Zauber/Fluch: am PC wirkt ein Klick sofort (Wirk-Fenster über dem Brett); am Handy ploppen erst die Werte mit „Wirken“-Knopf auf
     { const h = G.s.players[actor(G.s)].hand.find(x => x.iid === iid), c = h && G.s.cards[h.cid];
-      if (c && isSp(c)) { if (G.cast && G.cast.iid === iid) { G.cast = null; G.sel = null; render([]); return; } if (W.castOptions(G.s, actor(G.s), iid).ok) { startCast(iid); return; } } }
+      if (c && isSp(c)) { if (G.cast && G.cast.iid === iid) { G.cast = null; G.sel = null; render([]); return; }
+        if (touch && isPhone()) { G.sel = G.info ? { kind: 'hand', iid } : null; render([]); return; } // Werte und „Wirken“ stehen in der Leiste
+        if (touch) { G.sel = { kind: 'hand', iid }; render([]); const t = $('#hand [data-iid="' + iid + '"]'); if (t && !PEEK.toggle(t)) { G.sel = null; render([]); } return; }
+        if (W.castOptions(G.s, actor(G.s), iid).ok) { startCast(iid); return; } } }
     if (bigOn()) { G.sel = { kind: 'hand', iid }; render([]); openInspector({ iid, from: $('.hcard[data-iid="' + iid + '"]') || from }); return; }
     G.sel = G.sel && G.sel.kind === 'hand' && G.sel.iid === iid ? null : { kind: 'hand', iid };
     render([]);
+    if (touch && isPhone()) { if (!G.sel) G.info = null; render([]); }
+    else if (touch) { const t = $('#hand [data-iid="' + iid + '"]'); if (G.sel && t) PEEK.show(t, 'tap'); else PEEK.hide(); }
   }
 
   /* ---------------- Karte groß: dreht sich nach vorn, als hielte man sie in der Hand ---------------- */
@@ -1707,7 +1753,7 @@
     if (card.getAnimations) card.getAnimations().forEach(a => a.cancel());
     if (!reduce) {
       const start = fr && fr.width ? 'translate(' + (fr.left + fr.width / 2 - (to.left + to.width / 2)) + 'px,' + (fr.top + fr.height / 2 - (to.top + to.height / 2)) + 'px) scale(' + Math.max(.08, fr.width / to.width) + ') rotateY(180deg)' : 'translateY(40px) scale(.6) rotateY(180deg)';
-      card.animate([{ transform: start, offset: 0 }, { transform: 'translateZ(60px) scale(1.04) rotateY(20deg)', offset: .7 }, { transform: 'none' }], { duration: 620, easing: 'cubic-bezier(.2,.75,.25,1)' });
+      card.animate([{ transform: start, offset: 0 }, { transform: 'translateZ(60px) scale(1.04) rotateY(20deg)', offset: .7 }, { transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.2,.75,.25,1)' });
     }
     { const ic = $('#insp-card'); ic.classList.remove('sheen'); void ic.offsetWidth; ic.classList.add('sheen'); clearTimeout(ic._sh); ic._sh = setTimeout(() => ic.classList.remove('sheen'), 2400); }
     if (G && G.tutorial) setTimeout(() => TUT.check([]), 0);
@@ -1720,7 +1766,7 @@
     const done = () => { box.hidden = true; box.classList.remove('closing'); $('#insp-tilt').style.transform = ''; if (after) after(); if (G && G.tutorial) TUT.check([]); };
     if (matchMedia('(prefers-reduced-motion: reduce)').matches || !card.animate) { done(); return; }
     const end = fr && fr.width ? 'translate(' + (fr.left + fr.width / 2 - (to.left + to.width / 2)) + 'px,' + (fr.top + fr.height / 2 - (to.top + to.height / 2)) + 'px) scale(' + Math.max(.08, fr.width / to.width) + ') rotateY(-180deg)' : 'translateY(40px) scale(.5)';
-    const a = card.animate([{ transform: 'none', opacity: 1 }, { transform: end, opacity: fr ? 1 : 0 }], { duration: 380, easing: 'cubic-bezier(.5,0,.75,.4)' });
+    const a = card.animate([{ transform: 'none', opacity: 1 }, { transform: end, opacity: fr ? 1 : 0 }], { duration: 280, easing: 'cubic-bezier(.5,0,.75,.4)' });
     a.onfinish = done; setTimeout(() => { if (!box.hidden && !INS) done(); }, 600);
   }
   function inspectorAct(b) {
@@ -1744,28 +1790,82 @@
   function adviceAct(act) { if (act.startsWith('u:')) { G.sel = { kind: 'unit', uid: act.slice(2) }; render([]); } else if (act.startsWith('h:')) { G.sel = { kind: 'hand', iid: act.slice(2) }; render([]); } }
   function showTips() {
     const list = advice(); if (!list.length) return;
-    dialog('<span class="eyebrow">Spielhilfe</span><h2>Das könntest du jetzt tun</h2>' + adviceList(list) + '<p class="hint">Tippe einen Hinweis an, um die Karte auszuwählen. Die Spielhilfe lässt sich im Menü ausschalten.</p><button class="btn" data-act="close">Schließen</button>', act => adviceAct(act), { dismiss: true });
+    const idea = ideaPlan();
+    dialog('<button class="dlg-x" data-act="close" aria-label="Schließen">✕</button><span class="eyebrow">Spielhilfe</span><h2>Das könntest du jetzt tun</h2>' + adviceList(list) + (idea.plan.length ? '<p class="hint">💡 <b>Idee:</b> ' + esc(idea.plan.map(ideaText).join(' · ')) + '</p>' : '') + '<div class="row">' + (idea.plan.length ? '<button class="btn primary" data-act="idea">💡 Idee übernehmen</button>' : '') + '<button class="btn" data-act="close">Selbst machen</button></div><p class="hint">Tippe einen Hinweis an, um die Karte auszuwählen. Die Spielhilfe lässt sich im Menü ausschalten.</p>', act => { if (act === 'idea') ideaStart(idea); else if (act !== 'close') adviceAct(act); }, { dismiss: true });
   }
+  /* ---------- „Idee übernehmen“ (31.10.2026) ----------
+     Dieselbe Spiellogik wie die KI rechnet die Aktionen der aktuellen Phase durch – ohne etwas auszulösen. Das Ergebnis wird
+     als Vorschau gezeigt (Angriffspfeile, beschworene Helden …); erst „Bestätigen“ führt es aus, „Abbrechen“ nimmt alles zurück. */
+  function ideaPlan() {
+    const none = { plan: [], state: null }; if (!G || !myTurn() || G.idea || !['summon1', 'summon2', 'move', 'battle', 'counter'].includes(G.s.phase)) return none;
+    let s = G.s; const p = actor(s), ph = s.phase, memo = { seed: 11 }, plan = [];
+    try { for (let k = 0; k < 24; k++) { let a = AI.decide(s, p, 'mittel', memo); if (a && a.type === 'endPhase' && ph === 'summon1') a = AI.decide(Object.assign({}, s, { phase: 'summon2' }), p, 'mittel', memo); /* die KI hebt sich Karten gern für Phase 2 auf – als Idee zeigen wir trotzdem eine Beschwörung */ if (!a || ['endPhase', 'pass', 'timeout', 'concede', 'mulligan', 'discard'].includes(a.type)) break; const r = W.apply(s, a); if (r.error) break; plan.push(a); s = r.state; if (s.phase !== ph || actor(s) !== p || s.pendingDiscard !== null) break; } } catch (e) { return none; }
+    return { plan, state: s };
+  }
+  function ideaText(a) {
+    const s = G.s, nmU = uid => { const u = s.units[uid]; return u ? s.cards[u.cid].name + (u.king ? ' (König)' : '') : 'Held'; }, nmH = iid => { const h = s.players[actor(s)].hand.find(x => x.iid === iid); return h ? s.cards[h.cid].name : 'Karte'; };
+    if (a.type === 'summon') return nmH(a.iid) + ' beschwören';
+    if (a.type === 'move') return nmU(a.uid) + ' läuft';
+    if (a.type === 'declare') return nmU(a.uid) + ' greift ' + (a.targets || []).map(t => { const pv = W.preview(s, a.uid, t); return nmU(t) + (pv && pv.kind === 'win' ? ' an (gewinnt)' : pv && pv.kind === 'king' ? ' an' : pv && pv.kind === 'lose' ? ' an (verliert!)' : ' an'); }).join(' und ');
+    if (a.type === 'cast') return nmH(a.iid) + ' wirken';
+    if (a.type === 'gift') return (giftInfo(a.gift).name || a.gift) + ' (' + nmU(a.uid) + ')';
+    return a.type;
+  }
+  const ideaBusy = () => !!(G && G.idea);
+  function ideaStart(idea) {
+    if (!idea || !idea.plan.length || !myTurn()) return;
+    G.idea = { base: G.s, plan: idea.plan, state: idea.state }; G.sel = null; G.gift = null; G.cast = null; G.s = idea.state; render([]); renderIdea();
+  }
+  function renderIdea() {
+    const wrap = document.querySelector('#v-game .boardwrap'); if (!wrap) return; let el = $('#ideabar');
+    if (!el) { el = document.createElement('div'); el.id = 'ideabar'; el.className = 'castfloat spell at-top ideabar'; wrap.appendChild(el); el.addEventListener('click', e => { const b = e.target.closest('[data-idea]'); if (b) ideaEnd(b.dataset.idea === 'ok'); }); }
+    if (!G || !G.idea) { el.hidden = true; el.innerHTML = ''; return; }
+    const base = G.s; G.s = G.idea.base; const txt = G.idea.plan.map(ideaText); G.s = base;
+    el.innerHTML = '<div class="cf-body"><div class="castbox spell"><span class="eyebrow">💡 Vorschlag – noch nichts ausgeführt</span><ul>' + txt.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul><div class="row"><button class="btn primary" data-idea="ok">Bestätigen</button><button class="btn" data-idea="no">Abbrechen</button></div></div></div>';
+    el.hidden = false;
+  }
+  function ideaEnd(ok) {
+    if (!G || !G.idea) return; const plan = G.idea.plan; G.s = G.idea.base; G.idea = null; renderIdea();
+    if (!ok) { render([]); toast('Vorschlag verworfen – nichts wurde ausgeführt.'); return; }
+    if (G.mode === 'online' && ONLINE.R && ONLINE.R.kind === 'srv') { G.ideaQueue = plan.slice(1); dispatch(plan[0]); return; } // online: nacheinander, sobald der Server bestätigt
+    for (const a of plan) { if (dispatch(a) === false) break; }
+    toast('Vorschlag ausgeführt. Angriffe kannst du bis zum Abschluss der Phase noch ändern.', 4500);
+  }
+
+  // Vollbild (4.11.2026): Knopf ⛶, Taste F oder F11
+  function toggleFull() { const d = document; try { if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d); else { const e = d.documentElement; (e.requestFullscreen || e.webkitRequestFullscreen).call(e, { navigationUI: 'hide' }); } } catch (x) { toast('Vollbild ist in dieser Ansicht nicht möglich – am PC F11 drücken.'); } }
+  document.addEventListener('keydown', e => { if ((e.key === 'f' || e.key === 'F') && !e.ctrlKey && !e.metaKey && !e.altKey && !/input|textarea|select/i.test((e.target && e.target.tagName) || '') && !$('#v-game').hidden) { e.preventDefault(); toggleFull(); } });
   function mainAction() {
+    if (G && G.ideaQueue && G.ideaQueue.length) { toast('Einen Moment – der Vorschlag wird noch ausgeführt.'); return; }
+    if (G && G.s.pendingDiscard !== null && G.s.pendingDiscard === G.view && !G.s.result) { discardPrompt(); return; }
+    if (ideaBusy()) { toast('Erst den Vorschlag bestätigen oder abbrechen.'); return; }
     if (G && G.s.phase === 'mulligan') { mulliganPrompt(); return; }
     if (!myTurn()) return;
     const s = G.s;
-    const go = () => { G.sel = null; G.gift = null; G.cast = null; dispatch(s.phase === 'counter' ? { type: 'pass', p: s.counter } : { type: 'endPhase' }); };
-    const list = advice();
+    const go = () => { if (G.s !== s || !myTurn()) return; G.sel = null; G.gift = null; G.cast = null; dispatch(s.phase === 'counter' ? { type: 'pass', p: s.counter } : { type: 'endPhase', p: s.active }); }; // nur, wenn sich seit dem Öffnen nichts geändert hat
+    const list = []; // 5.11.2026 (Entwickler): Spielhilfe NIE von selbst – nur über den 💡-Knopf
     if (list.length) {
       const lab = { summon1: 'Weiter zur Bewegung', move: 'Weiter zur Battlephase', battle: 'Battlephase abschließen', counter: 'Passen', summon2: 'Zug beenden' }[s.phase] || 'Weiter';
-      dialog('<span class="eyebrow">Spielhilfe</span><h2>Du hättest noch diese Möglichkeiten</h2>' + adviceList(list) + '<div class="row"><button class="btn" data-act="back">Zurück und nutzen</button><button class="btn primary" data-act="go">' + lab + '</button></div><p class="hint">Ausschalten: Menü → Spielhilfe.</p>', act => { if (act === 'go') go(); else adviceAct(act); });
+      const idea = ideaPlan();
+      dialog('<button class="dlg-x" data-act="close" aria-label="Schließen – selbst machen">✕</button><span class="eyebrow">Spielhilfe</span><h2>Du hättest noch diese Möglichkeiten</h2>' + adviceList(list) + (idea.plan.length ? '<p class="hint">💡 <b>Idee:</b> ' + esc(idea.plan.map(ideaText).join(' · ')) + '</p>' : '') + '<div class="row">' + (idea.plan.length ? '<button class="btn primary" data-act="idea">💡 Idee übernehmen</button>' : '') + '<button class="btn' + (idea.plan.length ? '' : ' primary') + '" data-act="go">Nein, weiter</button></div><p class="hint">✕ oder daneben tippen: selbst machen. Ausschalten: Menü → Spielhilfe.</p>', act => { if (act === 'go') go(); else if (act === 'idea') ideaStart(idea); else if (act !== 'close') adviceAct(act); }, { dismiss: true });
       return;
     }
     if (s.phase === 'battle') {
       const n = Object.keys(s.decl).length;
       const idle = Object.values(s.units).filter(u => u.owner === s.active && W.attackTargets(s, u.uid).length && !s.decl[u.uid]).length;
-      if (!n && idle && SET.help !== false) { dialog('<h2>Ohne Angriff abschließen?</h2><p>' + idle + ' Kämpfer könnten angreifen. Nach dem Abschluss lassen sich Angriffe nicht mehr festlegen.</p><div class="row"><button class="btn primary" data-act="yes">Abschließen</button><button class="btn" data-act="no">Zurück</button></div>', act => { if (act === 'yes') go(); }); return; }
+      if (false && !n && idle && SET.help !== false) { dialog('<h2>Ohne Angriff abschließen?</h2><p>' + idle + ' Kämpfer könnten angreifen. Nach dem Abschluss lassen sich Angriffe nicht mehr festlegen.</p><div class="row"><button class="btn primary" data-act="yes">Abschließen</button><button class="btn" data-act="no">Zurück</button></div>', act => { if (act === 'yes') go(); }); return; }
     }
     go();
   }
   // Schnellwahl der Gaben direkt am angetippten Helden (ohne Großansicht)
+  // Gaben als Knöpfe (4.7: stehen in der Spielerleiste statt als Kästchen auf dem Feld, damit kein Angriffsziel verdeckt wird)
+  function giftBtns(uid) {
+    const s = G.s, u = s.units[uid]; if (!u || u.owner !== G.view || !myTurn() || G.gift || G.cast || G.replay) return '';
+    const opts = W.giftOptions(s, uid); if (!opts.length) return '';
+    return '<div class="qgifts inbar">' + opts.map(o => '<button data-qg="' + o.id + '" data-uid="' + uid + '" ' + (o.ok ? '' : 'disabled') + ' title="' + esc(giftInfo(o.id).short || giftInfo(o.id).text || '') + '"><b>' + esc(o.name) + '</b><small>' + (o.ok ? 'CT ' + o.ct : esc(o.why)) + '</small></button>').join('') + '</div>';
+  }
   function quickGifts() {
+    const old = $('#qgifts'); if (old) old.remove(); return; // ersetzt durch giftBtns() in der Spielerleiste
     const board = $('#board'); let qb = $('#qgifts');
     const s = G.s, sel = G.sel && G.sel.kind === 'unit' && s.units[G.sel.uid];
     const opts = myTurn() && sel && !G.gift && !G.cast && !G.replay ? W.giftOptions(s, sel.uid) : [];
@@ -1822,12 +1922,36 @@
   function giftGo(a) {
     a = Object.assign({ p: actor(G.s) }, a);
     const adv = SET.help === false ? null : giftAdvice(G.s, a);
-    if (adv && adv.kind === 'warn') {
+    if (false && adv && adv.kind === 'warn') {
       dialog('<span class="eyebrow">Spielhilfe</span><h2>' + esc(giftInfo(a.gift).name) + '?</h2><p>' + esc(adv.text) + '</p>' + (adv.notes.length ? '<p class="muted" style="font-size:13px">' + esc(adv.notes.join(' ')) + '</p>' : '') + '<div class="row"><button class="btn primary" data-act="go">Trotzdem aktivieren</button><button class="btn" data-act="no">Abbrechen</button></div>', act => { if (act === 'go') dispatch(a); });
       return;
     }
     const ok = dispatch(a);
-    if (ok !== false && adv && adv.text) toast('💡 ' + adv.text + (adv.notes.length ? ' ' + adv.notes[0] : ''), 8000);
+    // keine Hinweis-Einblendung mehr nach dem Einsetzen (nur auf Wunsch über 💡)
+  }
+  // 4.13: Effekte mit zwei Tipps direkt an der Karte – Karte antippen → Knöpfe mit den JETZT einsetzbaren Gaben;
+  // 1. Tipp auf einen Knopf: kurzer Satz + Ziele leuchten, 2. Tipp: einsetzen (ein Ziel → sofort, sonst Ziel antippen).
+  function fxReady(s, uid) { const u = s.units[uid]; if (!u || u.owner !== G.view || !myTurn() || G.replay || G.tutorial) return []; return W.giftOptions(s, uid).filter(o => o.ok); }
+  function fxTap(uid, gid) { // 1. Tipp: Beschreibung + Ziele leuchten · 2. Tipp: einsetzen
+    if (!G) return;
+    if (G.fxOpen && G.fxOpen.uid === uid && G.fxOpen.gid === gid) { G.fxOpen = null; const o = W.giftOptions(G.s, uid).find(x => x.id === gid); if (!o || !o.ok) { render([]); return; }
+      if (W.GIFTS[gid].target !== 'self' && o.targets.length === 1 && gid !== 'blitzschritt') { giftGo({ type: 'gift', uid, gift: gid, target: o.targets[0] }); return; } useGiftUI(uid, gid); return; }
+    G.fxOpen = { uid, gid }; G.gift = null; render([]);
+  }
+  function renderFxChips(s) {
+    const wrap = document.querySelector('#v-game .boardwrap'); if (!wrap) return; let box = $('#fxchips');
+    if (!box) { box = document.createElement('div'); box.id = 'fxchips'; box.className = 'fxchips'; wrap.appendChild(box);
+      box.addEventListener('click', e => { const b = e.target.closest('[data-fxg]'); if (!b || !G) return; e.stopPropagation(); fxTap(b.dataset.uid, b.dataset.fxg); });
+      box.addEventListener('pointerdown', e => e.stopPropagation()); }
+    const focus = G.sel && G.sel.kind === 'unit' ? G.sel.uid : G.info && G.info.uid ? G.info.uid : null;
+    if (G.fxOpen && (G.fxOpen.uid !== focus || !s.units[G.fxOpen.uid])) G.fxOpen = null;
+    const opts = []; // 5.11.2026: nie mehr Knöpfe auf dem Spielfeld (verdeckten Ziele) – Gaben stehen im Kasten oben bzw. in der Leiste
+    let h = '';
+    const mstOn = $('#v-game').classList.contains('mstage'); // Handy-Bühne: Beschreibung steht oben im Kasten, der Knopf bleibt klein
+    if (opts.length) { const u = s.units[focus], P = pos(u.pos), cx = P.left + P.w / 2, below = P.top < 18;
+      h = '<div class="fxc' + (below ? ' below' : '') + '" style="left:' + cx.toFixed(2) + '%;top:' + (below ? P.top + P.h : P.top).toFixed(2) + '%">' + opts.map(o => { const open = G.fxOpen && G.fxOpen.gid === o.id, gi = giftInfo(o.id);
+        return '<button class="fxb' + (open ? ' open' : '') + '" data-fxg="' + o.id + '" data-uid="' + focus + '"><b>⚡ ' + esc(o.name) + '</b>' + (o.ct ? '<small>CT ' + o.ct + '</small>' : '') + (open ? (mstOn ? '' : '<span class="fxt">' + esc(gi.short || gi.text || '') + '</span>') + '<span class="fxgo">' + (mstOn ? 'Tippen = einsetzen' : 'Nochmal tippen = einsetzen') + '</span>' : '') + '</button>'; }).join('') + '</div>'; }
+    if (box._h !== h) { box.innerHTML = h; box._h = h; }
   }
   function useGiftUI(uid, gid) {
     const s = G.s, o = W.giftOptions(s, uid).find(x => x.id === gid); if (!o || !o.ok) return;
@@ -1842,7 +1966,7 @@
   function startCast(iid) {
     const s = G.s, p = actor(s), o = W.castOptions(s, p, iid); if (!o.ok) { toast('Nicht ausspielbar: ' + o.why + '.'); return; }
     const h = s.players[p].hand.find(x => x.iid === iid), steps = [];
-    for (const eo of o.effects) { if (eo.pick === 'player' && eo.candidates.length) steps.push({ i: eo.i, type: 'pick' }); if (eo.place && eo.candidates.length) steps.push({ i: eo.i, type: 'place' }); }
+    for (const eo of o.effects) { if (eo.pick === 'player' && eo.candidates.length) steps.push({ i: eo.i, type: 'pick' }); if (eo.place && eo.place.length && eo.candidates.length) steps.push({ i: eo.i, type: 'place' }); } // ohne freies Feld keine Feldwahl (der Held bleibt dann im Ablagestapel)
     G.cast = { iid, cid: h.cid, o, steps, k: 0, choices: o.effects.map(() => []), place: o.effects.map(() => []) }; PEEK.hide();
     G.sel = { kind: 'hand', iid }; render([]);
   }
@@ -1856,8 +1980,29 @@
     const C = G.cast, st = castStep(); if (!st) return;
     const arr = st.chosen, i = arr.indexOf(id);
     if (i >= 0) arr.splice(i, 1); else { if (arr.length >= st.need) { if (st.need === 1) arr.length = 0; else { toast('Schon ' + st.need + ' gewählt. Erst eins abwählen.'); return; } } arr.push(id); }
-    if (st.need === 1 && arr.length === 1) C.k++;
+    if (arr.length === st.need && (st.need === 1 || st.type === 'place')) C.k++; // Feldwahl: weiter, sobald für jeden Helden ein Feld gewählt ist
     render([]);
+    if (st.type === 'place' && arr.length && !castStep()) reviveConfirm(st);
+  }
+  // Wiederbeleben: Auswahl aus dem Ablagestapel als große Kartenbilder
+  function castGallery() {
+    const C = G.cast, st = castStep(); if (!C || !st || st.what !== 'discard') return;
+    const s = G.s, cidOf = id => { const [q, iid] = [+id.split(':')[0], id.slice(id.indexOf(':') + 1)]; return ((s.players[q].discard.find(d => d.iid === iid)) || {}).cid; };
+    dialog('<span class="eyebrow">' + esc(s.cards[C.cid].name) + '</span><h2>Wen holst du zurück?</h2><p class="muted">Tippe einen Helden an' + (st.need > 1 ? ' (' + st.need + ' Stück)' : '') + '. Doppeltipp zeigt die ganze Karte.</p><div class="cgal">' + st.eo.candidates.map(x => { const cid = cidOf(x.id), c = s.cards[cid], f = cid && fullURL(cid); return '<button class="cg' + (st.chosen.includes(x.id) ? ' on' : '') + '" data-act="pick" data-id="' + esc(x.id) + '" data-pcid="' + esc(cid || '') + '"' + (f ? ' style="background-image:url(' + f + ')"' : '') + '>' + (f ? '' : '<b>' + esc(c ? c.name : x.label) + '</b>') + '<span>' + esc(c ? c.name : x.label) + '</span></button>'; }).join('') + '</div><div class="row">' + (st.need > 1 ? '<button class="btn primary" data-act="next">Weiter</button>' : '') + '<button class="btn" data-act="abort">Abbrechen</button></div>', (act, b) => {
+      if (act === 'abort') { G.cast = null; G.sel = null; render([]); return; }
+      if (act === 'next') { if (st.chosen.length === st.need) { C.k++; render([]); goBoard(); return; } toast('Bitte ' + st.need + ' Helden wählen.'); return false; }
+      if (act === 'pick') { if (b.closest('.cg') && document.querySelector('#dlg .cg.on') && st.need === 1 && st.chosen[0] === b.dataset.id) return false; castToggle(b.dataset.id); if (st.need === 1 || st.chosen.length >= st.need) { if (st.need > 1 && G.cast && G.cast.steps[G.cast.k] && G.cast.steps[G.cast.k].i === st.eo.i && G.cast.steps[G.cast.k].type === 'pick') { G.cast.k++; render([]); } goBoard(); return; } $$('#dlg .cg').forEach(x => x.classList.toggle('on', st.chosen.includes(x.dataset.id))); return false; }
+      return false;
+    }, { cls: 'wide' });
+  }
+  // nach der Auswahl automatisch zum Spielfeld (dort leuchten die freien Felder)
+  function goBoard() { closeDialog(); const b = $('#board'); if (b) { try { b.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { b.scrollIntoView(); } } }
+  function reviveConfirm(st) {
+    const C = G.cast; if (!C) return; const pick = C.choices[st.eo.i] && C.choices[st.eo.i][0], nm = pick ? castLabel(st.eo, pick) : 'Der Held';
+    dialog('<span class="eyebrow">Wiederbeleben</span><h2>Bist du sicher?</h2><p><b>' + esc(nm) + '</b> erscheint auf dem gewählten Feld' + (G.s.phase === 'battle' && G.s.active === actor(G.s) ? ' und kann noch in dieser Battlephase angreifen' : '') + '.</p><div class="row"><button class="btn primary" data-act="yes">Ja</button><button class="btn" data-act="no">Nein, anderes Feld</button></div>', act => {
+      if (act === 'yes') { castAct({ cok: '1' }); return; }
+      if (act === 'no') { const C2 = G.cast; if (C2) { C2.k = Math.max(0, C2.k - 1); const s2 = castStep(); if (s2) s2.chosen.length = 0; render([]); } return; }
+    });
   }
   function castLabel(eo, id) { const x = (eo.candidates || []).find(c => c.id === id); return x ? x.label : id; }
   function castPanel() {
@@ -1867,6 +2012,11 @@
     if (st) {
       const what = st.type === 'place' ? 'Feld für den zurückgeholten Helden (golden)' : st.what === 'unit' || st.what === 'king' ? 'Ziel auf dem Brett (violett) oder hier in der Liste' : st.what === 'field' ? 'Feld auf dem Brett (grün) oder hier in der Liste' : st.what === 'discard' ? 'Karte aus dem Ablagestapel' : 'gegnerische Karte, die neutralisiert wird';
       const list = (st.type === 'place' ? st.cands.map(f => ({ id: f, label: f })) : st.eo.candidates);
+      const back = (C.k ? '<button class="btn small" data-cback="1">Zurück</button>' : '') + '<button class="btn small" data-cabort="1">Abbrechen</button>';
+      // 31.10.2026: Felder und Helden wählt man direkt auf dem Spielfeld (sie leuchten) – keine Koordinaten-Knöpfe mehr
+      if (st.type === 'place') { const pick = C.choices[st.eo.i] && C.choices[st.eo.i][0], nm = pick ? castLabel(st.eo, pick) : 'der Held'; body = '<p><b>Feld wählen:</b> Tippe ein <b>leuchtendes Feld</b> – dort kehrt <b>' + esc(nm) + '</b> zurück.</p><div class="row">' + back + '</div>'; return '<div class="castbox ' + c.type + '"><span class="eyebrow">' + (c.type === 'curse' ? '☾ Fluch' : '✦ Zauber') + ': ' + esc(c.name) + '</span>' + body + '</div>'; }
+      if (st.what === 'discard') { body = '<p><b>Effekt ' + (st.eo.i + 1) + ':</b> ' + esc(st.eo.text) + '</p><p class="hint">Wähle den Helden im Auswahlfenster. Gewählt: ' + st.chosen.length + ' / ' + st.need + '</p><div class="row"><button class="btn small primary" data-cgal="1">Auswahl zeigen</button>' + back + '</div>'; return '<div class="castbox ' + c.type + '"><span class="eyebrow">' + (c.type === 'curse' ? '☾ Fluch' : '✦ Zauber') + ': ' + esc(c.name) + '</span>' + body + '</div>'; }
+      if (['unit', 'king', 'field'].includes(st.what)) { body = '<p><b>Effekt ' + (st.eo.i + 1) + ':</b> ' + esc(st.eo.text) + '</p><p class="hint">Tippe ' + (st.need > 1 ? st.need + ' ' : 'ein ') + (st.what === 'field' ? 'leuchtende' + (st.need > 1 ? '' : 's') + ' Feld' + (st.need > 1 ? 'er' : '') : 'markierte' + (st.need > 1 ? '' : 's') + ' Ziel' + (st.need > 1 ? 'e' : '')) + ' auf dem Spielfeld an. Gewählt: ' + st.chosen.length + ' / ' + st.need + '</p><div class="row">' + (st.need > 1 ? '<button class="btn small primary" data-cnext="1" ' + (st.chosen.length === st.need ? '' : 'disabled') + '>Weiter</button>' : '') + back + '</div>'; return '<div class="castbox ' + c.type + '"><span class="eyebrow">' + (c.type === 'curse' ? '☾ Fluch' : '✦ Zauber') + ': ' + esc(c.name) + '</span>' + body + '</div>'; }
       body = '<p><b>Effekt ' + (st.eo.i + 1) + ':</b> ' + esc(st.eo.text) + '</p><p class="hint">Wähle ' + st.need + ' × ' + what + '. Gewählt: ' + st.chosen.length + ' / ' + st.need + '</p>'
         + '<div class="cpick">' + list.map(x => '<button class="btn small' + (st.chosen.includes(x.id) ? ' on' : '') + '" data-cpick="' + esc(x.id) + '">' + esc(x.label) + '</button>').join('') + '</div>'
         + '<div class="row">' + (st.need > 1 ? '<button class="btn small primary" data-cnext="1" ' + (st.chosen.length === st.need ? '' : 'disabled') + '>Weiter</button>' : '') + (C.k ? '<button class="btn small" data-cback="1">Zurück</button>' : '') + '<button class="btn small" data-cabort="1">Abbrechen</button></div>';
@@ -1879,21 +2029,23 @@
   // schwebendes Wirk-Fenster über dem Spielfeld: liegt auf der Seite, auf der keine Ziele stehen
   function renderCastFloat() {
     const wrap = document.querySelector('#v-game .boardwrap'); if (!wrap) return;
-    let el = $('#castfloat'); if (!el) { el = document.createElement('div'); el.id = 'castfloat'; el.className = 'castfloat'; wrap.appendChild(el); el.addEventListener('click', e => { const k = e.target.closest('[data-cpick],[data-cnext],[data-cback],[data-cabort],[data-cok]'); if (k && myTurn()) castAct(k.dataset); const z = e.target.closest('[data-cfzoom]'); if (z) openInspector({ cid: z.dataset.cfzoom, from: z }); }); }
-    if (!G || !G.cast || G.replay) { el.hidden = true; el.innerHTML = ''; return; }
+    let el = $('#castfloat'); if (!el) { el = document.createElement('div'); el.id = 'castfloat'; el.className = 'castfloat'; wrap.appendChild(el); el.addEventListener('click', e => { if (e.target.closest('[data-cgal]')) { castGallery(); return; } const k = e.target.closest('[data-cpick],[data-cnext],[data-cback],[data-cabort],[data-cok]'); if (k && myTurn()) castAct(k.dataset); const z = e.target.closest('[data-cfzoom]'); if (z) openInspector({ cid: z.dataset.cfzoom, from: z }); }); }
+    { const bd = $('#board'); if (bd) bd.classList.toggle('casting', !!(G && G.cast)); }
+    if (!G || !G.cast || G.replay || isPhone()) { el.hidden = true; el.innerHTML = ''; if (G && G.cast && isPhone()) { const st0 = castStep(); if (st0 && st0.what === 'discard' && !G.cast.galShown) { G.cast.galShown = true; setTimeout(castGallery, 0); } } return; } // Handy: Wirk-Panel steht in der Spielerleiste, das Spielfeld bleibt frei
     const st = castStep(), rows = [];
     if (st && st.type === 'pick' && (st.what === 'unit' || st.what === 'king')) for (const id of st.cands) { const u = G.s.units[id]; if (u) rows.push(+slotOf(u.pos).slice(1, 2)); }
     if (st && (st.type === 'place' || st.what === 'field')) for (const f of st.cands) rows.push(+slotOf(f).slice(1, 2));
-    const avg = rows.length ? rows.reduce((a, b) => a + b, 0) / rows.length : 7;
+    const avg = rows.length ? rows.reduce((a, b) => a + b, 0) / rows.length : W.ROWS;
     const c = G.s.cards[G.cast.cid], f = fullURL(c.id);
-    el.className = 'castfloat ' + c.type + ' ' + (avg <= 4 ? 'at-bottom' : 'at-top');
+    el.className = 'castfloat ' + c.type + ' ' + (avg <= (W.ROWS + 1) / 2 ? 'at-bottom' : 'at-top');
+    if (st && st.what === 'discard' && !G.cast.galShown) { G.cast.galShown = true; setTimeout(castGallery, 0); }
     el.innerHTML = (f ? '<button class="cf-thumb" data-cfzoom="' + esc(c.id) + '" title="Karte groß ansehen" style="background-image:url(' + f + ')"></button>' : '') + '<div class="cf-body">' + castPanel() + '</div><i class="cf-flame" aria-hidden="true"></i>';
     el.hidden = false;
   }
-  function castHint() { const st = castStep(); return st ? '<b>' + esc(G.s.cards[G.cast.cid].name) + '</b>: ' + (st.type === 'place' ? 'Tippe ein goldenes Feld.' : st.what === 'field' ? 'Tippe grüne Felder.' : st.what === 'unit' || st.what === 'king' ? 'Tippe ein violett markiertes Ziel.' : 'Wähle rechts eine Karte.') + ' Gewählt ' + st.chosen.length + ' / ' + st.need + '.' : 'Ziele gewählt – rechts verbindlich ausspielen.'; }
+  function castHint() { const st = castStep(); return st ? '<b>' + esc(G.s.cards[G.cast.cid].name) + '</b>: ' + (st.type === 'place' ? 'Tippe ein leuchtendes Feld.' : st.what === 'field' ? 'Tippe grüne Felder.' : st.what === 'unit' || st.what === 'king' ? 'Tippe ein violett markiertes Ziel.' : 'Wähle rechts eine Karte.') + ' Gewählt ' + st.chosen.length + ' / ' + st.need + '.' : 'Ziele gewählt – rechts verbindlich ausspielen.'; }
   function castAct(ds) {
     const C = G.cast; if (!C) return;
-    if (ds.cabort) { G.cast = null; render([]); return; }
+    if (ds.cabort) { G.cast = null; G.sel = null; G.info = null; render([]); return; } // 5.11.2026: auch die Auswahl lösen – sonst schaltete der nächste Tipp auf die Karte die Info AUS statt an (Wirken unmöglich)
     if (ds.cback) { C.k = Math.max(0, C.k - 1); const st = castStep(); if (st) st.chosen.length = 0; render([]); return; }
     if (ds.cnext) { C.k++; render([]); return; }
     if (ds.cpick !== undefined) { castToggle(ds.cpick); return; }
@@ -1909,14 +2061,117 @@
   // Spielfeld-Grafik: Engine-Feld → sichtbare Position (rZeileSpalte aus dem Einbaupaket).
   // Unten liegt immer die eigene Seite: Für Spieler 1 wird nur die Zuordnung gespiegelt, das Bild bleibt stehen.
   const FIELD = window.WOK_FIELD || null;
-  function slotOf(f) { const r = W.rowOf(f), c = W.colOf(f) + 1, v = G && G.view === 1; return 'r' + (v ? 8 - r : r) + 'c' + (v ? 8 - c : c); }
+  function slotOf(f) { const r = W.rowOf(f), c = W.colOf(f) + 1, v = G && G.view === 1; return 'r' + (v ? W.ROWS + 1 - r : r) + 'c' + (v ? 8 - c : c); }
   function pos(f) {
+    if (B3 && B3.active()) { const P3 = B3.project(slotOf(f)); if (P3) return P3; }
     const sl = FIELD && FIELD.slots[slotOf(f)];
     if (sl) return { left: sl.x * 100, top: sl.y * 100, w: sl.w * 100, h: sl.h * 100 };
-    const c = W.colOf(f), r = W.rowOf(f), vc = G.view === 1 ? 6 - c : c, vr = G.view === 1 ? 7 - r : r - 1;
-    return { left: vc * 100 / 7, top: vr * 100 / 7, w: 100 / 7, h: 100 / 7 };
+    const c = W.colOf(f), r = W.rowOf(f), vc = G.view === 1 ? 6 - c : c, vr = G.view === 1 ? W.ROWS - r : r - 1;
+    return { left: vc * 100 / 7, top: vr * 100 / W.ROWS, w: 100 / 7, h: 100 / W.ROWS };
   }
   const tokEls = new Map();
+  /* ---------- 3D-Spielfeld (4.11.2026, Prototyp; src/board3d.js) ---------- */
+  const B3 = window.WOK_BOARD3D;
+  const use3d = () => !!(B3 && FIELD && G && !G.tutorial && !G.replay && SET.view3d !== false && !(navigator.webdriver && !/[?&]3d=1/.test(location.search)) && B3.supported());
+  function fieldOfSlot(slot) { const m = /^r(\d+)c(\d+)$/.exec(slot || ''); if (!m) return null; let r = +m[1], c = +m[2]; if (G.view === 1) { r = W.ROWS + 1 - r; c = 8 - c; } const f = W.COLS[c - 1] + r; return W.exists(f) ? f : null; }
+  const B3H = {
+    tap(t, ev) { if (!G) return; const touch = ev.pointerType === 'touch' || ev.pointerType === 'pen';
+      if (t.uid && G.s.units[t.uid]) { if (isPhone() || touch) { /* 5.11.2026: auch wenn der Browser kein „touch“ meldet (Safari) – Karten-Info zeigen */ const uid = t.uid; setTimeout(() => { if (!G) return; G.info = G.info && G.info.uid === uid ? null : { uid }; render([]); }, 0); } clickUnit(t.uid); return; }
+      const f = fieldOfSlot(t.slot); if (f) clickField(f); },
+    long(t) { if (G && t.uid && G.s.units[t.uid]) openInspector({ uid: t.uid }); },
+    hover(uid) { if (!document.querySelector('#v-game.duel')) return; if (uid && G && G.s.units[uid]) PEEK.duelShow(uid, G.s.units[uid].cid); else PEEK.duelHide(); }
+  };
+  // 4.12: PC/TV-Bühne wie bei Master Duel – ganzer Bildschirm ist die Szene, Hand als Fächer unten, Leisten und Felder darüber
+  const duelOK = () => !isPhone() && innerWidth >= 921 && innerHeight >= 520;
+  function duelStage(vg) {
+    const on = duelOK(); vg.classList.toggle('duel', on); vg.classList.toggle('mstage', !on);
+    if (on) { stackPhone.key = ''; ['#pb-bot', '#hand'].forEach(id => { const el = $(id); if (el) el.style.bottom = ''; }); const bx = $('#mainbtn').closest('.box'); if (bx) bx.style.bottom = ''; B3.setFit({ x: [-.6, .6], y: [-.66, .86] }); }
+    else stackPhone(vg);
+  }
+  // 4.13 Handy-Bühne: Spielfeld bis an die Ränder, Leisten/Hand/Knöpfe schweben darüber. Von unten nach oben gestapelt:
+  // Phasenkasten, Hand, eigene Leiste (wird sie zur Karten-Info, wächst sie nach oben über das Feld). Das Feld passt in den Raum dazwischen.
+  function stackPhone(vg) {
+    const box = $('#mainbtn').closest('.box'), hand = $('#hand'), pb = $('#pb-bot'), pt = $('#pb-top'); if (!box || !hand || !pb || !pt) return;
+    // 5.11.2026 (Entwickler): Kamera denkt mit. Hand nur, wenn man sie braucht (Beschwören, eigene Konterphase, Zauber wählen, Hand-Griff);
+    // sonst gleitet sie weg und die Kamera fährt weich näher ans Spielfeld (Felder groß, gut zu treffen). Gleiche Lage → keine Bewegung.
+    const s = G && G.s, mine = !!(G && myTurn()), ph = s ? s.phase : '';
+    const showHand = !!(G && (G.handPeek || G.cast || (G.sel && G.sel.kind === 'hand') || (mine && (ph === 'summon1' || ph === 'summon2' || ph === 'counter' || ph === 'mulligan' || (ph === 'battle' && s.players[G.view].hand.some(h => { const c = s.cards[h.cid]; return c && isSp(c) && W.castOptions(s, G.view, h.iid).ok; })))) || (s && s.pendingDiscard === G.view)));
+    vg.classList.toggle('handaway', !showHand);
+    let b = 0; box.style.bottom = b + 'px'; b += box.offsetHeight + 4; hand.style.bottom = b + 'px'; const hh = hand.offsetHeight || 120; if (showHand) b += hh + 4; pb.style.bottom = b + 'px'; vg.style.setProperty('--gripb', (b + (pb.offsetHeight || 64) + 6) + 'px');
+    const key = innerWidth + 'x' + innerHeight + (showHand ? 'H' : 'F'); if (stackPhone.key === key) return; if (box.offsetHeight > 40 && (!showHand || hand.offsetHeight > 40)) { const smooth = !!stackPhone.key && stackPhone.key.slice(0, -1) === key.slice(0, -1); stackPhone.key = key;
+      const H = innerHeight || 700, reserve = b + Math.min(pb.offsetHeight || 64, 70) + (showHand ? 30 : 8), top = Math.min(pt.getBoundingClientRect().bottom || 60, 90) + 2;
+      B3.setFit({ x: [-1.04, 1.04], y: [1 - 2 * (H - reserve) / H, 1 - 2 * top / H], cells: showHand ? .1 : .02, tilt: showHand ? .45 : .32, smooth }); }
+  }
+  // 5.11.2026 (Entwickler): König angreifen sichtbar – der verlorene Teil der Lebensleiste leuchtet rot und läuft langsam ab,
+  // große Schadenszahl an der Leiste, die Leiste zuckt, kurzer roter Rand am Bildschirm (bei eigenem König).
+  function kingHitFx(s, evs) {
+    if (SET.fx === 'aus' || (G && G.replay)) return;
+    for (const e of evs) { if (e.t !== 'kingDamage' || !e.dmg) continue; const k = s.units[e.uid]; if (!k) continue; const max = s.cards[k.cid].hp || 1, own = k.owner === G.view, bar = own ? $('#pb-bot') : $('#pb-top');
+      setTimeout(() => { if (!bar) return; const hb = bar.querySelector('.hpbar'); const nowP = Math.max(0, Math.min(100, (e.hp) / max * 100)), oldP = Math.max(0, Math.min(100, (e.hp + e.dmg) / max * 100));
+        if (hb) { hb.style.position = 'relative'; const g = document.createElement('b'); g.className = 'hpghost'; g.style.left = nowP + '%'; g.style.width = (oldP - nowP) + '%'; hb.appendChild(g); setTimeout(() => g.classList.add('go'), 420); setTimeout(() => g.remove(), 1700); }
+        const r = (hb || bar).getBoundingClientRect(), n = document.createElement('div'); n.className = 'kingdmg' + (own ? ' own' : ''); n.textContent = '−' + fmt(e.dmg); n.style.left = (r.left + r.width * .5) + 'px'; n.style.top = (own ? r.top - 30 : r.bottom + 34) + 'px'; document.body.appendChild(n); setTimeout(() => n.remove(), 1500);
+        bar.classList.remove('kinghit'); void bar.offsetWidth; bar.classList.add('kinghit');
+        if (own) { const f = document.createElement('div'); f.className = 'hurtflash'; document.body.appendChild(f); setTimeout(() => f.remove(), 700); } }, 30); }
+  }
+  // 5.11.2026: Ziehen-Animation – der Stapel gleitet kurz am Rand herein, die oberste Karte hebt sich, dreht sich (eigene) und
+  // fliegt in die Hand; danach gleitet der Stapel wieder hinaus. Gegner: Karte bleibt verdeckt und fliegt zu seiner Leiste. Blockiert nichts.
+  const DRAWFX = (() => {
+    let deck = null, q = [], busy = false, outT = 0;
+    const off = () => !window.gsap || SET.fx === 'aus' || matchMedia('(prefers-reduced-motion: reduce)').matches || (G && (G.replay || G.tutorial)) || $('#v-game').hidden;
+    function ensureDeck() { if (deck) return deck; deck = document.createElement('div'); deck.className = 'drawdeck'; deck.innerHTML = '<i></i><i></i><i></i><i></i>'; document.body.appendChild(deck); return deck; }
+    function deckPos(mine) { const r = mine ? $('#hand').getBoundingClientRect() : $('#pb-top').getBoundingClientRect(), w = Math.max(64, Math.min(120, innerWidth * .12)), h = w * 1.5;
+      return mine ? { x: innerWidth - w - 14, y: Math.max(10, Math.min(innerHeight - h - 10, r.top - h * .55)), w, h } : { x: 14, y: Math.min(innerHeight - h - 10, r.bottom + 8), w, h }; }
+    function onEvents(s, evs) { if (off()) return; for (const e of evs) if (e.t === 'draw' && s.players[e.p]) q.push({ mine: e.p === G.view, iid: e.iid, cid: e.cid }); if (q.length && !busy) next(); }
+    function next() {
+      const d = q.shift(); if (!d) { busy = false; clearTimeout(outT); outT = setTimeout(hideDeck, 260); return; } busy = true; clearTimeout(outT);
+      const P = deckPos(d.mine), dk = ensureDeck(); dk.style.width = P.w + 'px'; dk.style.height = P.h + 'px'; dk.classList.toggle('foe', !d.mine);
+      if (!dk.classList.contains('in') || dk._mine !== d.mine) { dk._mine = d.mine; dk.classList.add('in'); gsap.killTweensOf(dk); gsap.fromTo(dk, { x: d.mine ? P.x + P.w + 60 : -P.w - 60, y: P.y, rotation: d.mine ? -8 : 8, opacity: 1 }, { x: P.x, y: P.y, rotation: d.mine ? -4 : 4, duration: .26, ease: 'power3.out' }); }
+      const fly = document.createElement('div'); fly.className = 'flycard'; const img = d.mine && d.cid ? (handImg(d.cid) || fullURL(d.cid) || artURL(d.cid)) : '';
+      fly.innerHTML = '<div class="fc-in"><b class="fc-back"></b><b class="fc-front"' + (img ? ' style="background-image:url(' + img + ')"' : '') + '></b></div>'; document.body.appendChild(fly);
+      fly.style.width = P.w + 'px'; fly.style.height = P.h + 'px';
+      let tgt = d.mine ? document.querySelector('#hand .hcard[data-iid="' + d.iid + '"]') : document.querySelector('#pb-top .hbacks i:last-child') || $('#pb-top');
+      const T0 = tgt && tgt.getBoundingClientRect(), tw = T0 && T0.width > 4 ? T0.width : P.w * .5, th = T0 && T0.height > 4 ? T0.height : tw * 1.5;
+      const tx = T0 ? T0.left + T0.width / 2 - P.w / 2 : innerWidth / 2, ty = T0 ? T0.top + T0.height / 2 - P.h / 2 : innerHeight / 2;
+      if (d.mine && tgt) tgt.classList.add('drawing');
+      const inner = fly.firstChild, tl = gsap.timeline({ delay: .18, onComplete: () => { fly.remove(); if (tgt) tgt.classList.remove('drawing'); } });
+      gsap.set(fly, { x: P.x, y: P.y, rotation: d.mine ? -4 : 4 });
+      tl.to(fly, { y: P.y - P.h * .35, duration: .16, ease: 'power2.out' })
+        .to(fly, { x: tx, y: ty, rotation: 0, scaleX: tw / P.w, scaleY: th / P.h, duration: .46, ease: 'power2.inOut' })
+        .to(inner, { rotateY: d.mine ? 180 : 0, duration: .4, ease: 'power2.inOut' }, '<.03');
+      setTimeout(next, 260); // nächste Karte startet schon, bevor die erste gelandet ist (Starthand fließt)
+    }
+    function hideDeck() { if (!deck || !deck.classList.contains('in')) return; const mine = deck._mine, P = deckPos(mine); gsap.to(deck, { x: mine ? P.x + P.w + 60 : -P.w - 60, rotation: mine ? -8 : 8, duration: .3, ease: 'power2.in', onComplete: () => deck.classList.remove('in') }); }
+    return { onEvents };
+  })();
+  function fanHand(hand) {
+    const cards = [...hand.querySelectorAll('.hcard')], n = cards.length, mid = (n - 1) / 2, step = Math.min(5, 26 / Math.max(1, n));
+    if (n && document.querySelector('#v-game.duel')) { // Karten rücken zusammen, damit der Fächer (mit Neigung) nie in die Leisten ragt
+      const cw = cards[0].offsetWidth || 160, ch = cards[0].offsetHeight || cw * 1.5, pb = $('#pb-bot').getBoundingClientRect(), mt = document.querySelector('#v-game .mate'), ml = mt && !mt.hidden ? mt.getBoundingClientRect().left : innerWidth - 20;
+      const tilt = Math.sin(mid * step * Math.PI / 180) * ch * 1.3 + cw * .12, avail = Math.max(cw * 2, 2 * Math.min(innerWidth / 2 - pb.right, ml - innerWidth / 2) - 2 * tilt - 56);
+      const ov = n > 1 ? Math.max(cw * .18, (n * cw - avail) / (n - 1)) : 0; hand.style.setProperty('--ov', ov.toFixed(1) + 'px'); }
+    cards.forEach((c, i) => { const k = i - mid; c.style.setProperty('--r', (k * step).toFixed(2)); c.style.setProperty('--d', (Math.abs(k) * Math.abs(k) * 2.2).toFixed(1)); c.style.zIndex = String(i + 1); });
+  }
+  addEventListener('resize', () => { const vg = $('#v-game'); if (G && B3 && B3.active() && vg) duelStage(vg); });
+  function b3render(s, p, hl, targets, gtargets, csel, events, outs) {
+    const on = use3d(), wrap = document.querySelector('#v-game .boardwrap'), board = $('#board');
+    const vg = $('#v-game');
+    if (!on) { stackPhone.key = ''; vg.classList.remove('duel', 'mstage'); ['#pb-bot', '#hand'].forEach(id => { const el = $(id); if (el) el.style.bottom = ''; }); { const bx = $('#mainbtn').closest('.box'); if (bx) bx.style.bottom = ''; } if (B3 && B3.active()) { B3.unmount(); board.dataset.view = ''; } return; }
+    duelStage(vg);
+    if (!B3.active()) { if (!B3.mount(wrap, board, FIELD.img, FIELD.slots, B3H)) return; board.dataset.view = ''; setTimeout(() => G && render([]), 0); }
+    const units = Object.values(s.units).map(u => { const c = s.cards[u.cid], a = W.atkOf(s, u), d = W.defOf(s, u);
+      return { uid: u.uid, slot: slotOf(u.pos), cid: c.id, img: fullURL(c.id) || artURL(c.id), name: c.name, foe: u.owner !== p, king: !!u.king, stat: u.king ? '' : a + '/' + d, atkCls: a > c.atk ? 'up' : a < c.atk ? 'down' : '', defCls: d > c.def ? 'up' : d < c.def ? 'down' : '',
+        sel: !!(G.sel && G.sel.kind === 'unit' && G.sel.uid === u.uid), atk: !!(s.decl[u.uid] && ['battle', 'counter', 'resolve'].includes(s.phase)), target: targets.includes(u.uid), fxr: fxReady(s, u.uid).length > 0, gtarget: gtargets.includes(u.uid), csel: csel.includes(u.uid) }; });
+    const hls = {}; for (const [f, cls] of Object.entries(hl)) hls[slotOf(f)] = cls;
+    const last = {}; for (const [uid, f] of Object.entries(G.lastPos || {})) last[uid] = slotOf(f);
+    B3.onEvents(events || [], last);
+    // 4.13: festgelegte Angriffe als 3D-Pfeile (Nummer = Reihenfolge, Ausgang groß am Ziel); beim Zielen: Ausgang an jedem möglichen Ziel
+    const attacks = []; let n = 0;
+    if (['battle', 'counter', 'resolve'].includes(s.phase)) for (const [aUid, d] of Object.entries(s.decl)) { const a = s.units[aUid]; if (!a) continue; const dbl = W.has(s, a, 'doppelschlag') && !a.king;
+      for (const t of d.targets) { const tu = s.units[t]; if (!tu) continue; n++; let out = null; try { out = W.preview(s, aUid, t, dbl ? 2 : 1); } catch (e) {}
+        attacks.push({ from: slotOf(a.pos), to: slotOf(tu.pos), a: aUid, t, n, king: !!tu.king, mine: a.owner === p, out }); } }
+    const cand = Object.entries(outs || {}).map(([t, out]) => s.units[t] ? { to: slotOf(s.units[t].pos), t, out } : null).filter(Boolean);
+    B3.sync({ units, hl: hls, myturn: myTurn() && s.phase !== 'counter', counter: myTurn() && s.phase === 'counter', attacks, cand });
+  }
   function render(events) {
     if (!G) return;
     const s = G.s, p = G.view, me = s.players[p], foe = s.players[1 - p];
@@ -1931,12 +2186,13 @@
       for (const t of targets) { const pv = W.preview(s, G.sel.uid, t, dbl ? 2 : 1); outs[t] = pv; }
     }
     if (mine && G.gift) { if (G.gift.id === 'blitzschritt') for (const f of G.gift.targets) hl[f] = 'hl-move'; else gtargets = G.gift.targets; }
+    else if (mine && G.fxOpen && s.units[G.fxOpen.uid]) { const o = W.giftOptions(s, G.fxOpen.uid).find(x => x.id === G.fxOpen.gid); if (o && o.ok) { if (G.fxOpen.gid === 'blitzschritt') for (const f of o.targets) hl[f] = 'hl-move'; else gtargets = o.targets.slice(); } }
     let csel = [];
     if (mine && G.cast) { const st = castStep(); if (st) { csel = st.chosen; if (st.type === 'place') for (const f of st.cands) hl[f] = st.chosen.includes(f) ? 'hl-csel' : 'hl-summon'; else if (st.what === 'field') for (const f of st.cands) hl[f] = st.chosen.includes(f) ? 'hl-csel' : 'hl-move'; else if (st.what === 'unit' || st.what === 'king') gtargets = st.cands; } }
     // Felder
     const board = $('#board');
     if (!board.dataset.view || +board.dataset.view !== p) {
-      board.innerHTML = W.FIELDS.map(f => { const P = pos(f); const r = W.rowOf(f); const cls = ['cell', (f === 'D1' || f === 'D7') ? 'k' : '', W.isGuard(f, 0) || W.isGuard(f, 1) ? 'guard' : '', r === 4 ? 'mid' : '', r === W.SUMMON_ROW[p] ? 'srow mine' : ''].join(' ');
+      board.innerHTML = W.FIELDS.map(f => { const P = pos(f); const r = W.rowOf(f); const cls = ['cell', W.KING_FIELD.includes(f) ? 'k' : '', W.isGuard(f, 0) || W.isGuard(f, 1) ? 'guard' : '', r === (W.ROWS + 1) / 2 ? 'mid' : '', r === W.SUMMON_ROW[p] ? 'srow mine' : ''].join(' ');
         return '<div class="' + cls + '" data-f="' + f + '" style="left:' + P.left + '%;top:' + P.top + '%;width:' + P.w + '%;height:' + P.h + '%" data-slot="' + slotOf(f) + '" role="button" tabindex="-1" aria-label="Feld ' + f + '"><div><span class="lab">' + f + '</span></div></div>'; }).join('') + '<svg class="arrows" id="arrows" viewBox="0 0 700 700" preserveAspectRatio="none"></svg>';
       board.dataset.view = p; tokEls.clear();
       if (FIELD) { board.classList.add('art'); board.style.backgroundImage = 'url(' + FIELD.img + ')'; }
@@ -1951,14 +2207,14 @@
       const c = s.cards[u.cid];
       if (!el) { el = document.createElement('div'); el.className = 'tok appear'; el.dataset.uid = u.uid; el.tabIndex = 0; board.appendChild(el); tokEls.set(u.uid, el); setTimeout(() => el.classList.remove('appear'), 500); }
       const P = pos(u.pos); el.style.left = P.left + '%'; el.style.top = P.top + '%'; el.style.width = P.w + '%'; el.style.height = P.h + '%';
-      el.classList.toggle('foe', u.owner !== p); el.classList.toggle('king', u.king);
+      el.classList.toggle('foe', u.owner !== p); el.classList.toggle('king', u.king); if (el.dataset.rar !== (c.rarity || '')) { if (el.dataset.rar) el.classList.remove('r-' + el.dataset.rar); el.dataset.rar = c.rarity || ''; if (c.rarity) el.classList.add('r-' + c.rarity); }
       el.classList.toggle('sel', !!(G.sel && G.sel.kind === 'unit' && G.sel.uid === u.uid));
       el.classList.toggle('locked', W.locked(s, u) && u.owner === s.active);
-      el.classList.toggle('target', targets.includes(u.uid)); el.classList.toggle('gtarget', gtargets.includes(u.uid)); el.classList.toggle('csel', csel.includes(u.uid));
+      el.classList.toggle('fxready', fxReady(s, u.uid).length > 0); el.classList.toggle('target', targets.includes(u.uid)); el.classList.toggle('gtarget', gtargets.includes(u.uid)); el.classList.toggle('csel', csel.includes(u.uid));
       const img = artURL(c.id), a = W.atkOf(s, u), d = W.defOf(s, u);
       const sfx = W.effectsOn(s, u), hasSp = sfx.some(e => e.src === 'spell'), hasCu = sfx.some(e => e.src === 'curse');
       const badges = statusBadges(s, u) + (hasSp ? '<span class="bsp" title="Zauber wirkt">✦</span>' : '') + (hasCu ? '<span class="bcu" title="Fluch wirkt">☾</span>' : '');
-      const st = u.king ? '<span class="h">' + fmt(u.hp) + '</span>' : '<span class="a ' + (a > c.atk ? 'up' : a < c.atk ? 'down' : '') + '">' + a + '</span><span class="d ' + (d > c.def ? 'up' : d < c.def ? 'down' : '') + '">' + d + '</span>';
+      const st = u.king ? '' : '<span class="a ' + (a > c.atk ? 'up' : a < c.atk ? 'down' : '') + '">' + a + '</span><span class="d ' + (d > c.def ? 'up' : d < c.def ? 'down' : '') + '">' + d + '</span>';
       const o = outs[u.uid];
       const out = o ? '<span class="out ' + o.kind + '">' + (o.kind === 'king' ? '−' + fmt(o.dmg) : o.kind === 'win' ? 'besiegt' : o.kind === 'lose' ? 'fällt selbst' : o.kind === 'both' ? 'beide fallen' : 'wirkungslos') + '</span>' : '';
       const fimg = !img && fullURL(c.id);
@@ -1966,36 +2222,64 @@
       if (el._h !== html) { el.innerHTML = html; el._h = html; }
       el.setAttribute('aria-label', (u.owner === p ? 'Eigene Karte ' : 'Gegnerische Karte ') + c.name + ' auf ' + u.pos);
     }
+    // 3D-Spielfeld: einhängen/abhängen und abgleichen
+    try { b3render(s, p, hl, targets, gtargets, csel, events, outs); } catch (e) { ERRLOG.add('3D', e.message, e.stack); }
     // Pfeile der festgelegten Angriffe
     const svg = $('#arrows'); let lines = '';
     const ctr = f => { const P = pos(f); return [(P.left + P.w / 2) * 7, (P.top + P.h / 2) * 7]; };
     for (const [aUid, d] of Object.entries(s.decl)) { const a = s.units[aUid]; if (!a) continue; for (const t of d.targets) { const tu = s.units[t]; if (!tu) continue; const [x1, y1] = ctr(a.pos), [x2, y2] = ctr(tu.pos); const k = 0.28; lines += '<g class="' + (tu.king ? 'king' : '') + '"><line x1="' + (x1 + (x2 - x1) * k) + '" y1="' + (y1 + (y2 - y1) * k) + '" x2="' + (x2 - (x2 - x1) * k) + '" y2="' + (y2 - (y2 - y1) * k) + '"/></g>'; } }
     svg.innerHTML = lines;
+    try { renderFxChips(s); } catch (e) { ERRLOG.add('Effekt-Knöpfe', e.message, e.stack); }
     // Spielerleisten
-    $('#pb-top').innerHTML = pbar(1 - p); $('#pb-bot').innerHTML = pbar(p);
+    // 5.11.2026 Handy-Bühne: Karten-Info und Zauber-Fenster liegen in einem Kasten OBEN (über der Thronhalle), nie über dem Spielfeld;
+    // die Leisten bleiben immer Spielerleisten, Gaben gibt es an der Karte (⚡-Knöpfe)
+    const mst = $('#v-game').classList.contains('mstage');
+    { const dk = $('#mdock'); if (dk) { let h = '';
+        if (mst) { if (G.cast && !G.replay) h = '<button class="cb-x mdx" data-cabort="1" aria-label="Abbrechen">✕</button>' + castPanel(); else { const it = infoTarget(); if (it && !it.giftsOnly) h = '<div class="cbar"><button class="cb-x" data-popact="close" aria-label="Schließen">✕</button>' + PEEK.infoHTML(it.uid, it.cid, it.iid) + (it.uid ? (o => o.length ? '<div class="mgifts">' + o.map(x => '<button class="mgb' + (G.fxOpen && G.fxOpen.uid === it.uid && G.fxOpen.gid === x.id ? ' on' : '') + '" data-fxg="' + x.id + '" data-uid="' + it.uid + '"><b>⚡ ' + esc(x.name) + '</b><small>' + (G.fxOpen && G.fxOpen.uid === it.uid && G.fxOpen.gid === x.id ? 'nochmal = einsetzen' : 'CT ' + x.ct) + '</small></button>').join('') + '</div>' : '')(fxReady(G.s, it.uid)) : '') + (G.fxOpen ? (gi => '<div class="fxdesc"><b>⚡ ' + esc(gi.name) + ':</b> ' + esc(gi.short || gi.text || '') + ' <i>Knopf nochmal tippen = einsetzen.</i></div>')(giftInfo(G.fxOpen.gid)) : '') + '</div>'; } }
+        if (dk._h !== h) { dk.innerHTML = h; dk._h = h; } dk.hidden = !h;
+        if (h) { const pt = $('#pb-top').getBoundingClientRect(), top = Math.round(pt.bottom + 4); dk.style.top = top + 'px';
+          // nur den freien Platz über dem Spielfeld nutzen (oberste Feldreihe bleibt frei)
+          let room = innerHeight * .3; try { const q = B3 && B3.active() && B3.project('r1c4'); if (q) room = q.top / 100 * innerHeight - top - 6; } catch (e) {}
+          dk.style.maxHeight = Math.max(76, Math.round(room)) + 'px'; } } }
+    { const castBar = !mst && isPhone() && G.cast && !G.replay, it0 = mst ? null : infoTarget(), it = castBar && it0 && it0.side === 'bot' ? null : it0, top = it && it.side === 'top' ? cardBar(it) : pbar(1 - p), bot = castBar ? '<div class="cbar castbar">' + castPanel() + '</div>' : it && it.side === 'bot' ? cardBar(it) : pbar(p);
+      for (const [id, h, on] of [['#pb-top', top, it && it.side === 'top'], ['#pb-bot', bot, castBar || (it && it.side === 'bot')]]) { const el = $(id); if (el._html !== h) { el.innerHTML = h; el._html = h; if (on && !el.classList.contains('info')) { el.classList.remove('flip'); void el.offsetWidth; el.classList.add('flip'); } } el.classList.toggle('info', !!on); } }
     $('#pb-top').classList.toggle('active', s.active === 1 - p && !s.result); $('#pb-bot').classList.toggle('active', s.active === p && !s.result);
     // Hand
     const hand = $('#hand');
-    if (G.handover) { hand.className = 'hand hidden-hand'; hand.innerHTML = 'Hand verdeckt'; }
-    else { hand.className = 'hand'; hand.innerHTML = me.hand.map(h => handCard(h, p, G.sel && G.sel.kind === 'hand' && G.sel.iid === h.iid)).join('') || '<span class="muted" style="align-self:center">Keine Handkarten.</span>'; }
+    if (G.handover) { hand.className = 'hand hidden-hand'; hand.innerHTML = 'Hand verdeckt'; hand._html = ''; }
+    else { hand.className = 'hand'; const hh = me.hand.map(h => handCard(h, p, G.sel && G.sel.kind === 'hand' && G.sel.iid === h.iid)).join('') || '<span class="muted" style="align-self:center">Keine Handkarten.</span>'; if (hand._html !== hh) { hand.innerHTML = hh; hand._html = hh; } fanHand(hand); } // nur neu zeichnen, wenn sich etwas geändert hat
     // Phase, Hinweis, Hauptknopf
     const shown = ['summon1', 'move', 'battle', 'counter', 'summon2'], curI = shown.indexOf(s.phase === 'resolve' ? 'counter' : s.phase);
     $('#phases').innerHTML = shown.map((ph, i) => '<span class="' + (i === curI ? 'on' : i < curI ? 'done' : '') + '">' + W.PHASE_NAME[ph] + '</span>').join('');
     $('#turnwho').textContent = s.result ? 'Partie beendet' : s.phase === 'counter' ? 'Konterphase: ' + s.players[s.counter].name + (isAI(s.counter) ? ' überlegt …' : G.mode === 'ai' || (G.mode === 'online' && s.counter === G.view) ? ' (du)' : G.mode === 'online' ? ' (Gegner)' : '') : (isAI(s.active) ? s.players[s.active].name + ' zieht …' : s.players[s.active].name + (G.mode === 'ai' || (G.mode === 'online' && s.active === G.view) ? ' (du)' : G.mode === 'online' ? ' (Gegner)' : '')) + (s.result ? '' : ' · ' + W.PHASE_NAME[s.phase === 'resolve' ? 'counter' : s.phase]);
+    { const mine = myTurn() && !s.result && s.phase !== 'mulligan'; $('#v-game').classList.toggle('myturn', mine); $('#v-game').classList.toggle('mycounter', mine && s.phase === 'counter');
+      if (mine) $('#turnwho').textContent = (s.phase === 'counter' ? '🛡 DEIN KONTER · ' : '⚔ DEIN ZUG · ') + (W.PHASE_NAME[s.phase] || ''); }
     $('#hint').innerHTML = hint();
+    { // 4.13: Liste der festgelegten Angriffe (Nummer, wer → wen, Ausgang; eigene in der Battlephase mit ✕ zurücknehmen)
+      const al = $('#atklist'); let h = '', n = 0;
+      if (al && ['battle', 'counter', 'resolve'].includes(s.phase)) for (const [aUid, d] of Object.entries(s.decl)) { const a = s.units[aUid]; if (!a) continue; const dbl = W.has(s, a, 'doppelschlag') && !a.king;
+        for (const t of d.targets) { const tu = s.units[t]; if (!tu) continue; n++; let o = null; try { o = W.preview(s, aUid, t, dbl ? 2 : 1); } catch (e) {}
+          const ot = !o ? '' : o.kind === 'king' ? '−' + fmt(o.dmg) : { win: 'besiegt', lose: 'fällt selbst', both: 'beide fallen', none: 'wirkungslos' }[o.kind];
+          const mineA = a.owner === p, can = mineA && mine && s.phase === 'battle' && !G.replay;
+          h += '<div class="al ' + (mineA ? 'me' : 'foe') + (tu.king ? ' king' : '') + '"><i>' + n + '</i><span>' + esc(s.cards[a.cid].name) + ' → ' + esc(tu.king ? '♛ ' + s.cards[tu.cid].name : s.cards[tu.cid].name) + '</span><b class="o-' + (o ? o.kind : '') + '">' + esc(ot || '') + '</b>' + (can ? '<button class="al-x" data-undecl="' + aUid + '|' + t + '" aria-label="Angriff zurücknehmen">✕</button>' : '') + '</div>'; } }
+      if (al && al._h !== h) { al.innerHTML = h; al._h = h; al.hidden = !h; }
+      { const dk = $('#mdock'); if (dk && !dk.hidden) { let m = dk.querySelector('.mdatk'); if (h) { if (!m) { m = document.createElement('div'); m.className = 'atklist mdatk'; dk.appendChild(m); } if (m._h !== h) { m.innerHTML = h; m._h = h; } } else if (m) m.remove(); } } // Handy: Angriffe mit ✕ auch im Kasten oben
+      if (al && $('#v-game').classList.contains('mstage')) { const pt = $('#pb-top').getBoundingClientRect(); al.style.top = Math.round(pt.bottom + 4) + 'px'; } else if (al) al.style.top = ''; }
     { const cb = $('#concede'); if (cb) cb.hidden = !!s.result; }
     const mb = $('#mainbtn'), lab = { summon1: 'Weiter: Bewegung', move: 'Weiter: Battlephase', battle: 'Battlephase abschließen', counter: 'Passen – Konterphase beenden', summon2: 'Zug beenden' }[s.phase];
     mb.textContent = s.result ? 'Partie beendet' : mine && G.cast ? 'Erst Ziele wählen oder abbrechen' : mine && lab ? lab + (s.phase === 'battle' ? ' (' + Object.keys(s.decl).length + ' Angriff' + (Object.keys(s.decl).length === 1 ? '' : 'e') + ')' : '') : 'Gegner ist am Zug';
-    mb.disabled = !mine || !lab || s.pendingDiscard !== null || !!G.cast;
+    mb.disabled = !mine || !lab || (s.pendingDiscard !== null && s.pendingDiscard !== G.view) || !!G.cast;
+    if (s.pendingDiscard !== null && s.pendingDiscard === G.view && !s.result && !G.replay) { mb.textContent = 'Handlimit: Karte ablegen'; mb.disabled = false; }
+    mb.classList.remove('endturn'); // 1.11.2026: keine Abkürzung im eigenen Zug (Entwickler) – nur die Konterphase wird ohne Möglichkeiten übersprungen
     if (s.phase === 'mulligan' && !s.result) { const ms = mullSide(); mb.textContent = ms !== null ? 'Starthand wählen' : 'Warte auf die Starthand-Entscheidung …'; mb.disabled = ms === null; $('#turnwho').textContent = 'Starthand-Entscheidung'; }
     const tips = advice(), tb = $('#tips'); tb.hidden = !tips.length;
     if (tips.length) tb.textContent = '💡 Spielhilfe: ' + tips.length + (tips.length === 1 ? ' Möglichkeit' : ' Möglichkeiten') + ' – anzeigen';
-    renderDetail(); renderCastFloat();
+    renderDetail(); renderCastFloat(); PEEK.refresh(); if (!G.idea) { const ib = $('#ideabar'); if (ib && !ib.hidden) renderIdea(); }
     if (INS && !$('#insp').hidden && INS.ctx === 'game') { const keep = $('#insp-info').scrollTop; fillInspector(); $('#insp-info').scrollTop = keep; }
     renderLog();
     quickGifts();
     playEvents(events || []);
-    FX.onEvents(s, events || []); MATE.onEvents(s, events || []); MATE.track(s);
+    FX.onEvents(s, events || []); MATE.onEvents(s, events || []); MATE.track(s); try { SPR.onEvents(s, events || []); SPR.phases(s, events || []); SPR.atmo(); } catch (e) { ERRLOG.add('Effekt', e.message, e.stack); } try { DRAWFX.onEvents(s, events || []); } catch (e) { ERRLOG.add('Ziehen', e.message, e.stack); } try { kingHitFx(s, events || []); } catch (e) { ERRLOG.add('König-Treffer', e.message, e.stack); }
     applyLooks(); if (G.tutorial) TUT.check(events || []); if (G && G.replay) rpUpdate();
     { const cb = $('#concede'); if (cb && (G.replay || G.tutorial)) cb.hidden = true; } mb.hidden = !!G.replay; $('#tips').hidden = $('#tips').hidden || !!G.tutorial;
     tickTimer();
@@ -2005,86 +2289,128 @@
     const pct = Math.max(0, Math.min(100, k.hp / kc.hp * 100));
     const live = s.active === p || (s.phase === 'counter' && s.counter === p) || !!P.reserve;
     const en = '<span class="energy" title="Energie ' + P.energy + (P.reserve && s.active !== p ? ' – aufgehoben für Konter im gegnerischen Zug' : '') + '">' + Array.from({ length: Math.min(10, Math.max(P.turns, 1)) }, (_, i) => '<i class="' + (i < P.energy && live ? 'on' : '') + '"></i>').join('') + '</span>';
-    return '<div class="pwho">' + avHTML((G.avatars || [])[p], 'pb-av') + '<div class="pname"><b>' + esc(P.name) + '</b><small>Deck ' + P.deckName + ' · ' + esc(kc.name) + '</small></div></div>'
-      + '<div class="hp"><div class="hpbar"><i style="width:' + pct + '%"></i></div><span>♛ ' + fmt(Math.max(0, k.hp)) + ' / ' + fmt(kc.hp) + ' HP</span></div>'
+    const kimg = artURL(kc.id); // 5.11.2026 (Entwickler): statt Profilbild das Bild des Königs auf dem Feld
+    return '<div class="pwho">' + (kimg ? '<span class="av pb-av kingav" style="background-image:url(' + kimg + ')" title="' + esc(kc.name) + '"></span>' : avHTML((G.avatars || [])[p], 'pb-av')) + '<div class="pname"><b>' + esc(P.name) + '</b><small>Deck ' + P.deckName + ' · ' + esc(kc.name) + '</small></div></div>'
+      + '<div class="hp"><div class="hpbar"><i style="width:' + pct + '%"></i></div><span>♛ ' + fmt(Math.max(0, k.hp)) + '<span class="hpx"> / ' + fmt(kc.hp) + ' HP</span></span></div>'
       + (p !== G.view || G.replay ? '<div class="hbacks" aria-label="' + P.hand.length + ' Handkarten">' + Array.from({ length: Math.min(10, P.hand.length) }, () => '<i></i>').join('') + '</div>' : '')
-      + '<div class="pstats">' + en + '<span title="Energie">⚡' + (live ? P.energy : 0) + '</span><span title="Handkarten">✋' + P.hand.length + '</span><span title="Nachziehstapel">▤' + P.deck.length + '</span><span title="Ablagestapel">⌫' + P.discard.length + '</span></div>';
+      + '<div class="pstats">' + en + '<span title="Energie" class="enum"><i class="encr' + (live && P.energy ? ' on' : '') + '"></i>' + (live ? P.energy : 0) + '</span><span title="Handkarten">✋' + P.hand.length + '</span><span title="Nachziehstapel">▤' + P.deck.length + '</span><span title="Ablagestapel">⌫' + P.discard.length + '</span></div>';
   }
-  /* ---------- Handkarten-Schnellvorschau ----------
-     PC: Maus über eine Handkarte → große Vorschau sofort, wechselt beim Weiterfahren, verschwindet beim Verlassen der Hand.
-     Touch: Karte berühren und ohne Absetzen über die Hand streichen; nach dem Loslassen bleibt die Karte stehen,
-     Tippen außerhalb schließt. Streichen löst nie eine Spielaktion aus. Doppelklick/Gedrückthalten = große Ansicht wie bisher. */
+  /* ---------- Werte-Pop-up (31.10.2026) ----------
+     Handkarten bleiben normal groß. Maus darüber (PC) bzw. einmal antippen (Handy) → die Werte der Karte ploppen
+     direkt an der Karte auf: Energie, ATK/DEF (bzw. HP), Lauf- und Angriffsrichtung, Gaben, Wirkungstext.
+     Nochmal tippen oder daneben tippen schließt. Doppelklick/Doppeltipp oder Gedrückthalten = ganze Karte groß.
+     Wischen blättert die Hand ganz normal (natives Scrollen, nichts geht auf). */
   const PEEK = (() => {
-    let el = null, img = null, cur = '', box = null, sticky = false, slide = null;
-    function make() { if (el) return; el = document.createElement('div'); el.id = 'peek'; el.className = 'peek'; el.setAttribute('aria-hidden', 'true'); el.hidden = true; document.body.appendChild(el); el.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); hide(); }); }
+    let el = null, key = '', anchor = null, mode = '';
     const cardOf = cid => (G && G.s && G.s.cards[cid]) || POOL.cards[cid];
-    function place(container) {
-      const r = container.getBoundingClientRect(), vw = innerWidth, vh = innerHeight, gap = 10;
-      const up = r.top - gap - 8, down = vh - r.bottom - gap - 8, room = Math.max(up, down);
-      let h = Math.min(room, vh * .66, 560), w = h * 5 / 7; if (w > vw - 24) { w = vw - 24; h = w * 7 / 5; }
-      h = Math.max(h, Math.min(220, room)); w = h * 5 / 7;
-      el.style.width = w + 'px'; el.style.height = h + 'px';
-      el.style.left = Math.max(12, Math.min(vw - w - 12, r.left + r.width / 2 - w / 2)) + 'px';
-      el.style.top = (up >= down ? r.top - gap - h : r.bottom + gap) + 'px';
+    function make() {
+      if (el) return; el = document.createElement('div'); el.id = 'pop'; el.className = 'pop'; el.hidden = true; el.setAttribute('role', 'tooltip'); document.body.appendChild(el);
+      el.addEventListener('click', e => { const b = e.target.closest('[data-popact]'); if (!b) return; e.stopPropagation(); const a = b.dataset.popact, arg = b.dataset.arg; hide(); if (a === 'cast' && G && myTurn()) startCast(arg); if (a === 'big') openInspector({ cid: arg, from: anchor && anchor.isConnected ? anchor : null }); });
+      el.addEventListener('pointerleave', e => { if (mode === 'hover' && !(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('[data-pcid],.tok'))) hide(); });
     }
-    function show(t, container) {
-      const cid = t.dataset.pcid, c = cardOf(cid); if (!c) return; if (G && G.cast && container.id === 'hand') { hide(); return; } make(); // beim Wirken liegt das Wirk-Fenster vorn
-      if (box !== container || el.hidden) { box = container; place(container); }
-      if (cur !== cid) {
-        cur = cid; const f = fullURL(c.id);
-        el.innerHTML = f ? '<img alt="" draggable="false" src="' + f + '">' : insFront(c);
-        el.dataset.rar = c.rarity || '';
+    function html(t) { return infoHTML(t.dataset.uid, t.dataset.pcid, t.dataset.iid); }
+    function infoHTML(uid, pcid, iid) {
+      const u = uid && G && G.s.units[uid], cid = u ? u.cid : pcid, c = cardOf(cid); if (!c) return '';
+      const s = G && G.s, king = c.type === 'king', sp = isSp(c);
+      let h = '<div class="pop-h ' + (sp ? c.type : '') + '"><b>' + (sp ? (c.type === 'curse' ? '☾ ' : '✦ ') : king ? '♛ ' : '') + esc(c.name) + '</b>' + (king ? '' : '<span class="pe">⚡' + (s && iid ? W.cost(s, G.view, cid) : c.energy) + '</span>') + '</div>';
+      if (sp) {
+        h += '<p class="pop-t">' + esc(c.ruleText || '') + '</p><div class="pop-ph">' + ({ battle: '<i class="b">B</i> nur Battlephase', counter: '<i class="k">K</i> nur Konterphase' }[(c.spell || {}).timing] || '<i class="b">B</i><i class="k">K</i> Battle- oder Konterphase') + '</div>';
+        if (!c.playable) h += '<p class="pop-x">Nicht spielbar: ' + esc((c.notPlayable || []).join(' ')) + '</p>';
+      } else {
+        const a = u && s ? W.atkOf(s, u) : c.atk, d = u && s ? (king ? u.hp : W.defOf(s, u)) : (king ? c.hp : c.def);
+        h += '<div class="pop-s"><span class="a">ATK <b>' + fmt(a) + '</b></span><span class="' + (king ? 'h' : 'd') + '">' + (king ? 'HP' : 'DEF') + ' <b>' + fmt(d) + '</b></span></div>';
+        const md = {}; for (const x of c.move.dirs) md[x] = c.move.steps;
+        h += '<div class="pop-g">' + (king ? '' : miniGrid(md, 'mov', 0, c.move.steps)) + miniGrid(c.attack.dirs, 'atk') + '</div>';
+        if (c.gifts.length) h += '<div class="pop-gifts">' + c.gifts.map(g => { const gi = giftInfo(g.id), cd = u && u.cd && u.cd[g.id]; return '<span><b>◆ ' + esc(gi.name) + '</b>' + (king ? '' : gi.kind === 'ct' ? ' · CT ' + gi.ct + (cd ? ' (noch ' + cd + ')' : '') : ' <span class="inf" title="permanent – wirkt immer">∞</span>') + '</span>'; }).join('') + '</div>';
+        if (u && s && u.fx && u.fx.length) h += '<div class="pop-fx">' + u.fx.map(f => '<span>' + esc(W.fxText ? W.fxText(s, f) : f.id || '') + '</span>').join('') + '</div>';
+        if (u && s && u.poison) h += '<div class="pop-fx"><span>☠ vergiftet</span></div>';
       }
-      if (el.hidden) { el.hidden = false; el.classList.remove('on'); void el.offsetWidth; }
-      el.classList.add('on'); el.classList.toggle('sticky', false);
+      // Aktion: spielbarer Zauber/Fluch auf der Hand → direkt wirken
+      if (sp && iid && G && myTurn() && actor(s) === G.view && W.castOptions(s, G.view, iid).ok) h += '<div class="pop-a"><button class="btn primary small" data-popact="cast" data-arg="' + esc(iid) + '">' + (c.type === 'curse' ? '☾ Fluch wirken' : '✦ Zauber wirken') + '</button><button class="btn small" data-popact="big" data-arg="' + esc(cid) + '">Ganze Karte</button></div>';
+      else if (!sp && iid && G && G.sel && G.sel.kind === 'hand' && G.sel.iid === iid && myTurn() && W.summonOptions(s, iid).length) h += '<p class="pop-hint">Tippe ein goldenes Feld zum Beschwören.</p>';
+      return h;
     }
-    function hide() { if (slide && slide.raf) cancelAnimationFrame(slide.raf); if (!el || el.hidden) return; el.classList.remove('on', 'sticky'); el.hidden = true; cur = ''; box = null; sticky = false; slide = null; }
-    const hit = (x, y) => { const t = document.elementFromPoint(x, y); return t && t.closest('[data-pcid]'); };
+    // Lage: an der Karte; stehen gerade markierte Felder im unteren Brett-Teil, dann oben über dem Brett (nichts verdecken)
+    function place(t) {
+      const r = t.getBoundingClientRect(), w = el.offsetWidth, h = el.offsetHeight, vw = innerWidth, vh = innerHeight;
+      let left = Math.max(8, Math.min(vw - w - 8, r.left + r.width / 2 - w / 2)), top = r.top - h - 10;
+      const inHand = !!t.closest('#hand');
+      if (inHand && G) { const hl = [...document.querySelectorAll('#board .cell.hl-summon, #board .cell.hl-move, #board .cell.hl-ctarget, #board .cell.hl-csel')]; const b = $('#board').getBoundingClientRect(); if (hl.length && hl.some(c => c.getBoundingClientRect().top > b.top + b.height / 2)) top = Math.max(8, b.top + 6); }
+      if (top < 8) top = Math.min(vh - h - 8, r.bottom + 10);
+      el.style.left = left + 'px'; el.style.top = Math.max(8, top) + 'px';
+    }
+    function show(t, how) {
+      if (!t || !t.isConnected) return; make();
+      const k = (t.dataset.uid || '') + '|' + (t.dataset.iid || '') + '|' + (t.dataset.pcid || '');
+      const body = html(t); if (!body) return;
+      if (document.querySelector('#v-game.duel')) { const u = t.dataset.uid && G && G.s.units[t.dataset.uid]; duelShow(t.dataset.uid, u ? u.cid : t.dataset.pcid, t.dataset.iid); key = k; anchor = t; mode = how; return; }
+      el.innerHTML = body; el.className = 'pop' + (how === 'hover' ? ' hov' : ''); key = k; anchor = t; mode = how;
+      const was = el.hidden; el.hidden = false; place(t);
+      if (was) { el.classList.remove('on'); void el.offsetWidth; } el.classList.add('on');
+    }
+    // 4.12 PC-Bühne: Karten-Details wie bei Master Duel links groß (Bild + Werte), statt kleinem Fenster an der Karte
+    function duelShow(uid, cid, iid) {
+      make(); const body = infoHTML(uid, cid, iid); if (!body) return; const img = cid && (fullURL(cid) || artURL(cid));
+      el.innerHTML = (img ? '<div class="dp-img" style="background-image:url(\'' + img + '\')"></div>' : '') + body; el.className = 'pop duelpeek on'; el.hidden = false; el.style.left = ''; el.style.top = '';
+    }
+    function duelHide() { if (el && el.classList.contains('duelpeek')) { el.hidden = true; el.classList.remove('on'); key = ''; anchor = null; mode = ''; } }
+    function hide() { if (!el || el.hidden) return; el.hidden = true; el.classList.remove('on'); key = ''; anchor = null; mode = ''; }
+    // Antippen: gleiche Karte nochmal → zu; sonst die neue zeigen
+    function toggle(t) { const k = (t.dataset.uid || '') + '|' + (t.dataset.iid || '') + '|' + (t.dataset.pcid || ''); if (el && !el.hidden && key === k) { hide(); return false; } show(t, 'tap'); return true; }
+    function refresh() { if (!el || el.hidden || !anchor) return; if (anchor.isConnected) { const b = html(anchor); if (b === el.innerHTML) return; } let t = anchor; if (!t.isConnected) { const q = anchor.dataset.iid ? '#hand [data-iid="' + anchor.dataset.iid + '"]' : anchor.dataset.uid ? '.tok[data-uid="' + anchor.dataset.uid + '"]' : null; t = q && document.querySelector(q); } if (!t) { hide(); return; } show(t, mode); }
     function bind(container) {
-      // Maus
-      container.addEventListener('pointerover', e => { if (e.pointerType !== 'mouse') return; const t = e.target.closest('[data-pcid]'); if (t && container.contains(t)) show(t, container); });
-      container.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') hide(); });
-      container.addEventListener('focusin', e => { const t = e.target.closest('[data-pcid]'); if (t && t.matches(':focus-visible')) show(t, container); });
-      container.addEventListener('focusout', e => { if (!sticky && (!e.relatedTarget || !container.contains(e.relatedTarget))) { if (!slide) hide(); } });
-      container.addEventListener('dblclick', e => { const t = e.target.closest('[data-pcid]'); if (t && container.id !== 'hand') { hide(); openInspector({ cid: t.dataset.pcid, from: t, noFocus: true }); } });
-      // Finger / Stift
-      container.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') return; const t = e.target.closest('[data-pcid]'); if (!t) return; slide = { x: e.clientX, y: e.clientY, moved: false, id: e.pointerId }; sticky = false; container.style.scrollSnapType = 'none'; show(t, container); });
-      container.addEventListener('pointermove', e => {
-        if (!slide || e.pointerId !== slide.id) return;
-        if (!slide.moved && Math.hypot(e.clientX - slide.x, e.clientY - slide.y) > 10) slide.moved = true;
-        const t = hit(e.clientX, e.clientY); if (t && container.contains(t)) show(t, container);
-        // bei vielen Karten: am Rand der Hand weiterrollen (auch wenn der Finger dort still steht), damit alle zehn mit einer Bewegung erreichbar sind
-        slide.cx = e.clientX; slide.cy = e.clientY; if (slide.moved && !slide.raf) edge(container);
-      });
-      function edge(container) {
-        const sl = slide; if (!sl || slide !== sl) return;
-        const r = container.getBoundingClientRect(), over = container.scrollWidth > container.clientWidth + 2;
-        const dir = !over ? 0 : sl.cx < r.left + 34 ? -1 : sl.cx > r.right - 34 ? 1 : 0;
-        if (!dir) { sl.raf = 0; return; }
-        const before = container.scrollLeft; container.scrollLeft += dir * 9;
-        if (container.scrollLeft !== before) { const t = hit(sl.cx, sl.cy); if (t && container.contains(t)) show(t, container); }
-        sl.raf = requestAnimationFrame(() => edge(container));
-      }
-      const up = e => { if (!slide || e.pointerId !== slide.id) return; if (slide.raf) cancelAnimationFrame(slide.raf); container.style.scrollSnapType = ''; if (slide.moved) { container._swiped = Date.now(); } slide = null; if (el && !el.hidden) { sticky = true; el.classList.add('sticky'); } };
-      container.addEventListener('pointerup', up); container.addEventListener('pointercancel', up);
-      // nach einem Streichen keinen Klick (= keine Spielaktion) auslösen
-      container.addEventListener('click', e => { if (container._swiped && Date.now() - container._swiped < 600) { container._swiped = 0; e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+      container.addEventListener('pointerover', e => { if (e.pointerType !== 'mouse' || isPhone()) return; /* am Handy: Werte-Leiste statt Pop-up */ const t = e.target.closest('[data-pcid],.tok[data-uid]'); if (t && container.contains(t)) show(t, 'hover'); });
+      container.addEventListener('pointerout', e => { if (e.pointerType !== 'mouse' || mode !== 'hover') return; const to = e.relatedTarget; if (to && (to.closest && (to.closest('#pop') || (container.contains(to) && to.closest('[data-pcid],.tok[data-uid]'))))) return; hide(); });
+      container.addEventListener('focusin', e => { const t = e.target.closest('[data-pcid]'); if (t && kbd) show(t, 'hover'); }); // nur bei Tastatur-Bedienung
     }
-    // Tippen außerhalb schließt die stehende Vorschau
-    document.addEventListener('pointerdown', e => { if (!el || el.hidden || e.pointerType === 'mouse') return; if (e.target.closest && e.target.closest('[data-pcid]')) return; hide(); }, true);
-    addEventListener('resize', hide); addEventListener('scroll', () => { if (el && !el.hidden && box && box.isConnected) place(box); }, true);
-    return { bind, hide, get open() { return !!el && !el.hidden; }, get cid() { return cur; } };
+    let kbd = false; addEventListener('keydown', e => { if (e.key === 'Tab' || e.key.startsWith('Arrow')) kbd = true; }, true); addEventListener('pointerdown', () => { kbd = false; }, true);
+    // Tippen außerhalb (nicht auf Karte/Held/Pop-up) schließt
+    document.addEventListener('pointerdown', e => { if (!el || el.hidden) return; if (e.target.closest && e.target.closest('#pop,[data-pcid],.tok[data-uid]')) return; hide(); }, true);
+    addEventListener('resize', hide); addEventListener('scroll', () => { if (el && !el.hidden && anchor && anchor.isConnected) place(anchor); }, true);
+    return { bind, hide, show, toggle, refresh, infoHTML, duelShow, duelHide, get open() { return !!el && !el.hidden; } };
   })();
+  /* ---------- Werte-Leiste (Handy, 31.10.2026) ----------
+     Einmal auf eine Handkarte oder einen Helden tippen → die Spielerleiste zeigt statt König-HP und Energie die Werte
+     der Karte. Wegtippen (oder Karte nicht mehr ausgewählt) → wieder König-HP, Energie usw. */
+  // Handy-Bedienung (Werte in der Spielerleiste): Touch-Gerät, oder schmales Fenster, das zuletzt per Finger/Stift bedient wurde.
+  // Ein schmales PC-Fenster mit Maus behält die PC-Bedienung (Aufploppen beim Darüberfahren, Doppelklick).
+  let LASTTOUCH = false; document.addEventListener('pointerdown', e => { LASTTOUCH = e.pointerType !== 'mouse'; }, true);
+  const isPhone = () => matchMedia('(pointer: coarse)').matches || (matchMedia('(max-width: 820px)').matches && LASTTOUCH);
+  function infoTarget() {
+    if (!G || G.replay) return null;
+    const gu = G.sel && G.sel.kind === 'unit' && G.s.units[G.sel.uid], giftSel = gu && gu.owner === G.view && myTurn() && !G.gift && !G.cast && (W.giftOptions(G.s, gu.uid).length || (G.s.phase === 'battle' && G.s.decl[gu.uid]));
+    if (!isPhone()) return giftSel ? { uid: gu.uid, side: 'bot', giftsOnly: true } : null; // PC: Werte per Aufploppen, Gaben in der Leiste
+    if (G.info && G.info.uid && G.s.units[G.info.uid]) return { uid: G.info.uid, side: G.s.units[G.info.uid].owner === G.view ? 'bot' : 'top' };
+    if (G.info && G.info.iid) { const h = G.s.players[G.view].hand.find(x => x.iid === G.info.iid); if (h) return { iid: h.iid, cid: h.cid, side: 'bot' }; }
+    if (G.sel && G.sel.kind === 'hand') { const h = G.s.players[G.view].hand.find(x => x.iid === G.sel.iid); if (h) return { iid: h.iid, cid: h.cid, side: 'bot' }; }
+    if (G.cast) { const h = G.s.players[G.view].hand.find(x => x.iid === G.cast.iid); if (h) return { iid: h.iid, cid: h.cid, side: 'bot' }; }
+    if (giftSel) return { uid: gu.uid, side: 'bot' };
+    return null;
+  }
+  function cardBar(t) { return '<div class="cbar"><button class="cb-x" data-popact="close" aria-label="Werte schließen">✕</button>' + (t.giftsOnly ? '<div class="pop-h"><b>' + esc(G.s.cards[G.s.units[t.uid].cid].name) + '</b> – Gabe einsetzen?</div>' : PEEK.infoHTML(t.uid, t.cid, t.iid)) + (t.uid ? declBtns(t.uid) + giftBtns(t.uid) : '') + '</div>'; }
+  // festgelegten Angriff wieder abwählen (31.10.2026)
+  function declBtns(uid) {
+    const s = G.s, d = s.decl[uid], u = s.units[uid]; if (!d || !u || u.owner !== G.view || !myTurn() || s.phase !== 'battle' || G.replay) return '';
+    return '<div class="pop-a">' + d.targets.filter(t => s.units[t]).map(t => '<button class="btn small" data-popact="undecl" data-arg="' + uid + '|' + t + '">↩ Angriff auf ' + esc(s.cards[s.units[t].cid].name) + (s.units[t].king ? ' (König)' : '') + ' zurücknehmen</button>').join(' ') + '</div>';
+  }
+  // Kleine Vorschaubilder für die Hand (31.10.2026): das große Kartenbild wird einmal verkleinert – das Handy muss beim
+  // Wischen nicht mehr die großen Bilder skalieren. Bis es fertig ist, wird das große Bild benutzt.
+  let thumbT = 0;
+  function handImg(id) {
+    const t = THUMB[id], f = fullURL(id); if (t) return t; if (!f) return '';
+    if (t === undefined) { THUMB[id] = ''; const im = new Image(); im.onload = () => { try { const w = 300, h = Math.round(w * im.naturalHeight / im.naturalWidth), cv = document.createElement('canvas'); cv.width = w; cv.height = h; const g = cv.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(im, 0, 0, w, h); cv.toBlob(bl => { THUMB[id] = bl ? URL.createObjectURL(bl) : f; clearTimeout(thumbT); thumbT = setTimeout(() => { if (G && !$('#v-game').hidden) render([]); }, 120); }, 'image/webp', .86); } catch (e) { THUMB[id] = f; } }; im.onerror = () => { THUMB[id] = f; }; im.src = f; }
+    return f;
+  }
   function handCard(h, p, sel, extra) {
     const s = G.s, c = s.cards[h.cid], cost = W.cost(s, p, h.cid), full = fullURL(c.id), img = artURL(c.id);
     const ready = !extra && isSp(c) && G.view === p && myTurn() && actor(s) === p && !G.cast && W.castOptions(s, p, h.iid).ok;
     extra = (extra || 'data-iid="' + h.iid + '"') + ' data-pcid="' + esc(h.cid) + '"' + (ready ? ' data-ready="' + c.type + '"' : '');
     const can = isSp(c) ? W.castOptions(s, p, h.iid).ok : s.active === p && ['summon1', 'summon2'].includes(s.phase) && W.summonOptions(s, h.iid).length > 0;
-    const bg = full ? 'background-image:url(' + full + ');background-size:cover;background-position:center' : img ? 'background-image:url(' + img + ')' : 'background-color:' + (SPCOL[c.type] || ELCOL[c.elements[0]] || '#2a3242');
+    const bg = full ? 'background-image:url(' + handImg(c.id) + ');background-size:cover;background-position:center' : img ? 'background-image:url(' + img + ')' : 'background-color:' + (SPCOL[c.type] || ELCOL[c.elements[0]] || '#2a3242');
     const label = esc(c.name) + (isSp(c) ? ', ' + TYPEN(c) + ', Kosten ' + cost + (c.playable ? '' : ', nicht spielbar') : ', Kosten ' + cost + ', ATK ' + c.atk + ', DEF ' + c.def);
     const seal = isSp(c) ? '<span class="hseal">' + ({ battle: '<i class="b">B</i>', counter: '<i class="k">K</i>' }[(c.spell || {}).timing] || '<i class="b">B</i><i class="k">K</i>') + '</span>' : '';
     if (isSp(c) && !full) return '<button class="hcard sp ' + c.type + ' ' + (sel ? 'sel ' : '') + (!can && !extra ? 'no' : '') + '" ' + (extra || 'data-iid="' + h.iid + '"') + ' style="' + bg + '" aria-label="' + label + '"><span class="cost">' + cost + '</span><span class="nm">' + (c.type === 'curse' ? '☾ ' : '✦ ') + esc(c.name) + '</span><span class="st"><span>' + TYPEN(c) + '</span></span>' + seal + '</button>';
-    if (full) return '<button class="hcard full ' + (sel ? 'sel ' : '') + (!can && !extra ? 'no' : '') + '" ' + (extra || 'data-iid="' + h.iid + '"') + ' style="' + bg + '" aria-label="' + label + '" title="' + esc(c.name) + '">' + (cost < c.energy ? '<span class="cost red" title="Kosten durch Gebot der Krone gesenkt">' + cost + '</span>' : '') + '</button>';
+    if (full) return '<button class="hcard full r-' + esc(c.rarity || 'gewoehnlich') + ' ' + (sel ? 'sel ' : '') + (!can && !extra ? 'no' : '') + '" ' + (extra || 'data-iid="' + h.iid + '"') + ' style="' + bg + '" aria-label="' + label + '" title="' + esc(c.name) + '">' + (cost < c.energy ? '<span class="cost red" title="Kosten durch Gebot der Krone gesenkt">' + cost + '</span>' : '') + '</button>';
     return '<button class="hcard ' + (sel ? 'sel ' : '') + (!can && !extra ? 'no' : '') + '" ' + (extra || 'data-iid="' + h.iid + '"') + ' style="' + bg + '" aria-label="' + label + '">'
       + (img ? '' : '<span class="ph">' + esc(initials(c.name)) + '</span>') + '<span class="cost ' + (cost < c.energy ? 'red' : '') + '">' + cost + '</span><span class="nm">' + esc(c.name) + '</span><span class="st"><span class="a">' + c.atk + '</span><span class="d">' + c.def + '</span></span></button>';
   }
@@ -2128,6 +2454,7 @@
     // Zauber/Fluch wird gerade gewirkt: Fenster liegt über dem Spielfeld (renderCastFloat)
     html = stackPanel() + html;
     box.innerHTML = html || '<p class="hint">Tippe eine Karte auf dem Brett oder in der Hand an, um sie hier genau zu sehen. Doppelklick oder gedrückt halten zeigt die Karte groß.</p>';
+    { const db = $('#detailbox'); if (db) db.classList.toggle('empty', !html); } // 4.13: Hinweis-Kasten nur, wenn er etwas zeigt (PC-Bühne)
   }
   let logLen = 0;
   function renderLog() {
@@ -2179,6 +2506,67 @@
     for (let i = 0; i < 14; i++) { const sp = document.createElement('i'); sp.className = 'spark'; el.appendChild(sp); const a = rnd(0, Math.PI * 2), d = rnd(30, 90); sp.animate([{ transform: 'translate(-50%,-50%)', opacity: 1 }, { transform: 'translate(calc(-50% + ' + Math.cos(a) * d + 'px), calc(-50% + ' + Math.sin(a) * d + 'px)) scale(.3)', opacity: 0 }], { duration: rnd(500, 900), easing: 'ease-out', fill: 'forwards' }); }
     setTimeout(() => el.remove(), dur + 80);
   }
+  /* ---------- Effekt-Bilder (1.11.2026): Spritesheets aus WOK_FX, nur transform/opacity → flüssig, blockieren nie ---------- */
+  const SPR = (() => {
+    const X = window.WOK_FX || { img: {}, frames: {} }; let dustAlt = 0;
+    const lvl = () => (SET.fx === 'aus' || !ANIM() || matchMedia('(prefers-reduced-motion: reduce)').matches) ? 0 : SET.fx === 'wenig' ? 1 : 2;
+    const ELFX = { fire: 'fx_feuer', water: 'fx_wasser', earth: 'fx_erde', wind: 'fx_wind', lightning: 'fx_blitz', light: 'fx_licht', dark: 'fx_dunkelheit' };
+    function elOf(c) { const ids = (window.WOK_DATA && WOK_DATA.ELEMENTS) || []; const e = (c && c.elements && c.elements[0]) || ''; const d = ids.find(x => x.id === e || x.name === e) || {}; const nm = String(d.name || e).toLowerCase();
+      return nm.startsWith('feuer') ? 'fx_feuer' : nm.startsWith('wasser') ? 'fx_wasser' : nm.startsWith('erde') ? 'fx_erde' : nm.startsWith('wind') ? 'fx_wind' : nm.startsWith('blitz') ? 'fx_blitz' : nm.startsWith('licht') ? 'fx_licht' : nm.startsWith('dunkel') ? 'fx_dunkelheit' : ELFX[e] || (c && c.type === 'curse' ? 'fx_dunkelheit' : 'fx_licht'); }
+    // spielt ein Spritesheet an einem Feld (oder Mittelpunkt in % des Bretts); size = Vielfaches der Feldbreite
+    function play(name, at, o) {
+      o = o || {}; if (!lvl()) return; const src = X.img[name], n = X.frames[name] || 1; const board = $('#board'); if (!src || !board) return;
+      const P = typeof at === 'string' ? pos(at) : at; if (!P) return; const size = (o.size || 1.6) * (P.w || 100 / 7);
+      const el = document.createElement('div'); el.className = 'spr' + (o.cls ? ' ' + o.cls : '');
+      el.style.cssText = 'left:' + (P.left + (P.w || 0) / 2) + '%;top:' + (P.top + (P.h || 0) / 2) + '%;width:' + size + '%;background-image:url(' + src + ');background-size:' + (n * 100) + '% 100%;' + (o.rot ? '--r:' + o.rot + 'deg;' : '') + (o.blend ? 'mix-blend-mode:' + o.blend + ';' : '') + (o.op ? 'opacity:' + o.op + ';' : '');
+      board.appendChild(el); const ms = o.ms || 520;
+      const a = el.animate([{ backgroundPosition: '0% 0' }, { backgroundPosition: '100% 0' }], { duration: ms, delay: o.delay || 0, easing: 'steps(' + Math.max(1, n - 1) + ', jump-none)', fill: 'both', iterations: o.loops || 1 });
+      a.onfinish = () => el.remove(); setTimeout(() => el.remove(), (o.delay || 0) + ms * (o.loops || 1) + 400);
+    }
+    function glow(at, color, o) { o = o || {}; if (!lvl() || !X.img.fx_glow) return; const board = $('#board'); const P = typeof at === 'string' ? pos(at) : at; if (!P || !board) return;
+      const el = document.createElement('div'); el.className = 'spr glow'; const size = (o.size || 2) * (P.w || 14);
+      el.style.cssText = 'left:' + (P.left + (P.w || 0) / 2) + '%;top:' + (P.top + (P.h || 0) / 2) + '%;width:' + size + '%;--c:' + (color || '#ffd27a');
+      board.appendChild(el); el.animate([{ opacity: 0, transform: 'translate(-50%,-50%) scale(.4)' }, { opacity: o.op || .85, transform: 'translate(-50%,-50%) scale(1)', offset: .3 }, { opacity: 0, transform: 'translate(-50%,-50%) scale(1.25)' }], { duration: o.ms || 600, delay: o.delay || 0, fill: 'both', easing: 'cubic-bezier(.2,.7,.3,1)' }).onfinish = () => el.remove();
+      setTimeout(() => el.remove(), (o.delay || 0) + (o.ms || 600) + 300);
+    }
+    // Ereignisse → Effekte (gleichzeitig mit den vorhandenen Animationen, ohne Wartezeit)
+    function onEvents(s, evs) {
+      if (!lvl() || !G || (G.replay && G.replay.silent)) return; const full = lvl() === 2;
+      for (const e of evs) {
+        if (e.t === 'summon' && e.field) { play(dustAlt++ % 2 ? 'fx_staub_landung2' : 'fx_staub_landung', e.field, { size: 1.9, ms: 480, delay: 160, cls: 'low' }); const c = s.cards[e.cid]; if (full && c && c.rarity === 'legendaer') glow(e.field, '#ffd27a', { size: 3, ms: 900 }); }
+        if (e.t === 'combat') for (const h of e.hits) { const A = s.units[h.a], T = s.units[h.t], ta = T ? T.pos : null, aa = A ? A.pos : null; const tp = ta || (G.lastPos && G.lastPos[h.t]), ap = aa || (G.lastPos && G.lastPos[h.a]); if (!tp) continue;
+          let rot = 0; if (ap) { const P1 = pos(ap), P2 = pos(tp); rot = Math.atan2(P2.top - P1.top, P2.left - P1.left) * 180 / Math.PI + 30; }
+          play('fx_klinge', tp, { size: 1.7, ms: 360, rot }); play('fx_treffer_funken', tp, { size: 1.8, ms: 420, delay: 120 }); if (full) glow(tp, '#ffb35a', { size: 1.8, ms: 420, delay: 100, op: .6 }); }
+        if (e.t === 'death') for (const id of e.uids) { const f = (G.lastPos && G.lastPos[id]); if (f) play('fx_splitter', f, { size: 1.6, ms: 760, delay: 140 }); }
+        if (e.t === 'kingDamage') { const k = s.units[e.uid]; if (k) { play('fx_treffer_funken', k.pos, { size: 2.2, ms: 460 }); if (full) glow(k.pos, '#ff6a4a', { size: 2.4, ms: 520, op: .7 }); const bar = k.owner === G.view ? $('#pb-bot') : $('#pb-top'); if (bar && bar.animate) bar.animate([{ transform: 'none' }, { transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'translateX(-2px)' }, { transform: 'none' }], { duration: 320 }); } }
+        if (e.t === 'cast') { const c = s.cards[e.cid], k = W.kingOf(s, e.p); if (k) { play(elOf(c), k.pos, { size: 2, ms: 640, blend: 'screen' }); if (full) glow(k.pos, c.type === 'curse' ? '#b07cff' : '#7cffb0', { size: 2.6, ms: 700, op: .7 }); } }
+        if (e.t === 'spellFx') { const u = s.units[e.uid], c = s.cards[e.cid]; if (u) play(elOf(c), u.pos, { size: 1.8, ms: 620, blend: 'screen' }); }
+        if (e.t === 'gift') { const t = (e.target && s.units[e.target]) || s.units[e.uid]; if (t) glow(t.pos, '#ecd08f', { size: 1.8, ms: 520, op: .7 }); }
+      }
+      G.lastPos = Object.fromEntries(Object.values(s.units).map(u => [u.uid, u.pos]));
+    }
+    // kurzes Band oben auf dem Spielfeld: BATTLEPHASE, KONTERPHASE, AUSWERTUNG, GEGNER AM ZUG – darunter kann man weiterspielen
+    function phaseBanner(text, cls) { if (!lvl()) return; const w = document.querySelector('#v-game .boardwrap'); if (!w) return; const old = w.querySelector('.phband'); if (old) old.remove();
+      const el = document.createElement('div'); el.className = 'phband ' + (cls || ''); el.innerHTML = '<b>' + esc(text) + '</b>'; w.appendChild(el);
+      el.animate([{ opacity: 0, transform: 'translate(-50%,-30%) scaleX(.6)' }, { opacity: 1, transform: 'translate(-50%,-50%) scaleX(1)', offset: .18 }, { opacity: 1, transform: 'translate(-50%,-50%) scaleX(1)', offset: .78 }, { opacity: 0, transform: 'translate(-50%,-70%) scaleX(1.04)' }], { duration: 1100, easing: 'cubic-bezier(.2,.8,.3,1)', fill: 'both' }).onfinish = () => el.remove(); }
+    function phases(s, evs) {
+      if (!G || G.tutorial || (G.replay && G.replay.silent)) return; const me = G.view;
+      for (const e of evs) {
+        if (e.t === 'turn' && e.p !== me && G.mode !== 'hot') phaseBanner('GEGNER AM ZUG', 'foe');
+        if (e.t === 'phase' && e.phase === 'battle') phaseBanner(e.p === me ? 'DEINE BATTLEPHASE' : 'BATTLEPHASE · GEGNER', e.p === me ? '' : 'foe');
+        if (e.t === 'phase' && e.phase === 'counter' && !(e.p === me && !isAI(me))) phaseBanner('KONTERPHASE · ' + (e.p === me ? 'DU' : 'GEGNER'), 'counter');
+        if (e.t === 'spellsResolve') phaseBanner('EFFEKTE WERDEN AUFGELÖST', 'counter');
+        if (e.t === 'counterPass' && e.auto && e.p === me) phaseBanner('KEIN KONTER MÖGLICH – WEITER', 'counter');
+      }
+    }
+    // lebendiges Spielfeld: Fackellicht flackert, Staub schwebt, Licht auf der Seite, die dran ist
+    function atmo() { const w = document.querySelector('#v-game .boardwrap'); if (!w) return; let a = w.querySelector('.atmo'); const on = lvl() > 0;
+      if (!on) { if (a) a.remove(); return; } if (a) return;
+      a = document.createElement('div'); a.className = 'atmo' + (lvl() === 2 ? ' full' : ''); a.setAttribute('aria-hidden', 'true');
+      a.innerHTML = '<i class="torch t1"></i><i class="torch t2"></i><i class="torch t3"></i><i class="torch t4"></i><i class="sidelight"></i>' + (lvl() === 2 ? Array.from({ length: 14 }, (_, k) => '<i class="dust" style="left:' + (5 + (k * 37) % 90) + '%;top:' + (8 + (k * 53) % 84) + '%;--d:' + (9 + k % 6) + 's;--x:' + ((k % 5) * 6 - 12) + 'px;animation-delay:-' + (k * 1.3) + 's"></i>').join('') : '');
+      w.appendChild(a); }
+    return { play, glow, onEvents, phases, atmo, elOf, level: lvl, img: n => X.img[n] };
+  })();
   function floatAt(f, text, cls) {
     const P = pos(f), el = document.createElement('div'); el.className = 'float ' + (cls || ''); el.textContent = text;
     el.style.left = (P.left + P.w / 2) + '%'; el.style.top = (P.top + P.h / 2) + '%'; $('#board').appendChild(el); setTimeout(() => el.remove(), 1400);
@@ -2206,7 +2594,8 @@
     if (!G || !G.timer || G.s.result || !G.deadline) { el.textContent = ''; return; }
     const left = Math.max(0, Math.ceil((G.deadline - Date.now()) / 1000));
     el.textContent = '⏱ ' + Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0'); el.classList.toggle('low', left <= 15);
-    if (left === 0 && myTurn() && !G.timeoutSent) { G.timeoutSent = true; toast('Zeit abgelaufen – der Zug wird abgeschlossen.'); if (G.s.pendingDiscard !== null) { const P = G.s.players[G.s.pendingDiscard]; dispatch({ type: 'discard', p: G.s.pendingDiscard, iid: P.hand[P.hand.length - 1].iid }); closeDialog(); } dispatch({ type: 'timeout' }); }
+    if (left === 0 && myTurn() && !G.timeoutSent) { G.timeoutSent = true; if (G.idea) { G.s = G.idea.base; G.idea = null; renderIdea(); } G.cast = null; G.gift = null; closeDialog(); toast('Zeit abgelaufen – der Zug wird abgeschlossen.'); if (G.s.pendingDiscard !== null && G.s.pendingDiscard === G.view) { const P = G.s.players[G.s.pendingDiscard]; dispatch({ type: 'discard', p: G.s.pendingDiscard, iid: P.hand[P.hand.length - 1].iid }); }
+      const me = actor(G.s); if (me === G.view && !G.s.result) dispatch(G.s.phase === 'counter' ? { type: 'pass', p: me } : { type: 'timeout', p: me }); } // Konterphase: Passen (timeout gilt nur für den aktiven Spieler)
     if (left > 0) G.timeoutSent = false;
   }
   setInterval(() => { if (G && G.timer && !$('#v-game').hidden) tickTimer(); }, 500);
@@ -2268,18 +2657,18 @@
     function push(fn, ms) { q.push([fn, ms]); if (!busy) next(); }
     function next() {
       const it = q.shift(); if (!it) { busy = false; const l = layer(); l.hidden = true; l.innerHTML = ''; l.onclick = null; const w = idle.splice(0); for (const f of w) try { f(); } catch (e) { } return; }
-      busy = true; const l = layer(); l.hidden = false; l.innerHTML = ''; let done = false;
+      busy = true; const l = layer(); l.hidden = false; l.innerHTML = ''; l.classList.remove('fx-pass'); let done = false;
       const end = () => { if (done) return; done = true; clearTimeout(t); l.classList.add('out'); setTimeout(() => { l.classList.remove('out'); next(); }, 260); };
-      l.onclick = end; it[0](l); const t = setTimeout(end, it[1]);
+      const t = setTimeout(() => end(), it[1]); l.onclick = end; try { it[0](l); } catch (e) { ERRLOG.add('Einblendung', e.message, e.stack); end(); }
     }
     const art = c => fullURL(c.id) ? '<img src="' + fullURL(c.id) + '" alt="">' : '<div class="fx-noimg ' + (c.type || '') + '"><b>' + esc(c.name) + '</b><span>' + esc(TYPEN(c)) + '</span></div>';
     function cutIn(c, owner) {
       if (!ANIM()) return;
       const col = ELGLOW[c.elements && c.elements[0]] || '#ecd08f', mine = G && owner === G.view;
-      push(l => {
+      push(l => { l.classList.add('fx-pass');
         l.innerHTML = '<div class="cutin ' + (mine ? 'mine' : 'foe') + '" style="--glow:' + col + '"><i class="rays"></i><div class="ci-card">' + art(c) + '<i class="ci-shine"></i></div><div class="ci-text"><small>' + (c.type === 'king' ? 'König' : esc(RAR(c.rarity)) + ' · ' + (mine ? 'deine Beschwörung' : 'gegnerische Beschwörung')) + '</small><b>' + esc(c.name) + '</b></div><span class="fx-skip">Antippen zum Überspringen</span></div>';
         SFX.thump(1);
-      }, 1750);
+      }, 1000); // 1.11.2026: Tempo (vorher 1300 ms), blockiert nichts
     }
     function versus(s) {
       if (!ANIM()) return;
@@ -2289,15 +2678,15 @@
         const side = (c, p, cls) => '<div class="vs-side ' + cls + '" style="--glow:' + (ELGLOW[c.elements[0]] || '#ecd08f') + '">' + avHTML(av[p], 'vs-av') + '<div class="vs-who"><b>' + esc(s.players[p].name) + '</b><small>♛ ' + esc(c.name) + '</small></div><div class="vs-card">' + art(c) + '</div></div>';
         l.innerHTML = '<div class="versus">' + side(k[1 - me], 1 - me, 'top') + '<div class="vs-mid"><span>VS</span><small>' + esc(s.players[s.active].name) + ' beginnt</small></div>' + side(k[me], me, 'bot') + '<span class="fx-skip">Antippen zum Überspringen</span></div>';
         SFX.thump(1.2);
-      }, 2300);
+      }, 1700); // 31.10.2026: Tempo (vorher 2300 ms)
     }
     // Zauber/Flüche dieser Auswertung: als Kette in der Mitte, neutralisierte zerbrechen
     function chain(s, list, title) {
       if (!ANIM() || !list.length) return;
-      push(l => {
+      push(l => { l.classList.add('fx-pass');
         l.innerHTML = '<div class="chainfx"><span class="eyebrow">' + esc(title || 'Auswertung nach der Konterphase') + '</span><div class="ch-row">' + list.map((x, i) => '<div class="ch-card ' + x.c.type + (x.canceled ? ' cancel' : '') + '" style="--i:' + i + '"><span class="ch-n">' + (i + 1) + '</span>' + art(x.c) + (x.canceled ? '' : x.c.type === 'curse' ? smokeHTML(8) : sparkHTML(10)) + '<small>' + esc(s.players[x.p] ? s.players[x.p].name : '') + '</small>' + (x.canceled ? '<em>neutralisiert</em>' : '') + '</div>').join('') + '</div><span class="fx-skip">Antippen zum Überspringen</span></div>';
         SFX.swish();
-      }, 1300 + list.length * 450);
+      }, 800 + list.length * 300); // 1.11.2026: Tempo (vorher 1000 + 380 je Karte)
     }
     // Aktivierung: Flüche lassen dunklen Rauch aus der Karte steigen, Zauber leuchten mit Runen und Funken in Kartenfarbe
     const rnd = (a, b) => (a + Math.random() * (b - a)).toFixed(2);
@@ -2305,18 +2694,23 @@
     function sparkHTML(n) { let h = ''; for (let i = 0; i < n; i++) h += '<i style="--x:' + rnd(-50, 50) + '%;--dx:' + rnd(-14, 14) + 'vw;--d:' + rnd(0, 1) + 's;--s:' + rnd(.5, 1.4) + ';--t:' + rnd(1.1, 1.9) + 's"></i>'; return '<span class="sparks">' + h + '</span>'; }
     function castFx(c, p) {
       if (!ANIM() || !c) return; const curse = c.type === 'curse', mine = G && p === G.view;
-      push(l => {
+      push(l => { l.classList.add('fx-pass');
         l.innerHTML = '<div class="castfx ' + (curse ? 'curse' : 'spell') + '">' + (curse ? '' : '<i class="runes"></i><i class="runes r2"></i><i class="burst"></i>') + '<div class="cf-card">' + art(c) + '<i class="cf-glow"></i></div>' + (curse ? smokeHTML(24) : sparkHTML(28))
           + '<div class="cf-text"><small>' + (mine ? 'Du aktivierst' : 'Gegner aktiviert') + ' ' + (curse ? 'einen Fluch' : 'einen Zauber') + '</small><b>' + esc(c.name) + '</b></div><span class="fx-skip">Antippen zum Überspringen</span></div>';
         if (curse) { SFX.swish(); SFX.thump(.35); } else SFX.chime(true);
-      }, 1900);
+      }, 1000); // 1.11.2026: Tempo (vorher 1400 ms), blockiert nichts
     }
-    function banner(text, cls) { if (!ANIM()) return; push(l => { l.innerHTML = '<div class="fxbanner ' + (cls || '') + '"><b>' + esc(text) + '</b></div>'; SFX.chime(cls !== 'lose'); }, 1500); }
+    function banner(text, cls) { if (!ANIM()) return; push(l => { l.classList.add('fx-pass'); l.innerHTML = '<div class="fxbanner ' + (cls || '') + '"><b>' + esc(text) + '</b></div>'; SFX.chime(cls !== 'lose'); }, 1000); }
     function onEvents(s, evs) {
       if (!G || G.replay && G.replay.silent) return;
       G.castMap = G.castMap || {};
       for (const e of evs) {
         if (e.t === 'start') versus(s);
+        // 31.10.2026: unübersehbar, wenn du dran bist (zu zweit an einem Gerät nach der Übergabe, siehe handover)
+        if (G.mode !== 'hot' && !G.tutorial && !s.result) {
+          if (e.t === 'turn' && e.p === G.view && !isAI(e.p)) turnCall('turn');
+          if (e.t === 'phase' && e.phase === 'counter' && s.counter === G.view && !isAI(G.view)) turnCall('counter');
+        }
         if (e.t === 'control' && evs.some(x => x.t === 'cast' && x.now)) banner('⚔ Übernommen – greift mit an!');
         if (e.t === 'summon' && !e.revive) { const c = s.cards[e.cid]; if (c && c.type === 'hero' && c.rarity === 'legendaer') cutIn(c, e.p); else SFX.swish(); }
         if (e.t === 'cast') { G.castMap[e.sid] = { cid: e.cid, p: e.p }; castFx(s.cards[e.cid], e.p); }
@@ -2324,7 +2718,19 @@
         if (e.t === 'death') SFX.thump(.45);
       }
     }
-    return { cutIn, versus, chain, banner, onEvents, get busy() { return busy; }, whenIdle: f => { if (!busy) f(); else if (!idle.includes(f)) idle.push(f); } };
+    // „Du bist dran“: große Einblendung, Ton, Vibration (wo möglich), Ansicht springt zum eigenen Spielfeld
+    function turnCall(kind) {
+      const counter = kind === 'counter';
+      try { if (navigator.vibrate) navigator.vibrate(counter ? [80, 60, 80, 60, 120] : [70, 50, 110]); } catch (e) { }
+      try { const b = $('#board'); if (b) b.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { }
+      push(l => {
+        l.classList.add('fx-pass'); // blockiert nichts: man kann sofort tippen, wischen und spielen
+        l.innerHTML = '<div class="turncall ' + (counter ? 'counter' : 'turn') + '"><i class="tc-rays"></i><b>' + (counter ? '🛡 KONTER!' : '⚔ DU BIST DRAN!') + '</b><small>' + (counter ? 'Der Gegner greift an – du kannst reagieren' : 'Dein Zug beginnt') + '</small></div>';
+        SFX.chime(true); SFX.thump(counter ? 1 : .7);
+      }, ANIM() ? 1300 : 900);
+    }
+    function reset() { q.length = 0; busy = false; const l = layer(); l.hidden = true; l.innerHTML = ''; l.onclick = null; const w = idle.splice(0); for (const f of w) try { f(); } catch (e) { } }
+    return { reset, cutIn, versus, chain, banner, turnCall, onEvents, get busy() { return busy; }, whenIdle: f => { if (!busy) f(); else if (!idle.includes(f)) idle.push(f); } };
   })();
 
   // Begleiter („Mate“) und Aussehen je Deck
@@ -2378,7 +2784,7 @@
     let list = (LS.get(REPLAYS_KEY) || []).filter(x => x && x.id); list.unshift(item); list = list.slice(0, 5);
     while (list.length) { try { localStorage.setItem(REPLAYS_KEY, JSON.stringify(list)); break; } catch (e) { list.pop(); } }
   }
-  function replayList() { return (LS.get(REPLAYS_KEY) || []).filter(x => x && x.init && x.acts); }
+  function replayList() { return (LS.get(REPLAYS_KEY) || []).filter(x => x && x.init && x.acts && (x.init.rows || 7) === W.ROWS); } // Wiederholungen vom alten 7-Reihen-Feld passen nicht mehr
   function replaysDialog() {
     const L = replayList();
     dialog('<h2>Wiederholungen</h2>' + (L.length ? '<p class="muted">Die letzten ' + L.length + ' beendeten Partien. Du siehst jeden Zug noch einmal.</p><div class="rplist">' + L.map(x => '<button class="btn" data-act="rp:' + x.id + '"><b>' + esc(x.names.join(' gegen ')) + '</b><small>' + new Date(x.date).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' }) + ' · ' + esc(x.result) + ' · ' + x.acts.length + ' Aktionen</small></button>').join('') + '</div>' : '<p class="muted">Noch keine Wiederholung. Nach jeder beendeten Partie wird sie hier gespeichert (die letzten 5).</p>') + '<div class="row"><button class="btn" data-act="close">Schließen</button></div>',
@@ -2475,14 +2881,14 @@
           { text: 'Energie verbraucht. Tippe den großen Knopf, um zur nächsten Phase zu gehen.', hl: () => ['#mainbtn'], done: (S) => S.phase === 'move' }
         ] },
       { id: 'laufen', title: 'Laufen', desc: 'Helden bewegen: Schritte, Richtungen und gesperrte Felder.', min: 2,
-        make() { const s = base({ phase: 'move' }); const k = put(s, 't_kli', 0, 'D6'); put(s, 't_gra', 1, 'D3'); return { s, k }; },
+        make() { const s = base({ phase: 'move' }); const k = put(s, 't_kli', 0, 'D4'); put(s, 't_gra', 1, 'D2'); return { s, k }; }, // 31.10.2026: Feld mit 5 Reihen
         steps: [
           { text: 'Tippe deine <b>Klingentänzerin</b> an.', hl: (S, T) => ['.tok[data-uid="' + T.k + '"]'], done: (S, T, G) => sel(G, T.k) },
-          { text: 'Die <b>blauen Felder</b> zeigen, wohin sie laufen darf: bis zu 2 Schritte in ihren Laufrichtungen, Richtungswechsel erlaubt, aber nie über besetzte Felder. Tippe <b>D4</b>.', hl: () => ['.cell[data-f="D4"]'], done: (S, T, G, e) => ev(e, 'move') },
+          { text: 'Die <b>blauen Felder</b> zeigen, wohin sie laufen darf: bis zu 2 Schritte in ihren Laufrichtungen, Richtungswechsel erlaubt, aber nie über besetzte Felder. Tippe das markierte Feld <b>direkt vor dem Grabwächter</b>.', hl: () => ['.cell[data-f="D3"]'], done: (S, T, G, e) => ev(e, 'move') },
           { text: 'Jeder Held läuft einmal pro Zug. Die Felder direkt neben dem gegnerischen König darf man nicht betreten. Jetzt steht deine Klingentänzerin direkt vor dem Grabwächter – bereit für den Angriff.', next: true }
         ] },
       { id: 'kampf', title: 'Angreifen und Kampf', desc: 'Angriffe festlegen und verstehen, wer gewinnt.', min: 3,
-        make() { const s = base({ phase: 'battle' }); const k = put(s, 't_kli', 0, 'D4'), g = put(s, 't_gra', 1, 'D3'); return { s, k, g }; },
+        make() { const s = base({ phase: 'battle' }); const k = put(s, 't_kli', 0, 'D3'), g = put(s, 't_gra', 1, 'D2'); return { s, k, g }; },
         steps: [
           { text: 'Battlephase! Tippe deine <b>Klingentänzerin</b> an. Angreifen geht nur auf direkt angrenzende Felder in ihren Angriffsrichtungen (Schütze: 2 Felder).', hl: (S, T) => ['.tok[data-uid="' + T.k + '"]'], done: (S, T, G) => sel(G, T.k) },
           { text: 'Mögliche Ziele sind markiert, mit Vorschau: Wer gewinnt? Tippe den <b>Grabwächter</b> an, um den Angriff festzulegen.', hl: (S, T) => ['.tok[data-uid="' + T.g + '"]'], done: (S, T, G, e) => ev(e, 'declare', x => (x.targets || []).length) },
@@ -2490,23 +2896,23 @@
           { text: '<b>ATK 1.500 gegen DEF 1.000</b>: Der Verteidiger fällt. Ist die ATK kleiner als die DEF, fällt der Angreifer. Bei Gleichstand fallen beide. Mehrere Angreifer addieren ihre ATK nicht.', next: true }
         ] },
       { id: 'gaben', title: 'Gaben einsetzen', desc: 'Aktivierbare Fähigkeiten mit Abklingzeit (CT).', min: 3,
-        make() { const s = base({ phase: 'battle' }); const k = put(s, 't_kli', 0, 'D4'), g = put(s, 't_kno', 1, 'D3'); return { s, k, g }; },
+        make() { const s = base({ phase: 'battle' }); const k = put(s, 't_kli', 0, 'D3'), g = put(s, 't_kno', 1, 'D2'); return { s, k, g }; },
         steps: [
           { text: 'Der <b>Knochenriese</b> hat DEF 1.800 – deine Klingentänzerin (ATK 1.500) würde verlieren. Tippe sie einmal an.', hl: (S, T) => ['.tok[data-uid="' + T.k + '"]'], done: (S, T, G) => sel(G, T.k) },
-          { text: 'Ihre Gaben erscheinen direkt am Helden. Setze <b>Mordlust</b> ein: +500 ATK bis zum Ende des Zuges.', hl: () => ['#qgifts [data-qg="mordlust"]'], done: (S, T, G, e) => ev(e, 'gift') },
+          { text: 'Ihre Gaben erscheinen direkt am Helden. Setze <b>Mordlust</b> ein: +500 ATK bis zum Ende des Zuges.', hl: () => ['#pb-bot [data-qg="mordlust"]'], done: (S, T, G, e) => ev(e, 'gift') },
           { text: 'Jetzt hat sie 2.000 ATK. „CT 3“ heißt: danach 3 Züge Abklingzeit. Tippe deine Klingentänzerin und dann den <b>Knochenriesen</b> an.', hl: (S, T, G) => sel(G, T.k) ? ['.tok[data-uid="' + T.g + '"]'] : ['.tok[data-uid="' + T.k + '"]'], done: (S, T, G, e) => ev(e, 'declare', x => (x.targets || []).length) },
           { text: 'Tippe <b>Battlephase abschließen</b>.', hl: () => ['#mainbtn'], done: (S, T, G, e) => ev(e, 'combat') },
           { text: 'Geschafft: 2.000 gegen 1.800. Gaben sind sofort verbindlich – setze sie überlegt ein.', next: true }
         ] },
       { id: 'zauber', title: 'Zauber, Flüche und Konterphase', desc: 'Karten ausspielen und auf gegnerische Angriffe antworten.', min: 4,
-        make() { const s = base({ phase: 'battle', energy: 3 }); const r = put(s, 't_rek', 0, 'D4'), w = put(s, 't_ste', 1, 'D3'), f = hand(s, 0, 't_flu'); return { s, r, w, f }; },
+        make() { const s = base({ phase: 'battle', energy: 3 }); const r = put(s, 't_rek', 0, 'D3'), w = put(s, 't_ste', 1, 'D2'), f = hand(s, 0, 't_flu'); return { s, r, w, f }; },
         steps: [
-          { text: 'Dein <b>Rekrut</b> (ATK 1.200) kommt nicht gegen den <b>Steinwächter</b> (DEF 1.500) an. Tippe den violett glühenden <b>Schwächefluch</b> in deiner Hand an – seine Wirkung erscheint direkt über dem Spielfeld.', hl: (S, T) => ['.hcard[data-iid="' + T.f + '"]'], scroll: '#hand', done: (S, T, G) => !!G.cast },
+          { text: 'Dein <b>Rekrut</b> (ATK 1.200) kommt nicht gegen den <b>Steinwächter</b> (DEF 1.500) an. Tippe den violett glühenden <b>Schwächefluch</b> in deiner Hand an (am Handy danach „Fluch wirken“) – seine Wirkung erscheint direkt über dem Spielfeld.', hl: (S, T) => ['.hcard[data-iid="' + T.f + '"]'], scroll: '#hand', done: (S, T, G) => !!G.cast },
           { text: 'Wähle den <b>Steinwächter</b> als Ziel und bestätige.', hl: (S, T) => ['.tok[data-uid="' + T.w + '"]', '[data-cok]'], scroll: '[data-cok]', done: (S, T, G, e) => ev(e, 'cast') },
           { text: 'Ausspielen ist verbindlich. Ausgewertet wird erst <b>nach der Konterphase</b> des Gegners. Lege jetzt den Angriff fest: Rekrut → Steinwächter.', hl: (S, T, G) => sel(G, T.r) ? ['.tok[data-uid="' + T.w + '"]'] : ['.tok[data-uid="' + T.r + '"]'], done: (S, T, G, e) => ev(e, 'declare', x => (x.targets || []).length) },
           { text: 'Tippe <b>Battlephase abschließen</b>. Zuerst wirkt der Fluch (DEF −500), dann kämpfen die Helden.', hl: () => ['#mainbtn'], done: (S, T, G, e) => ev(e, 'combat') },
           { text: 'Jetzt greift der Gegner an! Sein <b>Knochenriese</b> (ATK 1.900) zielt auf deinen <b>Schildwächter</b>. In seiner Konterphase bist du dran: Spiele „<b>Schild des Lichts</b>“ (0 Energie) auf deinen angegriffenen Helden.',
-            enter(T, G) { const s = G.s; for (const u of Object.values(s.units)) if (!u.king) delete s.units[u.uid]; T.d = put(s, 't_wae', 0, 'D5'); T.e = put(s, 't_kno', 1, 'D4'); T.p = hand(s, 0, 't_sch'); s.active = 1; s.phase = 'battle'; s.decl = {}; s.stack = []; s.players[1].energy = 0; s.players[0].energy = 0;
+            enter(T, G) { const s = G.s; for (const u of Object.values(s.units)) if (!u.king) delete s.units[u.uid]; T.d = put(s, 't_wae', 0, 'D4'); T.e = put(s, 't_kno', 1, 'D3'); T.p = hand(s, 0, 't_sch'); s.active = 1; s.phase = 'battle'; s.decl = {}; s.stack = []; s.players[1].energy = 0; s.players[0].energy = 0;
               let r = W.apply(s, { type: 'declare', p: 1, uid: T.e, targets: [T.d] }); r = W.apply(r.state, { type: 'endPhase', p: 1 }); G.s = r.state; },
             hl: (S, T, G) => G.cast ? ['.tok[data-uid="' + T.d + '"]', '[data-cok]'] : ['.hcard[data-iid="' + T.p + '"]', '[data-cast]'], scroll: '[data-cast],[data-cok]', done: (S, T, G, e) => ev(e, 'cast') },
           { text: 'Tippe <b>Passen – Konterphase beenden</b>. Dann wird ausgewertet.', hl: () => ['#mainbtn'], done: (S, T, G, e) => ev(e, 'spellsResolve') || ev(e, 'combat') },
@@ -2807,18 +3213,38 @@
     const openBig = t => { const o = bigOf(t); if (!o) return; if (o.iid && !myTurn()) { const h = G.s.players[G.view].hand.find(x => x.iid === o.iid); if (h) openInspector({ cid: h.cid, from: t }); return; } openInspector(o); };
     board.addEventListener('click', e => { if (!G) return; const t = e.target.closest('.tok'); if (t) { if (t._long) { t._long = false; return; } if (e.detail >= 2) { openBig(t); return; } clickUnit(t.dataset.uid); return; } const c = e.target.closest('.cell'); if (c) clickField(c.dataset.f); });
     board.addEventListener('keydown', e => { const t = e.target.closest('.tok,.cell'); if (!t) return; if ((e.key === 'i' || e.key === 'I') && t.classList.contains('tok')) { e.preventDefault(); openBig(t); return; } if (e.key !== 'Enter' && e.key !== ' ') return; e.preventDefault(); t.click(); });
-    let press = 0, pressPos = null;
-    const longStart = e => { const t = e.target.closest('.tok,.hcard'); if (!t || !G || (e.button !== undefined && e.button !== 0)) return; clearTimeout(press); pressPos = [e.clientX, e.clientY]; press = setTimeout(() => { t._long = true; openBig(t); setTimeout(() => { t._long = false; }, 900); }, 480); };
+    let press = 0, pressPos = null, longOpenAt = 0;
+    // Gedrückthalten öffnet die große Ansicht – das Loslassen des Fingers darf dort nichts antippen (z. B. „Zurück“ unter dem Finger)
+    document.addEventListener('click', e => { if (longOpenAt && Date.now() - longOpenAt < 5000 && e.target.closest && e.target.closest('#insp')) { e.stopPropagation(); e.preventDefault(); longOpenAt = 0; } }, true);
+    const longStart = e => { const t = e.target.closest('.tok,.hcard'); if (!t || !G || (e.button !== undefined && e.button !== 0)) return; clearTimeout(press); pressPos = [e.clientX, e.clientY]; press = setTimeout(() => { t._long = true; longOpenAt = Date.now(); openBig(t); setTimeout(() => { t._long = false; }, 900); }, 480); };
     const longEnd = () => clearTimeout(press);
     const longMove = e => { if (pressPos && Math.hypot(e.clientX - pressPos[0], e.clientY - pressPos[1]) > 10) clearTimeout(press); };
     for (const el of [board, $('#hand')]) {
       el.addEventListener('pointerdown', longStart); el.addEventListener('pointerup', longEnd); el.addEventListener('pointercancel', longEnd); el.addEventListener('pointermove', longMove); el.addEventListener('pointerleave', longEnd);
       el.addEventListener('contextmenu', e => { const t = e.target.closest('.tok,.hcard'); if (t) e.preventDefault(); });
     }
-    PEEK.bind($('#hand')); PEEK.bind($('#dlg'));
-    $('#hand').addEventListener('click', e => { const h = e.target.closest('.hcard'); if (!h || !G) return; if (h._long) { h._long = false; return; } if (e.detail >= 2) { openBig(h); return; } clickHand(h.dataset.iid); });
+    PEEK.bind($('#hand')); PEEK.bind($('#dlg')); PEEK.bind(board);
+    const isTouch = e => e.pointerType === 'touch' || e.pointerType === 'pen' || (!e.pointerType && matchMedia('(pointer: coarse)').matches);
+    $('#hand').addEventListener('click', e => { const h = e.target.closest('.hcard'); if (!h || !G) return; if (h._long) { h._long = false; return; } if (e.detail >= 2) { PEEK.hide(); openBig(h); return; } clickHand(h.dataset.iid, isTouch(e)); });
+    // Starthand-Auswahl: Karten antippen = Werte, Doppeltipp = ganze Karte
+    $('#dlg').addEventListener('click', e => { const t = e.target.closest('.mhand [data-pcid]'); if (!t) return; if (e.detail >= 2) { PEEK.hide(); openInspector({ cid: t.dataset.pcid, from: t }); return; } if (isTouch(e)) PEEK.toggle(t); });
+    // Helden auf dem Brett: am Handy ploppen beim Antippen ebenfalls die Werte auf
+    board.addEventListener('click', e => { if (!G || !isTouch(e) || e.detail >= 2) return; const t = e.target.closest('.tok[data-uid]'); if (!t || t._long) return;
+      if (isPhone()) { const uid = t.dataset.uid; setTimeout(() => { G.info = G.info && G.info.uid === uid ? null : { uid }; render([]); }, 0); return; }
+      setTimeout(() => { const n = document.querySelector('.tok[data-uid="' + t.dataset.uid + '"]'); if (n) PEEK.show(n, 'tap'); }, 0); }, false);
+    // Wegtippen (nicht auf Karte, Held oder Leiste) → Leiste zeigt wieder König-HP und Energie
+    document.addEventListener('pointerdown', e => { if (!G) return; const hs = isPhone() && G.sel && G.sel.kind === 'hand' && !G.cast; if (!G.info && !hs) return; if (e.target.closest && e.target.closest('.tok,.hcard,[data-popact],[data-qg],.pbar.info,#mdock,#fxchips,#dlg,#insp,#castfloat,#ideabar,#qgifts' + (hs ? ',#board .cell.hl-summon,canvas.b3d' : ''))) return; G.info = null; if (hs) G.sel = null; setTimeout(() => G && render([]), 0); }, true); // Handy: daneben tippen → Leiste zeigt wieder König-Leben und Energie (eine angetippte Handkarte wird dabei abgewählt)
+    for (const id of ['#pb-top', '#pb-bot', '#mdock']) $(id).addEventListener('click', e => { { const fx = e.target.closest('[data-fxg]'); if (fx && G) { fxTap(fx.dataset.uid, fx.dataset.fxg); return; } } { const ud = e.target.closest('[data-undecl]'); if (ud && G && myTurn() && G.s.phase === 'battle') { const [uid, t] = ud.dataset.undecl.split('|'), cur = ((G.s.decl[uid] || {}).targets || []); dispatch({ type: 'declare', uid, targets: cur.filter(x => x !== t) }); toast('Angriff zurückgenommen.'); return; } } if (G && G.cast) { if (e.target.closest('[data-cgal]')) { castGallery(); return; } const k = e.target.closest('[data-cpick],[data-cnext],[data-cback],[data-cabort],[data-cok]'); if (k) { if (myTurn()) castAct(k.dataset); return; } } const q = e.target.closest('[data-qg]'); if (q && G) { if (!q.disabled) { G.info = null; useGiftUI(q.dataset.uid, q.dataset.qg); } return; } const b = e.target.closest('[data-popact]'); if (!b || !G) return; const a = b.dataset.popact, arg = b.dataset.arg; if (a === 'cast' && myTurn()) { G.info = null; startCast(arg); } if (a === 'big') openInspector({ cid: arg, from: b }); if (a === 'close') { G.info = null; G.sel = null; render([]); } if (a === 'undecl' && myTurn() && G.s.phase === 'battle') { const [uid, t] = arg.split('|'), cur = ((G.s.decl[uid] || {}).targets || []); G.sel = { kind: 'unit', uid }; dispatch({ type: 'declare', uid, targets: cur.filter(x => x !== t) }); toast('Angriff zurückgenommen.'); } });
     $('#hand').addEventListener('keydown', e => { const h = e.target.closest('.hcard'); if (h && (e.key === 'i' || e.key === 'I')) { e.preventDefault(); openBig(h); } });
+    $('#fsbtn').onclick = toggleFull;
     $('#mainbtn').onclick = mainAction; $('#tips').onclick = showTips;
+    { const hg = document.createElement('button'); hg.id = 'handgrip'; hg.className = 'handgrip'; hg.setAttribute('aria-label', 'Hand zeigen'); hg.innerHTML = '<span>▲</span> Hand'; $('#v-game').appendChild(hg);
+      hg.addEventListener('click', e => { e.stopPropagation(); if (!G) return; G.handPeek = !G.handPeek; render([]); }); }
+    $('#atklist').addEventListener('click', e => { const b = e.target.closest('[data-undecl]'); if (!b || !G || !myTurn() || G.s.phase !== 'battle') return; const [uid, t] = b.dataset.undecl.split('|'), cur = ((G.s.decl[uid] || {}).targets || []); dispatch({ type: 'declare', uid, targets: cur.filter(x => x !== t) }); toast('Angriff zurückgenommen.'); });
+    // Handy (31.10.2026): Spielverlauf und Hinweise hinter 📜, Ton/Aufgeben/Menü hinter ☰ – keine lange Seite mehr
+    $('#logbtn').onclick = () => { if (!G) return; dialog('<span class="eyebrow">Spielverlauf</span><h2>Was gerade passiert</h2><p class="hint">' + hint() + '</p><div class="phases">' + $('#phases').innerHTML + '</div><div class="log dlglog">' + $('#log').innerHTML + '</div><div class="row"><button class="btn" data-act="close">Schließen</button></div>', () => {}, { dismiss: true }); };
+    $('#mmenu').onclick = () => { if (!G) return; const mu = $('#music'); dialog('<span class="eyebrow">Menü</span><h2>Partie</h2><div class="row" style="flex-direction:column;align-items:stretch">' + (mu && !mu.hidden ? '<button class="btn" data-act="music">' + esc(mu.textContent || '🔊') + ' Ton an/aus</button>' : '') + '<button class="btn" data-act="tips">💡 Spielhilfe zeigen</button><button class="btn" data-act="fx">✨ Effekte: ' + ({ wenig: 'wenig', aus: 'aus' }[SET.fx] || 'voll') + '</button><button class="btn" data-act="v3d">🧊 3D-Ansicht: ' + (SET.view3d === false ? 'aus' : 'an') + '</button><button class="btn" data-act="fs">⛶ Vollbild</button><button class="btn danger" data-act="concede">🏳 Aufgeben</button><button class="btn" data-act="errlog">🧾 Fehlerprotokoll</button><button class="btn" data-act="menu">Hauptmenü</button><button class="btn" data-act="close">Zurück zum Spiel</button></div>', act => { closeDialog(); if (act === 'music') $('#music').click(); if (act === 'tips') showTips(); if (act === 'concede') $('#concede').click(); if (act === 'menu') $('#menu').click(); if (act === 'errlog') showErrLog(); if (act === 'v3d') { SET.view3d = SET.view3d === false; LS.set('wok-spiel-setup', SET); render([]); toast('3D-Ansicht ' + (SET.view3d ? 'an' : 'aus') + '.'); } if (act === 'fs') toggleFull(); if (act === 'fx') { SET.fx = { voll: 'wenig', wenig: 'aus', aus: 'voll' }[SET.fx || 'voll']; LS.set('wok-spiel-setup', SET); const at = document.querySelector('#v-game .atmo'); if (at) at.remove(); SPR.atmo(); toast('Effekte: ' + SET.fx + (SET.fx === 'wenig' ? ' (ohne Lichtblitze und Staub)' : '') + '.'); } }, { dismiss: true }); };
+    function showErrLog() { const n = ERRLOG.list.length; dialog('<button class="dlg-x" data-act="close" aria-label="Schließen">✕</button><span class="eyebrow">Fehlerprotokoll</span><h2>' + (n ? n + ' Einträge' : 'Keine Fehler') + '</h2><p class="muted">Wenn etwas hängt oder seltsam wirkt: „Kopieren“ und an den Entwickler schicken.</p><pre class="errlog">' + esc(ERRLOG.text()) + '</pre><div class="row"><button class="btn primary" data-act="copy">Kopieren</button><button class="btn" data-act="clear">Leeren</button></div>', act => { if (act === 'copy') { try { navigator.clipboard.writeText(ERRLOG.text()); toast('Fehlerprotokoll kopiert.'); } catch (e) { toast('Kopieren nicht möglich – bitte markieren und kopieren.'); } return false; } if (act === 'clear') { ERRLOG.clear(); showErrLog(); return false; } }, { dismiss: true, cls: 'wide' }); }
     $('#music').onclick = () => MUSIC.toggle(); MUSIC.updBtn();
     document.addEventListener('input', e => { if (e.target.id === 'vol') MUSIC.setVolume(+e.target.value); });
     $('#insp').addEventListener('click', e => { const b = e.target.closest('[data-ix]'); if (b) { inspectorAct(b); return; } const z = e.target.closest('[data-zoom]'); if (z && z.dataset.zoom !== (INS && insCard() && insCard().id)) { INS.cid = z.dataset.zoom; INS.uid = INS.iid = null; INS.from = null; fillInspector(); } });
@@ -2873,6 +3299,6 @@
   }
   window.WOK_APP_MUSIC = MUSIC;
   window.WOK_INSPECT = { open: o => openInspector(o), close: () => closeInspector(), get state() { return INS; } };
-  window.WOK_APP = { get game() { return G; }, dispatch: a => dispatch(a), POOL, VERSION, urls, STORE, renderNow: () => G && render([]), render: ev => G && render(ev) };
+  window.WOK_APP = { castStep: () => (G && G.cast ? castStep() : null), get game() { return G; }, dispatch: a => dispatch(a), POOL, VERSION, urls, STORE, renderNow: () => G && render([]), render: ev => G && render(ev) };
   boot();
 })();
